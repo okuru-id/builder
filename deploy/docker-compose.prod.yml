@@ -1,0 +1,51 @@
+services:
+  app:
+    image: ${IMAGE:-registry.gitlab.com/kurob1993/okuru}:latest
+    container_name: okuru-app
+    restart: unless-stopped
+    env_file:
+      - ../backend/.env
+    environment:
+      APP_HOST: 0.0.0.0
+      APP_PORT: 8080
+      APP_ENV: production
+      APP_DEBUG: "false"
+    volumes:
+      - db-data:/var/lib/okuru
+      - storage-data:/opt/okuru/storage/app/public
+    expose:
+      - "8080"
+    depends_on:
+      - caddy
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: okuru-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+
+volumes:
+  db-data:
+  storage-data:
+  caddy-data:
+  caddy-config:

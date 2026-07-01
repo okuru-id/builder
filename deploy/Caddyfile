@@ -1,0 +1,33 @@
+# API + admin backend
+api.okuru.id {
+	reverse_proxy app:8080
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+
+	encode gzip zstd
+}
+
+# Storefront
+shop.okuru.id {
+	reverse_proxy app:8080
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+	}
+
+	encode gzip zstd
+}
+
+# Redirect bare domain to www / api
+okuru.id {
+	redir https://okuru.id{uri}
+	# Static marketing/blog is served by the same Goravel binary.
+	reverse_proxy app:8080
+}
