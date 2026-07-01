@@ -1,0 +1,28 @@
+# Backend
+backend/.env
+backend/storage/logs/*
+backend/storage/app/public/*
+backend/public/admin/*
+backend/bin/
+
+# Admin
+admin/node_modules/
+admin/dist/
+
+# Docker
+deploy/.env
+
+# OS
+.DS_Store
+*.swp
+*.swo
+
+# IDE
+.idea/
+.vscode/
+*.code-workspace
+
+# Env
+.env
+.env.local
+.env.*.local
