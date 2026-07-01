@@ -1,0 +1,37 @@
+{{ define "shop/index.tmpl" }}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ .Title }} - Okuru Shop</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <nav class="bg-white border-b border-gray-200">
+        <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+            <a href="/shop" class="text-xl font-bold text-gray-900">Okuru Shop</a>
+            <a href="https://okuru.id" class="text-gray-600 hover:text-gray-900">Blog</a>
+        </div>
+    </nav>
+    <main class="max-w-5xl mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-8">Digital Products</h1>
+        {{ if not .Products }}
+        <p class="text-gray-500">No products available yet. Check back soon.</p>
+        {{ else }}
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {{ range .Products }}
+            <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6 flex flex-col">
+                <h2 class="text-lg font-semibold text-gray-900 mb-2">{{ .Title }}</h2>
+                {{ if .Description }}<p class="text-gray-600 text-sm mb-4 flex-1">{{ .Description }}</p>{{ end }}
+                <div class="flex items-center justify-between mt-2">
+                    <span class="text-xl font-bold text-gray-900">Rp {{ .Price }}</span>
+                    <a href="/product/{{ .Slug }}" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">View</a>
+                </div>
+            </div>
+            {{ end }}
+        </div>
+        {{ end }}
+    </main>
+</body>
+</html>{{ end }}

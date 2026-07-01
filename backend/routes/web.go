@@ -19,4 +19,15 @@ func Web() {
 
 	userController := controllers.NewUserController()
 	facades.Route().Get("/users", userController.Index)
+
+	shopController := controllers.NewShopController()
+	facades.Route().Get("/shop", shopController.Index)
+	facades.Route().Get("/product/{slug}", shopController.Product)
+	facades.Route().Post("/checkout/{slug}", shopController.Checkout)
+
+	facades.Route().Get("/health", func(ctx http.Context) http.Response {
+		return ctx.Response().Json(http.StatusOK, http.Json{
+			"status": "ok",
+		})
+	})
 }

@@ -1,0 +1,46 @@
+{{ define "shop/product.tmpl" }}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ .Title }} - Okuru Shop</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <nav class="bg-white border-b border-gray-200">
+        <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+            <a href="/shop" class="text-xl font-bold text-gray-900">Okuru Shop</a>
+            <a href="https://okuru.id" class="text-gray-600 hover:text-gray-900">Blog</a>
+        </div>
+    </nav>
+    <main class="max-w-3xl mx-auto px-4 py-8" x-data="{ form: { name: '', email: '' }, submit() { this.$refs.checkout.submit() } }">
+        <a href="/shop" class="text-blue-600 hover:text-blue-800 text-sm mb-4 inline-block">&larr; Back to products</a>
+        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-4">{{ .Product.Title }}</h1>
+            {{ if .Product.Description }}<p class="text-gray-600 mb-6 leading-relaxed">{{ .Product.Description }}</p>{{ end }}
+            <div class="border-t border-gray-100 pt-6 mb-6">
+                <span class="text-3xl font-bold text-gray-900">Rp {{ .Product.Price }}</span>
+            </div>
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">Checkout</h2>
+            <form method="POST" action="/checkout/{{ .Product.Slug }}" x-ref="checkout" class="space-y-4">
+                <div>
+                    <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                    <input type="text" id="name" name="name" required x-model="form.name"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+                </div>
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input type="email" id="email" name="email" required x-model="form.email"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+                </div>
+                <button type="submit"
+                    class="w-full bg-blue-600 text-white py-3 rounded-md hover:bg-blue-700 transition-colors font-medium">
+                    Buy Now
+                </button>
+            </form>
+            <p class="text-xs text-gray-400 mt-3 text-center">Secure payment via Sumopod (coming soon)</p>
+        </div>
+    </main>
+</body>
+</html>{{ end }}
