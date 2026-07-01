@@ -28,10 +28,12 @@ func init() {
 		//
 		// Supported drivers: "jwt", "session"
 		"guards": map[string]any{
-			"user": map[string]any{
-				"driver":   "jwt",
-				"provider": "user",
-			},
+		"user": map[string]any{
+			"driver":      "jwt",
+			"provider":    "user",
+			"ttl":         15,
+			"refresh_ttl": 20160,
+		},
 		},
 
 		// Supported: "orm"
