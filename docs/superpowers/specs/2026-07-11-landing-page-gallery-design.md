@@ -35,7 +35,7 @@ Remove custom HTML mode and default/minimal/bold template switches from admin UI
 ## Constraints
 
 - Frontend-only change. No migration or backend API change.
-- Reuse installed shadcn-vue dialog primitives and existing API client.
+- Reuse installed shadcn-vue sheet primitives for preview and existing API client; do not add dependencies.
 - Preserve authenticated route behavior and lazy-loaded views.
 
 ## Error handling
