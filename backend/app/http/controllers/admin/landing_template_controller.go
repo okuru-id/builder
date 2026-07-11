@@ -122,6 +122,13 @@ func (c *LandingTemplateController) Apply(ctx http.Context) http.Response {
 		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "template not found"})
 	}
 
+	if tmpl.HTML != "" {
+		if err := applyHTMLTemplate(tmpl.HTML); err != nil {
+			return ctx.Response().Json(http.StatusInternalServerError, http.Json{"error": err.Error()})
+		}
+		return ctx.Response().Success().Json(http.Json{"message": "Template applied"})
+	}
+
 	// Delete existing sections
 	facades.Orm().Query().Where("id > ?", 0).Delete(&models.LandingSection{})
 
@@ -156,4 +163,19 @@ func (c *LandingTemplateController) Apply(ctx http.Context) http.Response {
 	}
 
 	return ctx.Response().Success().Json(http.Json{"message": "Template applied"})
+}
+
+// applyHTMLTemplate activates a custom HTML template by writing settings, leaving sections untouched.
+func applyHTMLTemplate(html string) error {
+	settings := []models.Setting{
+		{Key: "landing_mode", Value: "custom"},
+		{Key: "landing_template_html", Value: html},
+	}
+	for _, s := range settings {
+		var setting models.Setting
+		if err := facades.Orm().Query().UpdateOrCreate(&setting, models.Setting{Key: s.Key}, s); err != nil {
+			return err
+		}
+	}
+	return nil
 }
