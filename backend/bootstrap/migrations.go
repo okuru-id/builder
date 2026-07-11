@@ -18,9 +18,5 @@ func Migrations() []schema.Migration {
 		&migrations.M20260702000007CreateOrdersTable{},
 		&migrations.M20260702000008CreateMessagesTable{},
 		&migrations.M20260702000009CreateSettingsTable{},
-		&migrations.M20260705000001CreateLandingSectionsTable{},
-		&migrations.M20260706000001DropUniqueIndexOnLandingSectionsType{},
-		&migrations.M20260711000001CreateLandingTemplatesTable{},
-		&migrations.M20260712000001AddHtmlToLandingTemplates{},
 	}
 }

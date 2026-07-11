@@ -1,36 +1,16 @@
 package routes
 
 import (
-	"encoding/json"
 	"strings"
 
 	"github.com/goravel/framework/contracts/http"
 
 	"okuru/app/http/controllers"
 	"okuru/app/facades"
-	"okuru/app/models"
 )
 
 func Web() {
 	facades.Route().Get("/", func(ctx http.Context) http.Response {
-		var mode models.Setting
-		if err := facades.Orm().Query().Where("key = ?", "landing_mode").First(&mode); err == nil && mode.Value == "custom" {
-			var html models.Setting
-			if err := facades.Orm().Query().Where("key = ?", "landing_template_html").First(&html); err == nil && html.Value != "" {
-				content := html.Value
-				if strings.Contains(content, "{{DATA}}") {
-					var sections []models.LandingSection
-					facades.Orm().Query().Where("is_active", true).Order("sort_order asc").Get(&sections)
-					sectionMap := make(map[string]any, len(sections))
-					for _, s := range sections {
-						sectionMap[s.Type] = s.Content
-					}
-					data, _ := json.Marshal(sectionMap)
-					content = strings.ReplaceAll(content, "{{DATA}}", string(data))
-				}
-				return ctx.Response().Data(http.StatusOK, "text/html; charset=utf-8", []byte(content))
-			}
-		}
 		return ctx.Response().File("./public/index.html")
 	})
 

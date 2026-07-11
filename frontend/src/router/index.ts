@@ -10,11 +10,6 @@ const router = createRouter({
       meta: { public: true },
     },
     {
-      path: '/landing-page/preview/:id',
-      name: 'landing-page-preview',
-      component: () => import('@/views/LandingPagePreview.vue'),
-    },
-    {
       path: '/',
       component: () => import('@/layouts/AdminLayout.vue'),
       children: [
@@ -26,8 +21,6 @@ const router = createRouter({
         { path: 'open-source', name: 'open-source', component: () => import('@/views/OpenSource.vue') },
         { path: 'products', name: 'products', component: () => import('@/views/Products.vue') },
         { path: 'inbox', name: 'inbox', component: () => import('@/views/Inbox.vue') },
-        { path: 'landing-page', name: 'landing-page', component: () => import('@/views/LandingPage.vue') },
-        { path: 'landing-page/content', name: 'landing-page-content', component: () => import('@/views/LandingPageContent.vue') },
       ],
     },
   ],

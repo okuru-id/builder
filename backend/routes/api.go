@@ -12,11 +12,9 @@ import (
 func Api() {
 	authController := controllers.NewAuthController()
 	contentController := controllers.NewContentController()
-	landingController := controllers.NewLandingController()
 
 	// Public API (no auth) — consumed by the React frontend.
 	facades.Route().Prefix("api/v1").Group(func(router route.Router) {
-		router.Get("/landing", landingController.Index)
 		router.Get("/content", contentController.Content)
 		router.Get("/posts", contentController.Posts)
 		router.Get("/posts/{slug}", contentController.Post)
@@ -47,22 +45,6 @@ func Api() {
 			messageController := admin.NewMessageController()
 			settingController := admin.NewSettingController()
 			uploadController := admin.NewUploadController()
-			landingTemplateController := admin.NewLandingTemplateController()
-			landingSectionController := admin.NewLandingSectionController()
-
-			r.Get("/landing-templates", landingTemplateController.Index)
-			r.Post("/landing-templates", landingTemplateController.Store)
-			r.Get("/landing-templates/{id}", landingTemplateController.Show)
-			r.Put("/landing-templates/{id}", landingTemplateController.Update)
-			r.Delete("/landing-templates/{id}", landingTemplateController.Destroy)
-			r.Post("/landing-templates/{id}/apply", landingTemplateController.Apply)
-
-			r.Get("/landing-sections", landingSectionController.Index)
-			r.Post("/landing-sections", landingSectionController.Store)
-			r.Put("/landing-sections/{id}", landingSectionController.Update)
-			r.Delete("/landing-sections/{id}", landingSectionController.Destroy)
-			r.Patch("/landing-sections/{id}/toggle", landingSectionController.Toggle)
-			r.Patch("/landing-sections/{id}/sort", landingSectionController.Sort)
 
 			r.Get("/posts", postController.Index)
 			r.Post("/posts", postController.Store)

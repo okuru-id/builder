@@ -7,7 +7,6 @@ import {
   IconLayoutDashboard,
   IconLifebuoy,
   IconPackage,
-  IconLayout,
 } from '@tabler/icons-vue'
 
 import NavMain from '@/components/NavMain.vue'
@@ -47,14 +46,6 @@ const data = {
       ],
     },
     { title: 'Inbox', to: '/inbox', icon: IconInbox },
-    {
-      title: 'Landing Page',
-      icon: IconLayout,
-      items: [
-        { title: 'Templates', to: '/landing-page' },
-        { title: 'Content', to: '/landing-page/content' },
-      ],
-    },
   ] as { title: string; to?: string; icon?: Component; items?: { title: string; to: string }[] }[],
   navSecondary: [
     { title: 'Support', to: '/', icon: IconLifebuoy },
