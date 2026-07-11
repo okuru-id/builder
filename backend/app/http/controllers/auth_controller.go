@@ -54,7 +54,7 @@ func (c *AuthController) Login(ctx http.Context) http.Response {
 		})
 	}
 
-	if user.TotpSecret != nil && user.TotpVerified {
+	if services.TotpEnabled() && user.TotpSecret != nil && user.TotpVerified {
 		tempToken, err := facades.Auth(ctx).LoginUsingID(user.ID)
 		if err != nil {
 			return ctx.Response().Json(http.StatusInternalServerError, http.Json{
@@ -78,7 +78,7 @@ func (c *AuthController) Login(ctx http.Context) http.Response {
 		"requires_totp":       false,
 		"access_token":        token,
 		"token_type":          "bearer",
-		"totp_setup_required": user.TotpSecret == nil,
+		"totp_setup_required": services.TotpEnabled() && (user.TotpSecret == nil || !user.TotpVerified),
 	})
 }
 
@@ -151,6 +151,12 @@ func (c *AuthController) VerifyTotp(ctx http.Context) http.Response {
 }
 
 func (c *AuthController) SetupTotp(ctx http.Context) http.Response {
+	if !services.TotpEnabled() {
+		return ctx.Response().Json(http.StatusForbidden, http.Json{
+			"error": "TOTP is disabled",
+		})
+	}
+
 	userIDStr, err := facades.Auth(ctx).ID()
 	if err != nil {
 		return ctx.Response().Json(http.StatusUnauthorized, http.Json{
@@ -258,8 +264,17 @@ func (c *AuthController) VerifyTotpSetup(ctx http.Context) http.Response {
 		})
 	}
 
+	accessToken, err := facades.Auth(ctx).LoginUsingID(user.ID)
+	if err != nil {
+		return ctx.Response().Json(http.StatusInternalServerError, http.Json{
+			"error": "failed to issue token",
+		})
+	}
+
 	return ctx.Response().Json(http.StatusOK, http.Json{
-		"verified": true,
+		"verified":     true,
+		"access_token": accessToken,
+		"token_type":   "bearer",
 	})
 }
 

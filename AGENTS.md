@@ -16,11 +16,11 @@ CGO_ENABLED=0 go build -o okuru .   # reproducible prod binary (ncruces sqlite =
 
 No CGO is required: SQLite uses `ncruces/go-sqlite3` (WASM).
 
-### Admin SPA (`admin/`)
+### Frontend (`frontend/`)
 ```bash
-pnpm install
-pnpm run build      # vue-tsc typecheck + vite build -> admin/dist
-pnpm run dev        # dev server, proxies /admin/api -> localhost:3000
+bun install
+bun run build      # vue-tsc typecheck + vite build -> frontend/dist
+bun run dev        # dev server (landing at /, admin at /admin/), proxies /admin/api -> localhost:3000
 ```
 
 ### Docker
@@ -33,7 +33,7 @@ make docker-up      # run the local compose stack
 - **Goravel** (Gin driver) on Go 1.24. App entry: `backend/main.go` -> `bootstrap/app.go`.
 - **ORM**: Goravel ORM (GORM-backed). Local facades in `backend/app/facades/`.
 - **DB**: SQLite (default) or Postgres, configured in `backend/config/database.go`.
-- **Admin**: Vue 3 + shadcn-vue (reka-ui) + Tailwind v4 + Vite. SPA mounted at `/admin/`.
+- **Admin**: Vue 3 + shadcn-vue (reka-ui) + Tailwind v4 + Vite. Package manager: bun. SPA mounted at `/admin/`.
 - **Storefront**: server-rendered Go templates + Tailwind CDN + Alpine.js.
 
 ## Code Style
@@ -54,8 +54,8 @@ make docker-up      # run the local compose stack
 
 ### Frontend (admin)
 - TypeScript, `<script setup lang="ts">` SFCs.
-- Components: shadcn-vue primitives from `admin/src/components/ui/`.
-- API calls via `axios`; routes in `admin/src/router`.
+- Components: shadcn-vue primitives from `frontend/src/components/ui/`.
+- API calls via `axios`; routes in `frontend/src/router`.
 
 ## Routing Map
 - `GET /health` -> health check

@@ -7,6 +7,7 @@ import (
 
 	"okuru/app/facades"
 	"okuru/app/models"
+	"okuru/app/services"
 )
 
 func TotpVerified() http.Middleware {
@@ -29,7 +30,7 @@ func TotpVerified() http.Middleware {
 			return
 		}
 
-		if user.TotpSecret != nil && !user.TotpVerified {
+		if services.TotpEnabled() && user.TotpSecret != nil && !user.TotpVerified {
 			ctx.Response().Json(http.StatusForbidden, http.Json{
 				"error":         "TOTP verification required",
 				"totp_required": true,

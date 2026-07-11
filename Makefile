@@ -1,14 +1,17 @@
-.PHONY: dev-admin dev-backend dev build-local docker-up docker-down docker-logs deploy migrate seed backup
+.PHONY: dev-frontend dev-backend dev build-local docker-up docker-down docker-logs deploy migrate seed backup build-frontend
 
 # === LOCAL DEV ===
-dev-admin:
-	cd admin && pnpm run dev
+dev-frontend:
+	cd frontend && bun run dev
 
 dev-backend:
-	cd backend && air
+	cd backend && go run .
 
 dev:
-	@make dev-backend & make dev-admin & wait
+	@make dev-backend & make dev-frontend & wait
+
+build-frontend:
+	cd frontend && bun run build && cp -r dist/* ../backend/public/
 
 # === DOCKER ===
 build-local:

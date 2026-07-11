@@ -1,15 +1,30 @@
 package services
 
 import (
+	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base32"
+	"encoding/base64"
 	"errors"
+	"image/png"
 	"io"
+	"strings"
 
 	"github.com/pquerna/otp/totp"
+
+	"okuru/app/facades"
 )
+
+// TotpEnabled reports whether 2FA/TOTP is active.
+// Explicit TOTP_ENABLED env overrides; otherwise auto-disabled
+// for non-production envs (local, dev, testing).
+func TotpEnabled() bool {
+	env := strings.ToLower(facades.Config().GetString("app.env", "production"))
+	def := env != "local" && env != "dev" && env != "testing"
+	return facades.Config().EnvBool("TOTP_ENABLED", def)
+}
 
 type TotpService struct {
 	appKey []byte
@@ -33,7 +48,18 @@ func (s *TotpService) GenerateSecret(email string) (secret string, qrUrl string,
 	if err != nil {
 		return "", "", err
 	}
-	return key.Secret(), key.URL(), nil
+
+	image, err := key.Image(176, 176)
+	if err != nil {
+		return "", "", err
+	}
+
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, image); err != nil {
+		return "", "", err
+	}
+
+	return key.Secret(), "data:image/png;base64," + base64.StdEncoding.EncodeToString(buf.Bytes()), nil
 }
 
 func (s *TotpService) ValidateCode(secret, code string) bool {

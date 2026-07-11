@@ -20,7 +20,7 @@ JSON API consumed by the Vue admin SPA.
 
 ```
 .
-├── admin/        # Vue 3 admin SPA (shadcn-vue)
+├── frontend/    # Vue 3 SPA: landing (at /) + admin (at /admin/)
 ├── backend/      # Goravel app: API, storefront, static admin host
 ├── deploy/       # Dockerfile, compose files, Caddyfile
 ├── docs/         # Plans and design notes
@@ -29,7 +29,7 @@ JSON API consumed by the Vue admin SPA.
 
 ## Local Development
 
-Requirements: Go 1.24+, Node 20+, pnpm 10+.
+Requirements: Go 1.24+, bun 1.3+.
 
 ```bash
 # Backend (http://localhost:3000)
@@ -39,8 +39,8 @@ go run .               # serves API + storefront templates
 
 # Admin SPA (http://localhost:5173 -> proxies /admin/api to :3000)
 cd admin
-pnpm install
-pnpm run dev
+bun install
+bun run dev
 ```
 
 ### Database

@@ -1,13 +1,12 @@
 # syntax=docker/dockerfile:1
 
-# ---- Stage 1: build admin SPA ----
-FROM node:20-alpine AS admin-builder
+# ---- Stage 1: build frontend (landing + admin, single Vite project) ----
+FROM oven/bun:1-alpine AS frontend-builder
 WORKDIR /build
-RUN corepack enable
-COPY admin/package.json admin/pnpm-lock.yaml* ./
-RUN pnpm install --frozen-lockfile || pnpm install
-COPY admin/ ./
-RUN pnpm run build
+COPY frontend/package.json frontend/bun.lock ./
+RUN bun install --frozen-lockfile
+COPY frontend/ ./
+RUN bun run build
 
 # ---- Stage 2: build Go backend ----
 FROM golang:1.24-alpine AS backend-builder
@@ -16,14 +15,14 @@ RUN apk add --no-cache git
 COPY backend/go.mod backend/go.sum ./
 RUN go mod download
 COPY backend/ ./
-# Embed admin dist so Goravel static serving can deliver /admin/
-COPY --from=admin-builder /build/dist ./public/admin
+# Embed unified frontend dist (landing at /, admin at /admin/) so Go serves both
+COPY --from=frontend-builder /build/dist/* ./public/
 # ncruces/go-sqlite3 is pure Go (WASM) -> no CGO needed
 RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/okuru .
 
 # ---- Stage 3: minimal runtime ----
 FROM alpine:3.20 AS runtime
-RUN apk add --no-cache ca-certificates tzdata wget sqlite \
+RUN apk add --no-cache ca-certificates tzdata wget postgresql16-client \
     && addgroup -S okuru && adduser -S okuru -G okuru
 WORKDIR /opt/okuru
 
