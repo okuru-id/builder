@@ -1,0 +1,202 @@
+package admin
+
+import (
+	"encoding/json"
+	"fmt"
+	"strings"
+
+	"github.com/goravel/framework/contracts/http"
+	"gorm.io/datatypes"
+
+	"okuru/app/facades"
+	"okuru/app/models"
+)
+
+type LandingPageController struct{}
+
+func NewLandingPageController() *LandingPageController {
+	return &LandingPageController{}
+}
+
+type landingPageInput struct {
+	Name string `json:"name" validate:"required"`
+	Slug string `json:"slug"`
+}
+
+// defaultRootTree returns the initial empty tree for a new page.
+func defaultRootTree() datatypes.JSON {
+	tree := map[string]any{
+		"root": map[string]any{
+			"id":       "root",
+			"type":     "frame",
+			"name":     "Page",
+			"props":    map[string]any{},
+			"classes":  []string{"min-h-screen", "bg-white", "text-neutral-900"},
+			"children": []any{},
+		},
+	}
+	b, _ := json.Marshal(tree)
+	return b
+}
+
+// Index lists all landing pages (without heavy tree payload).
+func (c *LandingPageController) Index(ctx http.Context) http.Response {
+	var pages []models.LandingPage
+	if err := facades.Orm().Query().Order("id desc").Get(&pages); err != nil {
+		return ctx.Response().Json(http.StatusInternalServerError, http.Json{"error": err.Error()})
+	}
+	type listItem struct {
+		ID        uint   `json:"id"`
+		Slug      string `json:"slug"`
+		Name      string `json:"name"`
+		Status    string `json:"status"`
+		Version   int    `json:"version"`
+		UpdatedAt string `json:"updated_at"`
+	}
+	items := make([]listItem, 0, len(pages))
+	for _, p := range pages {
+		items = append(items, listItem{p.ID, p.Slug, p.Name, p.Status, p.Version, ""})
+	}
+	return ctx.Response().Success().Json(http.Json{"data": items})
+}
+
+// Show returns a single page with its full tree.
+func (c *LandingPageController) Show(ctx http.Context) http.Response {
+	var page models.LandingPage
+	if err := facades.Orm().Query().Where("id = ?", ctx.Request().Input("id")).First(&page); err != nil {
+		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "page not found"})
+	}
+	if page.ID == 0 {
+		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "page not found"})
+	}
+	return ctx.Response().Success().Json(http.Json{"data": page})
+}
+
+// Store creates a new draft page.
+func (c *LandingPageController) Store(ctx http.Context) http.Response {
+	var in landingPageInput
+	if err := ctx.Request().Bind(&in); err != nil {
+		return ctx.Response().Json(http.StatusBadRequest, http.Json{"error": err.Error()})
+	}
+	slug := in.Slug
+	if slug == "" {
+		slug = slugify(in.Name)
+	}
+	page := models.LandingPage{
+		Name:   in.Name,
+		Slug:   slug,
+		Status: "draft",
+		Tree:   defaultRootTree(),
+	}
+	if err := facades.Orm().Query().Create(&page); err != nil {
+		return ctx.Response().Json(http.StatusInternalServerError, http.Json{"error": err.Error()})
+	}
+	return ctx.Response().Success().Json(http.Json{"data": page})
+}
+
+// treeInput is the autosave payload.
+type treeInput struct {
+	Name string          `json:"name"`
+	Slug string          `json:"slug"`
+	Tree json.RawMessage `json:"tree"`
+}
+
+// Update autosaves the working tree, bumps version, and logs a revision.
+func (c *LandingPageController) Update(ctx http.Context) http.Response {
+	id := ctx.Request().Input("id")
+	var page models.LandingPage
+	if err := facades.Orm().Query().Where("id = ?", id).First(&page); err != nil {
+		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "page not found"})
+	}
+	if page.ID == 0 {
+		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "page not found"})
+	}
+
+	var in treeInput
+	if err := ctx.Request().Bind(&in); err != nil {
+		return ctx.Response().Json(http.StatusBadRequest, http.Json{"error": err.Error()})
+	}
+
+	// Save revision of the current tree before overwriting.
+	rev := models.LandingPageRevision{
+		LandingPageID: page.ID,
+		Tree:          page.Tree,
+		Message:       fmt.Sprintf("autosave v%d", page.Version),
+	}
+	if err := facades.Orm().Query().Create(&rev); err != nil {
+		return ctx.Response().Json(http.StatusInternalServerError, http.Json{"error": err.Error()})
+	}
+
+	page.Tree = datatypes.JSON(in.Tree)
+	page.Version = page.Version + 1
+	if in.Name != "" {
+		page.Name = in.Name
+	}
+	if in.Slug != "" {
+		page.Slug = in.Slug
+	}
+	if _, err := facades.Orm().Query().Where("id = ?", id).Update(&page); err != nil {
+		return ctx.Response().Json(http.StatusInternalServerError, http.Json{"error": err.Error()})
+	}
+	return ctx.Response().Success().Json(http.Json{"data": page, "revision": rev.ID})
+}
+
+// Publish snapshots the working tree into published_tree and marks status=published.
+func (c *LandingPageController) Publish(ctx http.Context) http.Response {
+	id := ctx.Request().Input("id")
+	var page models.LandingPage
+	if err := facades.Orm().Query().Where("id = ?", id).First(&page); err != nil {
+		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "page not found"})
+	}
+	if page.ID == 0 {
+		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "page not found"})
+	}
+	page.PublishedTree = page.Tree
+	page.Status = "published"
+	if _, err := facades.Orm().Query().Where("id = ?", id).Update(&page); err != nil {
+		return ctx.Response().Json(http.StatusInternalServerError, http.Json{"error": err.Error()})
+	}
+	return ctx.Response().Success().Json(http.Json{"data": page})
+}
+
+// Revisions lists the page revision history (newest first).
+func (c *LandingPageController) Revisions(ctx http.Context) http.Response {
+	id := ctx.Request().Input("id")
+	var revs []models.LandingPageRevision
+	if err := facades.Orm().Query().Where("landing_page_id = ?", id).Order("id desc").Limit(100).Get(&revs); err != nil {
+		return ctx.Response().Json(http.StatusInternalServerError, http.Json{"error": err.Error()})
+	}
+	return ctx.Response().Success().Json(http.Json{"data": revs})
+}
+
+// RestoreRevision rolls the working tree back to a prior revision and bumps version.
+func (c *LandingPageController) RestoreRevision(ctx http.Context) http.Response {
+	pageID := ctx.Request().Input("id")
+	revID := ctx.Request().Input("rid")
+
+	var rev models.LandingPageRevision
+	if err := facades.Orm().Query().Where("id = ? AND landing_page_id = ?", revID, pageID).First(&rev); err != nil {
+		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "revision not found"})
+	}
+	if rev.ID == 0 {
+		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "revision not found"})
+	}
+
+	var page models.LandingPage
+	if err := facades.Orm().Query().Where("id = ?", pageID).First(&page); err != nil {
+		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "page not found"})
+	}
+	page.Tree = rev.Tree
+	page.Version = page.Version + 1
+	if _, err := facades.Orm().Query().Where("id = ?", pageID).Update(&page); err != nil {
+		return ctx.Response().Json(http.StatusInternalServerError, http.Json{"error": err.Error()})
+	}
+	return ctx.Response().Success().Json(http.Json{"data": page})
+}
+
+func slugify(s string) string {
+	s = strings.ToLower(strings.TrimSpace(s))
+	s = strings.ReplaceAll(s, " ", "-")
+	s = strings.ReplaceAll(s, "_", "-")
+	return s
+}

@@ -18,5 +18,6 @@ func Migrations() []schema.Migration {
 		&migrations.M20260702000007CreateOrdersTable{},
 		&migrations.M20260702000008CreateMessagesTable{},
 		&migrations.M20260702000009CreateSettingsTable{},
+		&migrations.M20260713000001CreateLandingPagesTables{},
 	}
 }

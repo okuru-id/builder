@@ -45,6 +45,15 @@ func Api() {
 			messageController := admin.NewMessageController()
 			settingController := admin.NewSettingController()
 			uploadController := admin.NewUploadController()
+			landingPageController := admin.NewLandingPageController()
+
+			r.Get("/landing-pages", landingPageController.Index)
+			r.Post("/landing-pages", landingPageController.Store)
+			r.Get("/landing-pages/{id}", landingPageController.Show)
+			r.Put("/landing-pages/{id}", landingPageController.Update)
+			r.Post("/landing-pages/{id}/publish", landingPageController.Publish)
+			r.Get("/landing-pages/{id}/revisions", landingPageController.Revisions)
+			r.Post("/landing-pages/{id}/revisions/{rid}/restore", landingPageController.RestoreRevision)
 
 			r.Get("/posts", postController.Index)
 			r.Post("/posts", postController.Store)
