@@ -18,67 +18,13 @@ func (s *LandingTemplateSeeder) Run() error {
 			Description: "Single-platform operations landing page. Tailwind + Inter/Space Grotesk.",
 			HTML:        sistemHTML(),
 		},
-		{
-			Name:        "Professional",
-			Description: "Clean portfolio with hero, client logos, services, projects, and CTA sections.",
-			Preview:     "",
-			Sections: []any{
-				map[string]any{"type": "hero", "content": map[string]any{
-					"greeting_en": "Hi, I'm Kurob", "greeting_id": "Halo, Saya Kurob",
-					"description_en": "Fullstack programmer with 10+ years of experience.",
-					"description_id": "Fullstack programmer dengan pengalaman 10+ tahun.",
-					"profile_image":  "/images/profile.webp", "profile_image_mobile": "/images/profile-half.webp",
-					"cta_text": "Contact Me", "cta_link": "#contact",
-				}},
-				map[string]any{"type": "clients", "content": map[string]any{
-					"items": []any{},
-				}},
-				map[string]any{"type": "services", "content": map[string]any{
-					"items": []any{},
-				}},
-				map[string]any{"type": "projects", "content": map[string]any{
-					"items": []any{},
-				}},
-				map[string]any{"type": "cta", "content": map[string]any{
-					"heading": "Tell me about your next project", "email": "kurob@okuru.id",
-				}},
-			},
-		},
-		{
-			Name:        "Minimal",
-			Description: "Minimal layout with hero and CTA — clean and distraction-free.",
-			Preview:     "",
-			Sections: []any{
-				map[string]any{"type": "hero", "content": map[string]any{
-					"greeting_en": "Kurob", "greeting_id": "Kurob",
-					"description_en": "Fullstack programmer.", "description_id": "Fullstack programmer.",
-					"profile_image": "/images/profile.webp",
-					"cta_text":      "Contact", "cta_link": "#contact",
-				}},
-				map[string]any{"type": "cta", "content": map[string]any{
-					"heading": "Let's work together", "email": "kurob@okuru.id",
-				}},
-			},
-		},
-		{
-			Name:        "Showcase",
-			Description: "Projects-first layout highlighting work with a hero and CTA.",
-			Preview:     "",
-			Sections: []any{
-				map[string]any{"type": "hero", "content": map[string]any{
-					"greeting_en": "Hi, I'm Kurob", "greeting_id": "Halo, Saya Kurob",
-					"description_en": "I build things.", "description_id": "Saya membuat sesuatu.",
-					"profile_image": "/images/profile.webp",
-					"cta_text":      "See my work", "cta_link": "#projects",
-				}},
-				map[string]any{"type": "projects", "content": map[string]any{
-					"items": []any{},
-				}},
-				map[string]any{"type": "cta", "content": map[string]any{
-					"heading": "Interested?", "email": "kurob@okuru.id",
-				}},
-			},
-		},
+	}
+
+	// Remove obsolete templates from prior seeds.
+	if _, err := facades.Orm().Query().
+		Where("name IN ?", []string{"Professional", "Minimal", "Showcase"}).
+		Delete(&models.LandingTemplate{}); err != nil {
+		return err
 	}
 
 	for _, t := range templates {
