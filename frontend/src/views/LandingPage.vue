@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { IconLayoutGrid } from '@tabler/icons-vue'
@@ -16,6 +16,7 @@ interface LandingTemplate {
   description: string
   preview: string
   sections: { type: string }[]
+  html?: string
 }
 
 const templates = ref<LandingTemplate[]>([])
@@ -24,6 +25,7 @@ const selectedTemplate = ref<LandingTemplate | null>(null)
 const sheetOpen = ref(false)
 const applyingTemplate = ref<number | null>(null)
 const brokenPreviews = ref(new Set<number>())
+const blobUrls = ref(new Map<number, string>())
 
 const sectionLabels: Record<string, string> = {
   hero: 'Hero',
@@ -43,6 +45,15 @@ function previewAvailable(template: LandingTemplate) {
 
 function markPreviewBroken(id: number) {
   brokenPreviews.value = new Set([...brokenPreviews.value, id])
+}
+
+function templatePreviewUrl(template: LandingTemplate) {
+  if (!template.html) return ''
+  if (!blobUrls.value.has(template.id)) {
+    const blob = new Blob([template.html], { type: 'text/html' })
+    blobUrls.value.set(template.id, URL.createObjectURL(blob))
+  }
+  return blobUrls.value.get(template.id)!
 }
 
 async function loadTemplates() {
@@ -86,6 +97,13 @@ async function applySelectedTemplate() {
 }
 
 onMounted(loadTemplates)
+
+onBeforeUnmount(() => {
+  for (const url of blobUrls.value.values()) {
+    URL.revokeObjectURL(url)
+  }
+  blobUrls.value.clear()
+})
 </script>
 
 <template>
@@ -118,8 +136,15 @@ onMounted(loadTemplates)
           @click="openPreview(template)"
         >
           <div class="aspect-video overflow-hidden bg-muted">
+            <iframe
+              v-if="template.html"
+              :src="templatePreviewUrl(template)"
+              :title="`${template.name} preview`"
+              class="pointer-events-none size-full"
+              sandbox="allow-scripts"
+            />
             <img
-              v-if="previewAvailable(template)"
+              v-else-if="previewAvailable(template)"
               :src="template.preview"
               :alt="`${template.name} preview`"
               class="size-full object-cover"
@@ -161,8 +186,15 @@ onMounted(loadTemplates)
 
         <div class="space-y-5 px-4">
           <div class="aspect-video overflow-hidden rounded-lg bg-muted">
+            <iframe
+              v-if="selectedTemplate.html"
+              :src="templatePreviewUrl(selectedTemplate)"
+              :title="`${selectedTemplate.name} preview`"
+              class="size-full"
+              sandbox="allow-scripts"
+            />
             <img
-              v-if="previewAvailable(selectedTemplate)"
+              v-else-if="previewAvailable(selectedTemplate)"
               :src="selectedTemplate.preview"
               :alt="`${selectedTemplate.name} preview`"
               class="size-full object-cover"
