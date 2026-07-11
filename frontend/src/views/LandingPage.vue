@@ -136,15 +136,8 @@ onBeforeUnmount(() => {
           @click="openPreview(template)"
         >
           <div class="aspect-video overflow-hidden bg-muted">
-            <iframe
-              v-if="template.html"
-              :src="templatePreviewUrl(template)"
-              :title="`${template.name} preview`"
-              class="pointer-events-none size-full"
-              sandbox="allow-scripts"
-            />
             <img
-              v-else-if="previewAvailable(template)"
+              v-if="previewAvailable(template)"
               :src="template.preview"
               :alt="`${template.name} preview`"
               class="size-full object-cover"
@@ -178,29 +171,29 @@ onBeforeUnmount(() => {
     </div>
 
     <Sheet :open="sheetOpen" @update:open="updateSheet">
-      <SheetContent v-if="selectedTemplate" class="w-full overflow-y-auto sm:max-w-lg">
+      <SheetContent v-if="selectedTemplate" class="w-screen overflow-y-auto sm:max-w-full">
         <SheetHeader>
           <SheetTitle>{{ selectedTemplate.name }}</SheetTitle>
           <SheetDescription>{{ selectedTemplate.description }}</SheetDescription>
         </SheetHeader>
 
-        <div class="space-y-5 px-4">
-          <div class="aspect-video overflow-hidden rounded-lg bg-muted">
+        <div class="flex flex-1 flex-col gap-5 px-4">
+          <div class="min-h-0">
             <iframe
               v-if="selectedTemplate.html"
               :src="templatePreviewUrl(selectedTemplate)"
               :title="`${selectedTemplate.name} preview`"
-              class="size-full"
+              class="h-[75vh] w-full rounded-lg border bg-white"
               sandbox="allow-scripts"
             />
             <img
               v-else-if="previewAvailable(selectedTemplate)"
               :src="selectedTemplate.preview"
               :alt="`${selectedTemplate.name} preview`"
-              class="size-full object-cover"
+              class="h-[75vh] w-full rounded-lg border object-cover bg-white"
               @error="markPreviewBroken(selectedTemplate.id)"
             >
-            <div v-else class="flex size-full flex-col items-center justify-center gap-3 p-4 text-center text-muted-foreground">
+            <div v-else class="flex h-[75vh] w-full flex-col items-center justify-center gap-3 rounded-lg border bg-muted text-center text-muted-foreground">
               <IconLayoutGrid class="size-10" />
               <span class="text-sm">{{ selectedTemplate.sections?.length || 0 }} sections</span>
             </div>
