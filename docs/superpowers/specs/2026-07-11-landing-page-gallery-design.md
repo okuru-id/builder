@@ -16,7 +16,7 @@ Gallery header includes an `Edit Content` link to `/admin/landing-page/content`.
 - Load templates with existing `GET /landing-templates` API.
 - Show responsive template cards.
 - Card shows `preview` image when supplied. If absent or unusable, show a safe fallback containing section names and count.
-- Card click opens a preview dialog. Dialog shows name, description, section list, preview/fallback, Cancel, and Apply Template actions.
+- Card click opens a `Sheet` preview panel. Panel shows name, description, section list, preview/fallback, Cancel, and Apply Template actions.
 - Applying requires native `confirm()` because it replaces all landing sections.
 - Confirmed apply calls existing `POST /landing-templates/:id/apply`.
 - On success: show toast and close dialog. On failure: show toast and keep dialog open.
@@ -41,7 +41,7 @@ Remove custom HTML mode and default/minimal/bold template switches from admin UI
 ## Error handling
 
 - Load and mutation API errors use existing toast pattern.
-- Modal remains open on apply error.
+- Preview sheet remains open on apply error.
 - Broken/missing preview must not break card or modal; fallback stays visible.
 
 ## Verification
@@ -51,6 +51,6 @@ Run `bun run build` in `frontend/`.
 Manual checks:
 
 1. Gallery loads templates, skeletons, and empty state correctly.
-2. Card opens preview dialog; Cancel does not mutate sections.
+2. Card opens preview sheet; Cancel does not mutate sections.
 3. Apply confirmation, success, and error states behave correctly.
 4. `Edit Content` opens section editor; all old section CRUD/reorder/toggle actions work.
