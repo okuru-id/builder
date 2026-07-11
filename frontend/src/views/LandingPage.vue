@@ -1,13 +1,12 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { IconLayoutGrid } from '@tabler/icons-vue'
 import api from '@/lib/api'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 
 interface LandingTemplate {
@@ -19,13 +18,11 @@ interface LandingTemplate {
   html?: string
 }
 
+const router = useRouter()
+
 const templates = ref<LandingTemplate[]>([])
 const loading = ref(true)
-const selectedTemplate = ref<LandingTemplate | null>(null)
-const sheetOpen = ref(false)
-const applyingTemplate = ref<number | null>(null)
 const brokenPreviews = ref(new Set<number>())
-const blobUrls = ref(new Map<number, string>())
 
 const sectionLabels: Record<string, string> = {
   hero: 'Hero',
@@ -47,13 +44,8 @@ function markPreviewBroken(id: number) {
   brokenPreviews.value = new Set([...brokenPreviews.value, id])
 }
 
-function templatePreviewUrl(template: LandingTemplate) {
-  if (!template.html) return ''
-  if (!blobUrls.value.has(template.id)) {
-    const blob = new Blob([template.html], { type: 'text/html' })
-    blobUrls.value.set(template.id, URL.createObjectURL(blob))
-  }
-  return blobUrls.value.get(template.id)!
+function openPreview(template: LandingTemplate) {
+  router.push({ name: 'landing-page-preview', params: { id: template.id } })
 }
 
 async function loadTemplates() {
@@ -68,42 +60,7 @@ async function loadTemplates() {
   }
 }
 
-function openPreview(template: LandingTemplate) {
-  selectedTemplate.value = template
-  sheetOpen.value = true
-}
-
-function updateSheet(open: boolean) {
-  if (!open && applyingTemplate.value !== null) return
-  sheetOpen.value = open
-  if (!open) selectedTemplate.value = null
-}
-
-async function applySelectedTemplate() {
-  const template = selectedTemplate.value
-  if (!template || !confirm(`Apply "${template.name}"? This will replace all current sections.`)) return
-
-  applyingTemplate.value = template.id
-  try {
-    await api.post(`/landing-templates/${template.id}/apply`)
-    toast.success('Template applied')
-    sheetOpen.value = false
-    selectedTemplate.value = null
-  } catch (e: any) {
-    toast.error(e.response?.data?.error || 'Failed to apply template')
-  } finally {
-    applyingTemplate.value = null
-  }
-}
-
 onMounted(loadTemplates)
-
-onBeforeUnmount(() => {
-  for (const url of blobUrls.value.values()) {
-    URL.revokeObjectURL(url)
-  }
-  blobUrls.value.clear()
-})
 </script>
 
 <template>
@@ -128,7 +85,11 @@ onBeforeUnmount(() => {
     </div>
 
     <div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      <Card v-for="template in templates" :key="template.id" class="overflow-hidden transition-shadow hover:shadow-md">
+      <Card
+        v-for="template in templates"
+        :key="template.id"
+        class="gap-0 overflow-hidden py-0 transition-shadow hover:shadow-md"
+      >
         <button
           type="button"
           class="block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -153,72 +114,21 @@ onBeforeUnmount(() => {
               </div>
             </div>
           </div>
-          <CardHeader class="pb-2">
+          <div class="space-y-2 p-4">
             <div class="flex items-center justify-between gap-2">
               <h2 class="font-semibold">{{ template.name }}</h2>
               <Badge variant="secondary">{{ template.sections?.length || 0 }} sections</Badge>
             </div>
             <p class="line-clamp-2 text-sm text-muted-foreground">{{ template.description }}</p>
-          </CardHeader>
-          <CardContent class="flex flex-wrap gap-1 pt-0">
-            <span v-for="section in (template.sections || []).slice(0, 5)" :key="section.type" class="rounded-full bg-secondary px-2 py-0.5 text-[10px] text-secondary-foreground">
-              {{ sectionLabel(section.type) }}
-            </span>
-            <span v-if="(template.sections?.length || 0) > 5" class="text-xs text-muted-foreground">+{{ (template.sections?.length || 0) - 5 }} more</span>
-          </CardContent>
+            <div class="flex flex-wrap gap-1 pt-1">
+              <span v-for="section in (template.sections || []).slice(0, 5)" :key="section.type" class="rounded-full bg-secondary px-2 py-0.5 text-[10px] text-secondary-foreground">
+                {{ sectionLabel(section.type) }}
+              </span>
+              <span v-if="(template.sections?.length || 0) > 5" class="text-xs text-muted-foreground">+{{ (template.sections?.length || 0) - 5 }} more</span>
+            </div>
+          </div>
         </button>
       </Card>
     </div>
-
-    <Sheet :open="sheetOpen" @update:open="updateSheet">
-      <SheetContent v-if="selectedTemplate" class="w-screen overflow-y-auto sm:max-w-full">
-        <SheetHeader>
-          <SheetTitle>{{ selectedTemplate.name }}</SheetTitle>
-          <SheetDescription>{{ selectedTemplate.description }}</SheetDescription>
-        </SheetHeader>
-
-        <div class="flex flex-1 flex-col gap-5 px-4">
-          <div class="min-h-0">
-            <iframe
-              v-if="selectedTemplate.html"
-              :src="templatePreviewUrl(selectedTemplate)"
-              :title="`${selectedTemplate.name} preview`"
-              class="h-[75vh] w-full rounded-lg border bg-white"
-              sandbox="allow-scripts"
-            />
-            <img
-              v-else-if="previewAvailable(selectedTemplate)"
-              :src="selectedTemplate.preview"
-              :alt="`${selectedTemplate.name} preview`"
-              class="h-[75vh] w-full rounded-lg border object-cover bg-white"
-              @error="markPreviewBroken(selectedTemplate.id)"
-            >
-            <div v-else class="flex h-[75vh] w-full flex-col items-center justify-center gap-3 rounded-lg border bg-muted text-center text-muted-foreground">
-              <IconLayoutGrid class="size-10" />
-              <span class="text-sm">{{ selectedTemplate.sections?.length || 0 }} sections</span>
-            </div>
-          </div>
-
-          <div>
-            <h3 class="mb-2 text-sm font-medium">Included sections</h3>
-            <div class="flex flex-wrap gap-2">
-              <Badge v-for="section in (selectedTemplate.sections || [])" :key="section.type" variant="secondary">
-                {{ sectionLabel(section.type) }}
-              </Badge>
-              <span v-if="!selectedTemplate.sections?.length" class="text-sm text-muted-foreground">No sections listed.</span>
-            </div>
-          </div>
-        </div>
-
-        <SheetFooter>
-          <Button :disabled="applyingTemplate !== null" @click="applySelectedTemplate">
-            {{ applyingTemplate === selectedTemplate.id ? 'Applying...' : 'Apply Template' }}
-          </Button>
-          <SheetClose as-child>
-            <Button variant="outline" :disabled="applyingTemplate !== null">Cancel</Button>
-          </SheetClose>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
   </div>
 </template>

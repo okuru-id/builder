@@ -10,6 +10,11 @@ const router = createRouter({
       meta: { public: true },
     },
     {
+      path: '/landing-page/preview/:id',
+      name: 'landing-page-preview',
+      component: () => import('@/views/LandingPagePreview.vue'),
+    },
+    {
       path: '/',
       component: () => import('@/layouts/AdminLayout.vue'),
       children: [
