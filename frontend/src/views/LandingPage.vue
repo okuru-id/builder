@@ -63,8 +63,9 @@ function openPreview(template: LandingTemplate) {
 }
 
 function updateSheet(open: boolean) {
+  if (!open && applyingTemplate.value !== null) return
   sheetOpen.value = open
-  if (!open && applyingTemplate.value === null) selectedTemplate.value = null
+  if (!open) selectedTemplate.value = null
 }
 
 async function applySelectedTemplate() {
@@ -189,7 +190,7 @@ onMounted(loadTemplates)
             {{ applyingTemplate === selectedTemplate.id ? 'Applying...' : 'Apply Template' }}
           </Button>
           <SheetClose as-child>
-            <Button variant="outline">Cancel</Button>
+            <Button variant="outline" :disabled="applyingTemplate !== null">Cancel</Button>
           </SheetClose>
         </SheetFooter>
       </SheetContent>
