@@ -83,7 +83,7 @@ const NODE_ICONS: Record<NodeType, any> = {
 const NODE_COLORS: Record<NodeType, string> = {
   frame: 'text-violet-500',
   section: 'text-sky-500',
-  text: 'text-neutral-400',
+  text: 'text-muted-foreground',
   heading: 'text-amber-500',
   image: 'text-emerald-500',
   button: 'text-rose-500',
@@ -124,8 +124,8 @@ function onDragEnd() {
       class="group relative flex w-full items-center gap-0.5 py-[5px] pr-2 text-left text-xs transition-colors"
       :class="[
         selected()
-          ? 'bg-blue-50 text-blue-700 font-medium'
-          : 'text-neutral-700 hover:bg-neutral-50',
+          ? 'bg-primary/10 text-primary font-medium'
+          : 'text-foreground hover:bg-muted/50',
         dragging() ? 'opacity-30' : '',
         dropInside() ? 'ring-2 ring-blue-400 ring-inset rounded-sm' : '',
       ]"
@@ -140,7 +140,7 @@ function onDragEnd() {
       <template v-for="(_parentLast, idx) in ancestorLines" :key="idx">
         <span
           v-if="!ancestorsIsLast[idx + 1]"
-          class="pointer-events-none absolute border-l border-neutral-300"
+          class="pointer-events-none absolute border-l border-input"
           :style="{ left: `${guideX(idx)}px`, top: 0, height: '100%', zIndex: 1 }"
         />
       </template>
@@ -149,21 +149,21 @@ function onDragEnd() {
            pointing at this node's icon. -->
       <span
         v-if="depth > 0"
-        class="pointer-events-none absolute top-1/2 border-t border-neutral-300"
+        class="pointer-events-none absolute top-1/2 border-t border-input"
         :style="{ left: `${guideX(depth - 1)}px`, width: `${elbowWidth}px`, transform: 'translateY(-50%)', zIndex: 1 }"
       />
       <!-- Vertical guide segment for this row's depth. Last sibling stops at
            row center; others span the full row height so they chain downward. -->
       <span
         v-if="depth > 0"
-        class="pointer-events-none absolute border-l border-neutral-300"
+        class="pointer-events-none absolute border-l border-input"
         :style="{ left: `${guideX(depth - 1)}px`, top: 0, height: isLast ? '50%' : '100%', zIndex: 1 }"
       />
 
       <!-- Expand/collapse toggle -->
       <button
         v-if="isContainer() && hasChildren()"
-        class="flex size-4 shrink-0 items-center justify-center rounded-sm text-neutral-400 hover:bg-neutral-200 hover:text-neutral-600"
+        class="flex size-4 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-muted hover:text-muted-foreground"
         @click="toggleExpand"
       >
         <IconChevronDown v-if="expanded" class="size-3" />
@@ -175,7 +175,7 @@ function onDragEnd() {
       <component
         :is="NODE_ICONS[node.type] ?? IconSquare"
         class="size-3.5 shrink-0"
-        :class="selected() ? 'text-blue-500' : NODE_COLORS[node.type] ?? 'text-neutral-400'"
+        :class="selected() ? 'text-blue-500' : NODE_COLORS[node.type] ?? 'text-muted-foreground'"
       />
 
       <!-- Node label -->
@@ -184,7 +184,7 @@ function onDragEnd() {
       <!-- Child count badge for collapsed containers -->
       <span
         v-if="isContainer() && hasChildren() && !expanded"
-        class="shrink-0 rounded-full bg-neutral-100 px-1.5 text-[10px] text-neutral-400"
+        class="shrink-0 rounded-full bg-muted px-1.5 text-[10px] text-muted-foreground"
       >
         {{ resolved.children.length }}
       </span>

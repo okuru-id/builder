@@ -43,16 +43,16 @@ function doSafelistDownload() {
 <template>
   <!-- Backdrop -->
   <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40" @click.self="emit('close')">
-    <div class="flex max-h-[85vh] w-[700px] flex-col rounded-xl border border-neutral-200 bg-white shadow-2xl">
+    <div class="flex max-h-[85vh] w-[700px] flex-col rounded-xl border border-border bg-background shadow-2xl">
       <!-- header -->
-      <div class="flex items-center justify-between border-b border-neutral-200 px-5 py-3">
+      <div class="flex items-center justify-between border-b border-border px-5 py-3">
         <h2 class="text-sm font-semibold">Export / Download</h2>
         <Button variant="ghost" size="icon" @click="emit('close')"><IconX class="size-4" /></Button>
       </div>
 
       <!-- body -->
       <Tabs default-value="html" class="flex flex-1 flex-col overflow-hidden">
-        <div class="border-b border-neutral-200 px-5">
+        <div class="border-b border-border px-5">
           <TabsList class="h-10">
             <TabsTrigger value="html" class="flex items-center gap-1.5 text-xs">
               <IconCode class="size-3.5" /> HTML
@@ -66,27 +66,27 @@ function doSafelistDownload() {
         <TabsContent value="html" class="flex flex-1 flex-col overflow-hidden p-5 pt-3">
           <textarea
             readonly
-            class="min-h-0 flex-1 resize-none whitespace-pre rounded-md border border-neutral-200 bg-neutral-50 p-3 font-mono text-[11px] leading-relaxed text-neutral-700 focus:outline-none"
+            class="min-h-0 flex-1 resize-none whitespace-pre rounded-md border border-border bg-muted/50 p-3 font-mono text-[11px] leading-relaxed text-foreground focus:outline-none"
             :value="html"
           />
         </TabsContent>
 
         <TabsContent value="safelist" class="flex flex-1 flex-col overflow-hidden p-5 pt-3">
-          <p class="mb-2 text-xs text-neutral-500">
+          <p class="mb-2 text-xs text-muted-foreground">
             Unique list of every Tailwind class used on this page. Paste it into
-            <code class="rounded bg-neutral-100 px-1">tailwind.config.safelist</code>
+            <code class="rounded bg-muted px-1">tailwind.config.safelist</code>
             to prevent purging.
           </p>
           <textarea
             readonly
-            class="min-h-0 flex-1 resize-none whitespace-pre rounded-md border border-neutral-200 bg-neutral-50 p-3 font-mono text-[11px] leading-relaxed text-neutral-700 focus:outline-none"
+            class="min-h-0 flex-1 resize-none whitespace-pre rounded-md border border-border bg-muted/50 p-3 font-mono text-[11px] leading-relaxed text-foreground focus:outline-none"
             :value="safelist"
           />
         </TabsContent>
       </Tabs>
 
       <!-- footer -->
-      <div class="flex items-center justify-between border-t border-neutral-200 px-5 py-3">
+      <div class="flex items-center justify-between border-t border-border px-5 py-3">
         <div class="flex items-center gap-2">
           <Button variant="outline" size="sm" @click="doSafelistDownload">
             <IconDownload class="size-3.5" /> Safelist

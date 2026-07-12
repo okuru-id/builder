@@ -56,14 +56,14 @@ function addType(t: NodeType) {
 </script>
 
 <template>
-  <aside class="flex h-full w-full flex-col border-r border-neutral-200 bg-white">
+  <aside class="flex h-full w-full flex-col border-r border-border bg-background">
     <!-- Header -->
-    <div class="flex items-center justify-between border-b border-neutral-200 px-3 py-2.5">
+    <div class="flex items-center justify-between border-b border-border px-3 py-2.5">
       <div class="flex items-center gap-1.5">
-        <IconLayersIntersect class="size-4 text-neutral-500" />
+        <IconLayersIntersect class="size-4 text-muted-foreground" />
         <h2 class="text-sm font-semibold">Layer</h2>
       </div>
-      <span class="rounded-full bg-neutral-100 px-1.5 py-0.5 text-[10px] text-neutral-400">
+      <span class="rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
         {{ nodeCount }}
       </span>
     </div>
@@ -74,18 +74,18 @@ function addType(t: NodeType) {
     </div>
 
     <!-- Component palette -->
-    <div class="max-h-[35%] overflow-auto border-t border-neutral-200">
+    <div class="max-h-[35%] overflow-auto border-t border-border">
       <ComponentPalette />
     </div>
 
     <!-- Add node palette -->
-    <div class="border-t border-neutral-200 p-2">
-      <div class="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-neutral-400">Add Node</div>
+    <div class="border-t border-border p-2">
+      <div class="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Add Node</div>
       <div class="grid grid-cols-4 gap-1">
         <button
           v-for="t in PALETTE_TYPES"
           :key="t"
-          class="flex flex-col items-center gap-0.5 rounded-md border border-neutral-200 py-1.5 text-[10px] text-neutral-600 transition-colors hover:border-neutral-300 hover:bg-neutral-50 active:bg-neutral-100"
+          class="flex flex-col items-center gap-0.5 rounded-md border border-border py-1.5 text-[10px] text-muted-foreground transition-colors hover:border-input hover:bg-muted/50 active:bg-muted"
           :title="`Add ${paletteLabels[t] ?? t}`"
           @click="addType(t)"
         >

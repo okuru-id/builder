@@ -87,10 +87,10 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div v-if="store.loading.value" class="flex h-screen items-center justify-center bg-white">
-    <div class="text-sm text-neutral-400">Loading builder…</div>
+  <div v-if="store.loading.value" class="flex h-screen items-center justify-center bg-background">
+    <div class="text-sm text-muted-foreground">Loading builder…</div>
   </div>
-  <div v-else class="flex h-screen flex-col bg-neutral-50">
+  <div v-else class="flex h-screen flex-col bg-muted">
     <Toolbar />
     <ResizablePanelGroup
       direction="horizontal"

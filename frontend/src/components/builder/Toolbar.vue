@@ -42,7 +42,7 @@ function openPreview() {
 </script>
 
 <template>
-  <header class="flex h-14 items-center gap-3 border-b border-neutral-200 bg-white px-3">
+  <header class="flex h-14 items-center gap-3 border-b border-border bg-background px-3">
     <Button variant="ghost" size="icon" @click="router.push('/pages')">
       <IconArrowLeft class="size-4" />
     </Button>
@@ -59,22 +59,22 @@ function openPreview() {
       />
       <button
         v-else
-        class="rounded px-2 py-1 text-sm font-medium hover:bg-neutral-100"
+        class="rounded px-2 py-1 text-sm font-medium hover:bg-muted"
         @click="startEditName"
       >
         {{ store.page.value?.name ?? '—' }}
       </button>
-      <span class="text-xs text-neutral-400">v{{ store.page.value?.version ?? 0 }}</span>
+      <span class="text-xs text-muted-foreground">v{{ store.page.value?.version ?? 0 }}</span>
       <span v-if="store.dirty.value" class="text-xs text-amber-600">●</span>
-      <span v-if="store.saving.value" class="text-xs text-neutral-400">Saving…</span>
+      <span v-if="store.saving.value" class="text-xs text-muted-foreground">Saving…</span>
     </div>
 
-    <div class="ml-4 flex items-center gap-0.5 rounded-lg border border-neutral-200 p-0.5">
+    <div class="ml-4 flex items-center gap-0.5 rounded-lg border border-border p-0.5">
       <button
         v-for="bp in bps"
         :key="bp.key"
         class="flex size-8 items-center justify-center rounded-md transition-colors"
-        :class="store.breakpoint.value === bp.key ? 'bg-neutral-900 text-white' : 'text-neutral-500 hover:bg-neutral-100'"
+        :class="store.breakpoint.value === bp.key ? 'bg-primary text-white' : 'text-muted-foreground hover:bg-muted'"
         :title="bp.label"
         @click="store.breakpoint.value = bp.key"
       >

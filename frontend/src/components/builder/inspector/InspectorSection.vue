@@ -22,10 +22,10 @@ watch(open, (v) => localStorage.setItem(STORAGE_PREFIX + props.title, String(v))
   <Collapsible
     v-if="show"
     v-model:open="open"
-    class="border-b border-neutral-100"
+    class="border-b border-border/50"
   >
     <CollapsibleTrigger
-      class="flex w-full items-center gap-1.5 px-3 py-1.5 text-left text-[11px] font-medium uppercase tracking-wider text-neutral-500 hover:text-neutral-700"
+      class="flex w-full items-center gap-1.5 px-3 py-1.5 text-left text-[11px] font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground"
     >
       <component :is="open ? IconChevronDown : IconChevronRight" class="size-3 shrink-0" />
       <component :is="icon" v-if="icon" class="size-3.5 shrink-0" />

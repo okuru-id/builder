@@ -91,20 +91,20 @@ function removeClass(idx: number) {
 </script>
 
 <template>
-  <component :is="bare ? 'div' : 'aside'" :class="bare ? 'flex h-full min-h-0 flex-col' : 'flex w-72 flex-col border-l border-neutral-200 bg-white'">
-    <div v-if="!bare" class="border-b border-neutral-200 px-4 py-3">
+  <component :is="bare ? 'div' : 'aside'" :class="bare ? 'flex h-full min-h-0 flex-col' : 'flex w-72 flex-col border-l border-border bg-background'">
+    <div v-if="!bare" class="border-b border-border px-4 py-3">
       <h2 class="text-sm font-semibold">Inspector</h2>
-      <p v-if="node" class="mt-0.5 text-[11px] text-neutral-400">{{ node.type }} · {{ node.name }}</p>
+      <p v-if="node" class="mt-0.5 text-[11px] text-muted-foreground">{{ node.type }} · {{ node.name }}</p>
     </div>
 
-    <div v-if="!node" class="p-4 text-sm text-neutral-400">
+    <div v-if="!node" class="p-4 text-sm text-muted-foreground">
       Select a node on the canvas to edit its properties.
     </div>
 
     <div v-else class="flex-1 overflow-auto">
       <!-- Umum: identity + actions, same shell as style sections -->
       <InspectorSection title="General" :icon="IconSettings">
-        <div v-if="node.id !== 'root'" class="flex items-center justify-center gap-1 rounded-md border border-neutral-200 bg-neutral-50 p-1">
+        <div v-if="node.id !== 'root'" class="flex items-center justify-center gap-1 rounded-md border border-border bg-muted/50 p-1">
           <Button variant="ghost" size="icon-sm" title="Move up" @click="moveUp">
             <IconArrowUp class="size-4" />
           </Button>
@@ -114,26 +114,26 @@ function removeClass(idx: number) {
           <Button variant="ghost" size="icon-sm" title="Duplicate" @click="dup">
             <IconCopy class="size-4" />
           </Button>
-          <Button variant="ghost" size="icon-sm" class="text-red-500 hover:bg-red-50 hover:text-red-600" title="Delete" @click="delConfirm">
+          <Button variant="ghost" size="icon-sm" class="text-red-500 hover:bg-red-500/10 hover:text-red-600 dark:text-red-400" title="Delete" @click="delConfirm">
             <IconTrash class="size-4" />
           </Button>
         </div>
 
         <div class="flex items-center gap-2">
-          <Label class="w-12 shrink-0 text-[11px] text-neutral-400">Name</Label>
+          <Label class="w-12 shrink-0 text-[11px] text-muted-foreground">Name</Label>
           <Input :model-value="node.name" class="h-7 flex-1 text-xs" @update:model-value="setName" />
         </div>
 
         <div class="flex items-center gap-2">
-          <Label class="w-12 shrink-0 text-[11px] text-neutral-400">Type</Label>
-          <div class="flex-1 text-xs text-neutral-600">{{ node.type }}</div>
+          <Label class="w-12 shrink-0 text-[11px] text-muted-foreground">Type</Label>
+          <div class="flex-1 text-xs text-muted-foreground">{{ node.type }}</div>
         </div>
 
         <div
           v-if="node.componentId"
-          class="flex items-center justify-between rounded-md border border-blue-200 bg-blue-50 px-2.5 py-1.5"
+          class="flex items-center justify-between rounded-md border border-primary/20 bg-primary/10 px-2.5 py-1.5"
         >
-          <div class="text-[11px] text-blue-700">
+          <div class="text-[11px] text-primary">
             Instance #{{ node.componentId }}
           </div>
           <Button variant="outline" size="sm" class="h-7 px-2 text-xs" @click="store.breakInstance(node.id)">
@@ -146,7 +146,7 @@ function removeClass(idx: number) {
       <template v-if="node.type === 'text' || node.type === 'heading' || node.type === 'button' || node.type === 'link'">
         <InspectorSection title="Text" :icon="IconTypography">
           <div class="flex items-start gap-2">
-            <Label class="mt-1.5 w-12 shrink-0 text-[11px] text-neutral-400">Text</Label>
+            <Label class="mt-1.5 w-12 shrink-0 text-[11px] text-muted-foreground">Text</Label>
             <Textarea
               :model-value="String(node.props.text ?? '')"
               rows="2"
@@ -155,7 +155,7 @@ function removeClass(idx: number) {
             />
           </div>
           <div v-if="node.type === 'heading'" class="flex items-center gap-2">
-            <Label class="w-12 shrink-0 text-[11px] text-neutral-400">Level</Label>
+            <Label class="w-12 shrink-0 text-[11px] text-muted-foreground">Level</Label>
             <Select :model-value="String(node.props.level ?? 2)" @update:model-value="(v) => setProp('level', Number(v))">
               <SelectTrigger class="h-7 flex-1 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -169,11 +169,11 @@ function removeClass(idx: number) {
       <template v-if="node.type === 'image'">
         <InspectorSection title="Image" :icon="IconPhoto">
           <div class="flex items-center gap-2">
-            <Label class="w-12 shrink-0 text-[11px] text-neutral-400">URL</Label>
+            <Label class="w-12 shrink-0 text-[11px] text-muted-foreground">URL</Label>
             <Input :model-value="String(node.props.src ?? '')" class="h-7 flex-1 text-xs" @update:model-value="(v) => setProp('src', v)" />
           </div>
           <div class="flex items-center gap-2">
-            <Label class="w-12 shrink-0 text-[11px] text-neutral-400">Alt</Label>
+            <Label class="w-12 shrink-0 text-[11px] text-muted-foreground">Alt</Label>
             <Input :model-value="String(node.props.alt ?? '')" class="h-7 flex-1 text-xs" @update:model-value="(v) => setProp('alt', v)" />
           </div>
         </InspectorSection>
@@ -182,7 +182,7 @@ function removeClass(idx: number) {
       <template v-if="node.type === 'link'">
         <InspectorSection title="Link" :icon="IconLink">
           <div class="flex items-center gap-2">
-            <Label class="w-12 shrink-0 text-[11px] text-neutral-400">Href</Label>
+            <Label class="w-12 shrink-0 text-[11px] text-muted-foreground">Href</Label>
             <Input :model-value="String(node.props.href ?? '#')" class="h-7 flex-1 text-xs" @update:model-value="(v) => setProp('href', v)" />
           </div>
         </InspectorSection>
@@ -203,11 +203,11 @@ function removeClass(idx: number) {
             <span
               v-for="(cls, idx) in node.classes"
               :key="idx"
-              class="group inline-flex items-center gap-0.5 rounded bg-neutral-100 px-1.5 py-0.5 text-[11px] font-mono text-neutral-700"
+              class="group inline-flex items-center gap-0.5 rounded bg-muted px-1.5 py-0.5 text-[11px] font-mono text-foreground"
             >
               {{ cls }}
               <button
-                class="ml-0.5 rounded-sm text-neutral-400 opacity-0 transition-opacity hover:text-red-500 group-hover:opacity-100"
+                class="ml-0.5 rounded-sm text-muted-foreground opacity-0 transition-opacity hover:text-red-500 group-hover:opacity-100"
                 @click="removeClass(idx)"
                 title="Remove class"
               >&times;</button>
@@ -221,7 +221,7 @@ function removeClass(idx: number) {
           />
         </InspectorSection>
       </template>
-      <div v-else class="border-b border-neutral-100 px-3 py-2 text-[11px] text-neutral-500">
+      <div v-else class="border-b border-border/50 px-3 py-2 text-[11px] text-muted-foreground">
         Edit the master component to change instances. Click Detach above to make an independent copy.
       </div>
     </div>

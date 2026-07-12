@@ -38,18 +38,18 @@ function currentBgHex() {
   <InspectorSection title="Background" :icon="IconColorSwatch" :show="!!node">
 
     <div class="space-y-1.5">
-      <Label class="text-[11px] text-neutral-400">Background Color</Label>
+      <Label class="text-[11px] text-muted-foreground">Background Color</Label>
       <div class="flex items-center gap-2">
         <input
           type="color"
           :value="currentBgHex()"
-          class="h-7 w-10 shrink-0 cursor-pointer rounded border border-neutral-300 p-0.5"
+          class="h-7 w-10 shrink-0 cursor-pointer rounded border border-input p-0.5"
           @input="(e) => cls(['bg-[', ...BG_COLOR_PRESETS.map((c) => `bg-${c}`)], `bg-[${(e.target as HTMLInputElement).value}]`)"
         />
         <Input
           :model-value="currentBgClass() ?? ''"
           class="h-8 flex-1 font-mono text-xs"
-          placeholder="bg-white"
+          placeholder="bg-background"
           @update:model-value="(v) => cls(['bg-[', ...BG_COLOR_PRESETS.map((c) => `bg-${c}`)], String(v) || null)"
         />
       </div>
@@ -57,7 +57,7 @@ function currentBgHex() {
         <button
           v-for="c in BG_COLOR_PRESETS"
           :key="c"
-          class="h-5 w-5 rounded-full border border-neutral-200"
+          class="h-5 w-5 rounded-full border border-border"
           :class="`bg-${c}`"
           :title="c"
           @click="cls(['bg-[', ...BG_COLOR_PRESETS.map((x) => `bg-${x}`)], `bg-${c}`)"
@@ -66,7 +66,7 @@ function currentBgHex() {
     </div>
 
     <div class="flex items-center justify-between gap-2">
-      <span class="text-[11px] text-neutral-500">Size</span>
+      <span class="text-[11px] text-muted-foreground">Size</span>
       <Select
         :model-value="currentFromSet(node?.classes ?? [], BG_SIZE_CLASSES) ?? 'auto'"
         @update:model-value="(v) => cls([...BG_SIZE_CLASSES], v === 'auto' ? null : String(v))"
@@ -80,7 +80,7 @@ function currentBgHex() {
     </div>
 
     <div class="flex items-center justify-between gap-2">
-      <span class="text-[11px] text-neutral-500">Repeat</span>
+      <span class="text-[11px] text-muted-foreground">Repeat</span>
       <Select
         :model-value="currentFromSet(node?.classes ?? [], BG_REPEAT_CLASSES) ?? 'repeat'"
         @update:model-value="(v) => cls([...BG_REPEAT_CLASSES], v === 'repeat' ? null : String(v))"
@@ -94,7 +94,7 @@ function currentBgHex() {
     </div>
 
     <div class="flex items-center justify-between gap-2">
-      <span class="text-[11px] text-neutral-500">Position</span>
+      <span class="text-[11px] text-muted-foreground">Position</span>
       <Select
         :model-value="currentFromSet(node?.classes ?? [], BG_POS_CLASSES) ?? 'center'"
         @update:model-value="(v) => cls([...BG_POS_CLASSES], v === 'center' ? null : String(v))"
@@ -107,14 +107,14 @@ function currentBgHex() {
     </div>
 
     <div class="space-y-1.5">
-      <Label class="text-[11px] text-neutral-400">Image URL</Label>
+      <Label class="text-[11px] text-muted-foreground">Image URL</Label>
       <Input
         :model-value="''"
         class="h-8 font-mono text-xs"
         placeholder="url(…) or bg-image class"
         @update:model-value="(v) => cls(ALL_BG_ASPECT_CLASSES, String(v) || null)"
       />
-      <p class="text-[11px] text-neutral-400">Size/position/repeat classes are set above.</p>
+      <p class="text-[11px] text-muted-foreground">Size/position/repeat classes are set above.</p>
     </div>
   </InspectorSection>
 </template>

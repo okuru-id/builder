@@ -62,7 +62,7 @@ function currentHex(): string {
   <InspectorSection title="Typography" :icon="IconTypography" :show="!!node && showTypography">
 
     <div class="space-y-1.5">
-      <Label class="text-[11px] text-neutral-400">Size</Label>
+      <Label class="text-[11px] text-muted-foreground">Size</Label>
       <Select
         :model-value="currentSize()"
         @update:model-value="(v) => cls(SIZE_CLASSES, v === 'base' ? null : `text-${String(v)}`)"
@@ -75,7 +75,7 @@ function currentHex(): string {
     </div>
 
     <div class="space-y-1.5">
-      <Label class="text-[11px] text-neutral-400">Weight</Label>
+      <Label class="text-[11px] text-muted-foreground">Weight</Label>
       <Select
         :model-value="currentWeight()"
         @update:model-value="(v) => cls(WEIGHT_CLASSES, v === 'normal' ? null : `font-${String(v)}`)"
@@ -88,7 +88,7 @@ function currentHex(): string {
     </div>
 
     <div class="space-y-1.5">
-      <Label class="text-[11px] text-neutral-400">Align</Label>
+      <Label class="text-[11px] text-muted-foreground">Align</Label>
       <Select
         :model-value="currentAlign()"
         @update:model-value="(v) => cls(ALIGN_CLASSES, v === 'left' ? null : `text-${String(v)}`)"
@@ -101,18 +101,18 @@ function currentHex(): string {
     </div>
 
     <div class="space-y-1.5">
-      <Label class="text-[11px] text-neutral-400">Text Color</Label>
+      <Label class="text-[11px] text-muted-foreground">Text Color</Label>
       <div class="flex items-center gap-2">
         <input
           type="color"
           :value="currentHex()"
-          class="h-7 w-10 shrink-0 cursor-pointer rounded border border-neutral-300 p-0.5"
+          class="h-7 w-10 shrink-0 cursor-pointer rounded border border-input p-0.5"
           @input="(e) => cls(['text-['], `text-[${(e.target as HTMLInputElement).value}]`)"
         />
         <Input
           :model-value="currentColorClass() ?? ''"
           class="h-8 flex-1 font-mono text-xs"
-          placeholder="text-gray-900"
+          placeholder="text-foreground"
           @update:model-value="(v) => cls(['text-[', ...TEXT_COLOR_PRESETS.map((c) => `text-${c}`)], String(v) || null)"
         />
       </div>
@@ -120,7 +120,7 @@ function currentHex(): string {
         <button
           v-for="c in TEXT_COLOR_PRESETS"
           :key="c"
-          class="h-5 w-5 rounded-full border border-neutral-200"
+          class="h-5 w-5 rounded-full border border-border"
           :class="`bg-${c}`"
           :title="c"
           @click="cls(['text-[', ...TEXT_COLOR_PRESETS.map((x) => `text-${x}`)], `text-${c}`)"
@@ -129,7 +129,7 @@ function currentHex(): string {
     </div>
 
     <div class="space-y-1.5">
-      <Label class="text-[11px] text-neutral-400">Transform</Label>
+      <Label class="text-[11px] text-muted-foreground">Transform</Label>
       <Select
         :model-value="currentTransform()"
         @update:model-value="(v) => cls(TRANSFORM_CLASSES, v === 'normal-case' ? null : String(v))"

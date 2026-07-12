@@ -44,11 +44,11 @@ const canSave = () => !!store.selectedId.value && store.selectedId.value !== sto
 </script>
 
 <template>
-  <div class="border-t border-neutral-200 p-2">
+  <div class="border-t border-border p-2">
     <div class="mb-1.5 flex items-center justify-between">
-      <span class="text-xs font-medium text-neutral-500">Components</span>
+      <span class="text-xs font-medium text-muted-foreground">Components</span>
       <button
-        class="rounded p-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 disabled:opacity-30"
+        class="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30"
         :disabled="!canSave()"
         title="Save selected node as a component"
         @click="saveSelected"
@@ -59,13 +59,13 @@ const canSave = () => !!store.selectedId.value && store.selectedId.value !== sto
 
     <button
       v-if="selectedIsInstance()"
-      class="mb-1.5 flex w-full items-center gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5 text-xs text-amber-700 hover:bg-amber-100"
+      class="mb-1.5 flex w-full items-center gap-1.5 rounded-md border border-amber-500/20 bg-amber-500/10 px-2 py-1.5 text-xs text-amber-600 dark:text-amber-400 hover:bg-amber-100"
       @click="breakLink"
     >
       <IconUnlink class="size-3.5" /> Detach (make a copy)
     </button>
 
-    <div v-if="store.components.components.value.length === 0" class="text-[11px] text-neutral-400">
+    <div v-if="store.components.components.value.length === 0" class="text-[11px] text-muted-foreground">
       No components yet.
     </div>
 
@@ -73,18 +73,18 @@ const canSave = () => !!store.selectedId.value && store.selectedId.value !== sto
       <div
         v-for="c in store.components.components.value"
         :key="c.id"
-        class="group flex items-center gap-1 rounded-md border border-neutral-200 px-2 py-1.5 hover:bg-neutral-50"
+        class="group flex items-center gap-1 rounded-md border border-border px-2 py-1.5 hover:bg-muted/50"
       >
         <button
           class="flex flex-1 items-center gap-1.5 text-left text-xs"
           :title="`Insert instance ${c.name}`"
           @click="insert(c.id)"
         >
-          <IconPlus class="size-3.5 text-neutral-400" />
+          <IconPlus class="size-3.5 text-muted-foreground" />
           <span class="truncate">{{ c.name }}</span>
         </button>
         <button
-          class="rounded p-0.5 text-neutral-300 opacity-0 hover:text-neutral-700 group-hover:opacity-100"
+          class="rounded p-0.5 text-neutral-300 opacity-0 hover:text-foreground group-hover:opacity-100"
           title="Rename"
           @click.stop="rename(c)"
         >

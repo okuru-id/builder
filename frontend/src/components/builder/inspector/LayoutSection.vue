@@ -83,7 +83,7 @@ const vAlign = [
   <InspectorSection title="Layout" :icon="IconLayoutNavbar" :show="!!node">
     <!-- Flex on/off -->
     <div class="flex items-center justify-between">
-      <span class="text-[11px] text-neutral-500">Flex</span>
+      <span class="text-[11px] text-muted-foreground">Flex</span>
       <Switch
         :model-value="hasClass(node?.classes ?? [], 'flex')"
         @update:model-value="(v) => cls(['flex', ...DISPLAY_CLASSES], v ? 'flex' : null)"
@@ -99,7 +99,7 @@ const vAlign = [
           class="flex h-7 items-center justify-center rounded-md border transition-colors"
           :class="currentDir() === d.value
             ? 'border-primary bg-primary/10 text-primary'
-            : 'border-neutral-200 text-neutral-500 hover:bg-neutral-100'"
+            : 'border-border text-muted-foreground hover:bg-muted'"
           :title="d.label"
           @click="cls(DIR_CLASSES, d.value === 'row' ? null : `flex-${d.value}`)"
         >
@@ -116,7 +116,7 @@ const vAlign = [
             class="flex h-7 items-center justify-center rounded-md border transition-colors"
             :class="currentJustify() === h.value
               ? 'border-primary bg-primary/10 text-primary'
-              : 'border-neutral-200 text-neutral-500 hover:bg-neutral-100'"
+              : 'border-border text-muted-foreground hover:bg-muted'"
             :title="`Horizontal ${h.label} (justify-${h.value})`"
             @click="cls(JUSTIFY_CLASSES, h.value === 'start' ? null : `justify-${h.value}`)"
           >
@@ -130,7 +130,7 @@ const vAlign = [
             class="flex h-7 items-center justify-center rounded-md border transition-colors"
             :class="currentItems() === v.value
               ? 'border-primary bg-primary/10 text-primary'
-              : 'border-neutral-200 text-neutral-500 hover:bg-neutral-100'"
+              : 'border-border text-muted-foreground hover:bg-muted'"
             :title="`Vertical ${v.label} (items-${v.value})`"
             @click="cls(ITEMS_CLASSES, `items-${v.value}`)"
           >
@@ -141,7 +141,7 @@ const vAlign = [
 
       <!-- Gap + Wrap row -->
       <div class="flex items-center gap-2">
-        <span class="w-8 shrink-0 text-[11px] text-neutral-500">Gap</span>
+        <span class="w-8 shrink-0 text-[11px] text-muted-foreground">Gap</span>
         <Select
           :model-value="currentClass(node?.classes ?? [], 'gap') ?? '0'"
           class="flex-1"
@@ -156,7 +156,7 @@ const vAlign = [
           class="flex size-7 shrink-0 items-center justify-center rounded-md border transition-colors"
           :class="hasClass(node?.classes ?? [], 'flex-wrap')
             ? 'border-primary bg-primary/10 text-primary'
-            : 'border-neutral-200 text-neutral-500 hover:bg-neutral-100'"
+            : 'border-border text-muted-foreground hover:bg-muted'"
           :title="hasClass(node?.classes ?? [], 'flex-wrap') ? 'Wrap on' : 'Wrap off'"
           @click="cls(['flex-wrap', 'flex-nowrap', 'flex-wrap-reverse'], hasClass(node?.classes ?? [], 'flex-wrap') ? null : 'flex-wrap')"
         >

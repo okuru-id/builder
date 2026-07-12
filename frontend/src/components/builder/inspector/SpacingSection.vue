@@ -42,13 +42,13 @@ const groups = [
 <template>
   <InspectorSection title="Spacing" :icon="IconArrowsHorizontal" :show="!!node">
     <div v-for="grp in groups" :key="grp.title" class="space-y-1">
-      <div class="text-[10px] font-medium uppercase tracking-wide text-neutral-400">{{ grp.title }}</div>
+      <div class="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{{ grp.title }}</div>
       <div
         v-for="item in grp.items"
         :key="item.prefix"
         class="flex items-center justify-between gap-2"
       >
-        <span class="text-[11px] text-neutral-500">{{ item.label }}</span>
+        <span class="text-[11px] text-muted-foreground">{{ item.label }}</span>
         <Select
           :model-value="spacingOpts(item.prefix).model"
           @update:model-value="spacingOpts(item.prefix).set"

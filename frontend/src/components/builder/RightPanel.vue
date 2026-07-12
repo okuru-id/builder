@@ -12,9 +12,9 @@ const tab = ref<'inspector' | 'agent'>('inspector')
 </script>
 
 <template>
-  <aside class="flex h-full w-full shrink-0 flex-col border-l border-neutral-200 bg-white">
+  <aside class="flex h-full w-full shrink-0 flex-col border-l border-border bg-background">
     <Tabs v-model="tab" class="flex h-full min-h-0 flex-col">
-      <div class="flex justify-center border-b border-neutral-200 py-1">
+      <div class="flex justify-center border-b border-border py-1">
         <TabsList class="h-9">
           <TabsTrigger value="inspector" class="gap-1.5 py-1 text-xs">
             <IconAdjustmentsHorizontal class="size-3.5" /> Inspector

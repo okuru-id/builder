@@ -61,7 +61,7 @@ function currentBorderHex() {
   <InspectorSection title="Border" :icon="IconBorderAll" :show="!!node">
 
     <div class="flex items-center justify-between">
-      <Label class="text-[11px] text-neutral-400">Show Border</Label>
+      <Label class="text-[11px] text-muted-foreground">Show Border</Label>
       <Switch
         :model-value="hasClass(node?.classes ?? [], 'border')"
         @update:model-value="(v) => cls(['border', ...WIDTH_CLASSES], v ? 'border' : null)"
@@ -70,7 +70,7 @@ function currentBorderHex() {
 
     <template v-if="hasClass(node?.classes ?? [], 'border')">
       <div class="space-y-1.5">
-        <Label class="text-[11px] text-neutral-400">Width</Label>
+        <Label class="text-[11px] text-muted-foreground">Width</Label>
         <Select
           :model-value="currentWidth()"
           @update:model-value="(v) => cls([...WIDTH_CLASSES], String(v) === '1' ? 'border' : `border-${String(v)}`)"
@@ -83,25 +83,25 @@ function currentBorderHex() {
       </div>
 
       <div class="space-y-1.5">
-        <Label class="text-[11px] text-neutral-400">Border Color</Label>
+        <Label class="text-[11px] text-muted-foreground">Border Color</Label>
         <div class="flex items-center gap-2">
           <input
             type="color"
             :value="currentBorderHex()"
-            class="h-7 w-10 shrink-0 cursor-pointer rounded border border-neutral-300 p-0.5"
+            class="h-7 w-10 shrink-0 cursor-pointer rounded border border-input p-0.5"
             @input="setBorderColor"
           />
           <Input
             :model-value="currentBorderClass() ?? ''"
             class="h-8 flex-1 font-mono text-xs"
-            placeholder="border-gray-300"
+            placeholder="border-input"
             @update:model-value="(v) => cls(['border-[', ...BORDER_COLOR_PRESETS.map((c) => `border-${c}`)], String(v) || null)"
           />
         </div>
       </div>
 
       <div class="space-y-1.5">
-        <Label class="text-[11px] text-neutral-400">Radius</Label>
+        <Label class="text-[11px] text-muted-foreground">Radius</Label>
         <Select
           :model-value="currentRadius()"
           @update:model-value="(v) => cls([...RADIUS_CLASSES], v === 'none' ? null : (v === 'md' ? 'rounded-md' : `rounded-${String(v)}`))"

@@ -113,14 +113,14 @@ const creating = ref(false)
 
 <template>
   <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40" @click.self="emit('close')">
-    <div class="flex max-h-[85vh] w-[600px] flex-col rounded-xl border border-neutral-200 bg-white shadow-2xl">
-      <div class="flex items-center justify-between border-b border-neutral-200 px-5 py-3">
+    <div class="flex max-h-[85vh] w-[600px] flex-col rounded-xl border border-border bg-background shadow-2xl">
+      <div class="flex items-center justify-between border-b border-border px-5 py-3">
         <h2 class="text-sm font-semibold">Import HTML / Vue</h2>
         <Button variant="ghost" size="icon" @click="emit('close')"><IconX class="size-4" /></Button>
       </div>
 
       <Tabs :default-value="tab" class="flex flex-1 flex-col overflow-hidden" @update:model-value="(v) => tab = v as 'paste' | 'file'">
-        <div class="border-b border-neutral-200 px-5">
+        <div class="border-b border-border px-5">
           <TabsList class="h-10">
             <TabsTrigger value="paste" class="text-xs">Paste HTML</TabsTrigger>
             <TabsTrigger value="file" class="text-xs">Upload File</TabsTrigger>
@@ -139,16 +139,16 @@ const creating = ref(false)
 
           <TabsContent value="file" class="m-0 flex flex-col gap-3">
             <div
-              class="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-neutral-300 p-8 transition-colors"
-              :class="dragOver ? 'border-blue-500 bg-blue-50' : 'hover:border-neutral-400'"
+              class="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-input p-8 transition-colors"
+              :class="dragOver ? 'border-blue-500 bg-primary/10' : 'hover:border-neutral-400'"
               @dragover.prevent="dragOver = true"
               @dragleave="dragOver = false"
               @drop.prevent="onFileDrop"
               @click="fileInput?.click()"
             >
-              <IconUpload class="mb-2 size-8 text-neutral-400" />
-              <p class="text-sm text-neutral-600">Drag .html or .vue files here</p>
-              <p class="mt-1 text-xs text-neutral-400">or click to choose a file</p>
+              <IconUpload class="mb-2 size-8 text-muted-foreground" />
+              <p class="text-sm text-muted-foreground">Drag .html or .vue files here</p>
+              <p class="mt-1 text-xs text-muted-foreground">or click to choose a file</p>
               <input ref="fileInput" type="file" accept=".html,.htm,.vue" class="hidden" @change="onFileInput" />
             </div>
           </TabsContent>
@@ -161,7 +161,7 @@ const creating = ref(false)
           </div>
 
           <!-- Parse result -->
-          <div v-if="parseError" class="flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+          <div v-if="parseError" class="flex items-start gap-2 rounded-md border border-red-200 bg-red-500/10 px-3 py-2 text-xs text-red-700">
             <IconAlertTriangle class="mt-0.5 size-3.5 shrink-0" />
             {{ parseError }}
           </div>

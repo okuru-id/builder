@@ -27,7 +27,7 @@ function sizeOpt(prefix: string) {
   <InspectorSection title="Size" :icon="IconResize" :show="!!node" :default-open="false">
 
     <div class="space-y-1.5">
-      <Label class="text-[11px] text-neutral-400">Width (w-*)</Label>
+      <Label class="text-[11px] text-muted-foreground">Width (w-*)</Label>
       <div class="flex gap-2">
         <Select
           :model-value="currentClass(node?.classes ?? [], 'w') ?? ''"
@@ -50,7 +50,7 @@ function sizeOpt(prefix: string) {
     </div>
 
     <div class="space-y-1.5">
-      <Label class="text-[11px] text-neutral-400">Height (h-*)</Label>
+      <Label class="text-[11px] text-muted-foreground">Height (h-*)</Label>
       <div class="flex gap-2">
         <Select
           :model-value="currentClass(node?.classes ?? [], 'h') ?? ''"
@@ -73,7 +73,7 @@ function sizeOpt(prefix: string) {
     </div>
 
     <div class="space-y-1.5">
-      <Label class="text-[11px] text-neutral-400">Min/Max Width</Label>
+      <Label class="text-[11px] text-muted-foreground">Min/Max Width</Label>
       <div class="flex gap-2">
         <Input
           :model-value="currentClass(node?.classes ?? [], 'min-w') ?? ''"
@@ -91,7 +91,7 @@ function sizeOpt(prefix: string) {
     </div>
 
     <div class="space-y-1.5">
-      <Label class="text-[11px] text-neutral-400">Min/Max Height</Label>
+      <Label class="text-[11px] text-muted-foreground">Min/Max Height</Label>
       <div class="flex gap-2">
         <Input
           :model-value="currentClass(node?.classes ?? [], 'min-h') ?? ''"

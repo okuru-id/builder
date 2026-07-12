@@ -274,7 +274,7 @@ function onKey(e: KeyboardEvent) {
                         class="mt-1 flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-2.5 py-1.5"
                       >
                         <IconSparkles class="size-3.5 shrink-0 text-primary" />
-                        <span class="flex-1 text-[11px] text-neutral-600">
+                        <span class="flex-1 text-[11px] text-muted-foreground">
                           Action: <span class="font-mono">{{ part.action.kind }}</span>
                         </span>
                         <Button
@@ -302,7 +302,7 @@ function onKey(e: KeyboardEvent) {
     </div>
 
     <!-- Composer -->
-    <div class="border-t border-neutral-200 p-2">
+    <div class="border-t border-border p-2">
       <Textarea
         v-model="input"
         rows="2"
@@ -312,7 +312,7 @@ function onKey(e: KeyboardEvent) {
         @keydown="onKey"
       />
       <div class="flex items-center justify-between">
-        <span class="text-[10px] text-neutral-400">AI Agent · LLM_API_KEY</span>
+        <span class="text-[10px] text-muted-foreground">AI Agent · LLM_API_KEY</span>
         <Button size="sm" class="h-7 px-2 text-xs" :disabled="!input.trim() || busy" @click="send">
           <IconSend class="size-3.5" /> Send
         </Button>

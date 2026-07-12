@@ -20,7 +20,7 @@ function onBackgroundClick() {
 
 <template>
   <div
-    class="flex h-full w-full justify-center overflow-auto bg-neutral-200 p-6 min-h-0"
+    class="flex h-full w-full justify-center overflow-auto bg-muted p-6 min-h-0"
     @click="onBackgroundClick"
   >
     <div
