@@ -16,39 +16,45 @@ const BG_REPEAT_CLASSES = ['bg-repeat', 'bg-no-repeat', 'bg-repeat-x', 'bg-repea
 const BG_POS_CLASSES = ['bg-center', 'bg-top', 'bg-bottom', 'bg-left', 'bg-right', 'bg-left-top', 'bg-right-top', 'bg-left-bottom', 'bg-right-bottom'] as const
 const ALL_BG_ASPECT_CLASSES = [...BG_SIZE_CLASSES, ...BG_REPEAT_CLASSES, ...BG_POS_CLASSES]
 
-// Color swatches grouped by family for visual hierarchy.
+// Color swatches grouped by family, ordered light→dark within each group.
 const BG_COLOR_GROUPS: { label: string; colors: string[] }[] = [
   { label: 'Neutral', colors: [
-    'white', 'black',
-    'slate-50', 'slate-100', 'slate-200', 'slate-800', 'slate-900',
-    'gray-50', 'gray-100', 'gray-200', 'gray-500', 'gray-800', 'gray-900',
+    'white',
+    'slate-50', 'gray-50',
+    'slate-100', 'gray-100',
+    'slate-200', 'gray-200',
+    'gray-500',
+    'slate-800', 'gray-800',
+    'slate-900', 'gray-900',
+    'black',
   ]},
   { label: 'Red / Orange / Amber', colors: [
-    'red-50', 'red-100', 'red-500', 'red-600',
-    'orange-50', 'orange-100', 'orange-500',
-    'amber-50', 'amber-100', 'amber-500',
+    'red-50', 'orange-50', 'amber-50',
+    'red-100', 'orange-100', 'amber-100',
+    'red-500', 'orange-500', 'amber-500',
+    'red-600',
   ]},
   { label: 'Yellow / Lime / Green', colors: [
-    'yellow-50', 'yellow-100',
-    'lime-100', 'lime-500',
-    'green-50', 'green-100', 'green-500', 'green-600',
-    'emerald-50', 'emerald-100', 'emerald-500',
+    'yellow-50', 'lime-100', 'green-50', 'emerald-50',
+    'yellow-100', 'green-100', 'emerald-100',
+    'lime-500', 'green-500', 'emerald-500',
+    'green-600',
   ]},
   { label: 'Teal / Cyan / Sky', colors: [
-    'teal-50', 'teal-100', 'teal-500',
-    'cyan-50', 'cyan-100', 'cyan-500',
-    'sky-50', 'sky-100', 'sky-500',
+    'teal-50', 'cyan-50', 'sky-50',
+    'teal-100', 'cyan-100', 'sky-100',
+    'teal-500', 'cyan-500', 'sky-500',
   ]},
   { label: 'Blue / Indigo / Violet', colors: [
-    'blue-50', 'blue-100', 'blue-500', 'blue-600',
-    'indigo-50', 'indigo-100', 'indigo-500',
-    'violet-50', 'violet-100', 'violet-500',
+    'blue-50', 'indigo-50', 'violet-50',
+    'blue-100', 'indigo-100', 'violet-100',
+    'blue-500', 'indigo-500', 'violet-500',
+    'blue-600',
   ]},
   { label: 'Purple / Pink / Rose', colors: [
-    'purple-50', 'purple-100', 'purple-500',
-    'fuchsia-50', 'fuchsia-100', 'fuchsia-500',
-    'pink-50', 'pink-100', 'pink-500',
-    'rose-50', 'rose-100', 'rose-500',
+    'purple-50', 'fuchsia-50', 'pink-50', 'rose-50',
+    'purple-100', 'fuchsia-100', 'pink-100', 'rose-100',
+    'purple-500', 'fuchsia-500', 'pink-500', 'rose-500',
   ]},
 ]
 
