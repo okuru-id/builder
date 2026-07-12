@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Right inspector: edits the selected node's props + classes. Delete/duplicate actions.
 import { computed, inject, watch, ref } from 'vue'
-import { IconCopy, IconTrash, IconArrowUp, IconArrowDown } from '@tabler/icons-vue'
+import { IconCopy, IconTrash, IconArrowUp, IconArrowDown, IconUnlink } from '@tabler/icons-vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -80,6 +80,18 @@ function moveDown() {
         <div class="text-sm text-neutral-600">{{ node.type }}</div>
       </div>
 
+      <div
+        v-if="node.componentId"
+        class="flex items-center justify-between rounded-md border border-blue-200 bg-blue-50 px-3 py-2"
+      >
+        <div class="text-xs text-blue-700">
+          Instance dari komponen #{{ node.componentId }}
+        </div>
+        <Button variant="outline" size="sm" @click="store.breakInstance(node.id)">
+          <IconUnlink class="size-3.5" /> Putus
+        </Button>
+      </div>
+
       <!-- Text-like: editable text + heading level -->
       <template v-if="node.type === 'text' || node.type === 'heading' || node.type === 'button' || node.type === 'link'">
         <div class="space-y-1.5">
@@ -118,9 +130,13 @@ function moveDown() {
         <Input :model-value="String(node.props.href ?? '#')" class="h-8" @update:model-value="(v) => setProp('href', v)" />
       </div>
 
-      <div class="space-y-1.5">
+      <div v-if="!node.componentId" class="space-y-1.5">
         <Label class="text-xs">Classes (satu per baris atau dipisah spasi)</Label>
         <Textarea v-model="classesText" rows="6" @blur="commitClasses" />
+      </div>
+
+      <div v-if="node.componentId" class="rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs text-neutral-500">
+        Edit komponen master untuk mengubah instance.
       </div>
 
       <div class="flex flex-wrap gap-2 pt-2" v-if="node.id !== 'root'">

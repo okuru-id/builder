@@ -16,13 +16,23 @@ const store = inject(BUILDER_KEY, null)
 const editing = ref(false)
 const elRef = ref<HTMLElement | null>(null)
 
-const tag = computed<string>(() => tagFor(props.node))
-const isTextLike = computed(() => TEXT_TYPES.has(props.node.type))
+const tag = computed<string>(() => tagFor(displayNode.value))
+const isTextLike = computed(() => TEXT_TYPES.has(displayNode.value.type))
 const selected = computed(
   () => !props.readonly && store?.selectedId.value === props.node.id,
 )
+// Resolve a component instance to its master root for display. Selection/drag
+// still bind to the instance node (props.node.id). Children rendered readonly.
+const displayNode = computed<Node>(() => {
+  if (props.node.type === 'component' && props.node.componentId && store) {
+    const master = store.components.masterRoot(props.node.componentId)
+    if (master) return master
+  }
+  return props.node
+})
+const isInstance = computed(() => props.node.type === 'component' && !!props.node.componentId)
 const classList = computed(() => {
-  const base = props.node.classes
+  const base = displayNode.value.classes
   if (props.readonly) return base
   // Selection ring + hover affordance, layered so we never overwrite real classes.
   return selected.value
@@ -64,7 +74,6 @@ function attrsFor(n: Node): Record<string, unknown> {
   }
   return a
 }
-
 function onClick(e: MouseEvent) {
   if (props.readonly) return
   e.stopPropagation()
@@ -72,7 +81,8 @@ function onClick(e: MouseEvent) {
 }
 
 async function onDblClick(e: MouseEvent) {
-  if (props.readonly || !isTextLike.value || !store) return
+  // Instances: double-click selects but does not inline-edit (edit master instead).
+  if (props.readonly || !isTextLike.value || !store || isInstance.value) return
   e.stopPropagation()
   editing.value = true
   await nextTick()
@@ -154,7 +164,7 @@ function onDragEnd() {
       'ring-2 ring-blue-500 ring-inset': dropInside,
     }]"
     :draggable="!readonly && !editing"
-    v-bind="{ ...attrsFor(node), ...interactiveAttrs }"
+    v-bind="{ ...attrsFor(displayNode), ...interactiveAttrs }"
     @click="onClick"
     @dblclick="onDblClick"
     @blur="onBlur"
@@ -167,21 +177,21 @@ function onDragEnd() {
     @dragend="onDragEnd"
   >
     <template v-if="isTextLike">
-      {{ node.props.text }}
+      {{ displayNode.props.text }}
     </template>
-    <template v-else-if="node.type === 'button'">
-      {{ node.props.text }}
+    <template v-else-if="displayNode.type === 'button'">
+      {{ displayNode.props.text }}
     </template>
-    <template v-else-if="node.type === 'image'">
+    <template v-else-if="displayNode.type === 'image'">
       <!-- void element, no children -->
     </template>
     <template v-else>
       <NodeRenderer
-        v-for="child in node.children"
+        v-for="child in displayNode.children"
         :key="child.id"
         :node="child"
         :depth="depth + 1"
-        :readonly="readonly"
+        :readonly="readonly || isInstance"
       />
     </template>
   </component>

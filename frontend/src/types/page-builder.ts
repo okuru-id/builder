@@ -48,6 +48,15 @@ export interface Page {
   updated_at?: string
 }
 
+// Component master — reusable tree fragment referenced by instances via componentId.
+export interface Component {
+  id: number
+  name: string
+  tree: TreeShape
+  created_at?: string
+  updated_at?: string
+}
+
 // Node types that carry text content (inline-editable).
 export const TEXT_TYPES: ReadonlySet<NodeType> = new Set(['text', 'heading'])
 // Node types that can have children (containers).

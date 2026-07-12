@@ -14,8 +14,8 @@ import (
 // Tree shape: { "root": Node } where Node =
 //   { id, type, name, props: {}, classes: [], children: [] }
 //
-// ponytail: component instance resolution (componentId → master tree) deferred to
-// Phase 5. For now instances render as plain frames.
+// ponytail: codegen stays pure (no DB). Component instance resolution happens
+// upstream in services.ResolveComponentInstances before Generate is called.
 type LandingCodegen struct{}
 
 func NewLandingCodegen() *LandingCodegen { return &LandingCodegen{} }

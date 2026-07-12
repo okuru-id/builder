@@ -46,6 +46,7 @@ func Api() {
 			settingController := admin.NewSettingController()
 			uploadController := admin.NewUploadController()
 			landingPageController := admin.NewLandingPageController()
+			landingComponentController := admin.NewLandingComponentController()
 
 			r.Get("/landing-pages", landingPageController.Index)
 			r.Post("/landing-pages", landingPageController.Store)
@@ -54,6 +55,12 @@ func Api() {
 			r.Post("/landing-pages/{id}/publish", landingPageController.Publish)
 			r.Get("/landing-pages/{id}/revisions", landingPageController.Revisions)
 			r.Post("/landing-pages/{id}/revisions/{rid}/restore", landingPageController.RestoreRevision)
+
+			r.Get("/landing-components", landingComponentController.Index)
+			r.Post("/landing-components", landingComponentController.Store)
+			r.Get("/landing-components/{id}", landingComponentController.Show)
+			r.Put("/landing-components/{id}", landingComponentController.Update)
+			r.Delete("/landing-components/{id}", landingComponentController.Destroy)
 
 			r.Get("/posts", postController.Index)
 			r.Post("/posts", postController.Store)

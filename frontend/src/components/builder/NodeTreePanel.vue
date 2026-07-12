@@ -14,6 +14,7 @@ import { PALETTE_TYPES } from '@/types/page-builder'
 import type { NodeType } from '@/types/page-builder'
 import { BUILDER_KEY } from '@/components/builder/injection'
 import TreeRow from '@/components/builder/TreeRow.vue'
+import ComponentPalette from '@/components/builder/ComponentPalette.vue'
 
 const store = inject(BUILDER_KEY, null)!
 
@@ -43,6 +44,10 @@ function addType(t: NodeType) {
 
     <div class="flex-1 overflow-auto py-1">
       <TreeRow :node="root" />
+    </div>
+
+    <div class="max-h-[40%] overflow-auto border-t border-neutral-200">
+      <ComponentPalette />
     </div>
 
     <div class="border-t border-neutral-200 p-2">

@@ -14,8 +14,10 @@ import {
   makeNode,
   moveSibling,
   reparent as reparentTree,
+  replaceNode,
   updateNode,
 } from '@/components/builder/tree-utils'
+import { useComponents } from '@/composables/useComponents'
 
 export type Breakpoint = 'desktop' | 'tablet' | 'mobile'
 
@@ -38,6 +40,9 @@ export function useBuilderStore() {
   const draggingId = ref<string | null>(null)
   const dropTarget = ref<{ parentId: string; index: number; pos: 'before' | 'after' | 'inside' } | null>(null)
 
+  // Component masters — loaded once on builder mount, shared with palette + renderer.
+  const components = useComponents()
+
   const selectedNode = computed<Node | null>(() => {
     if (!selectedId.value) return null
     const found = findNode(tree.value.root, selectedId.value)
@@ -51,7 +56,10 @@ export function useBuilderStore() {
   async function load(id: string | number) {
     loading.value = true
     try {
-      const res = await api.get<{ data: Page }>(`/landing-pages/${id}`)
+      const [res] = await Promise.all([
+        api.get<{ data: Page }>(`/landing-pages/${id}`),
+        components.load(),
+      ])
       page.value = res.data.data
       tree.value = res.data.data.tree ?? { root: emptyRoot() }
       selectedId.value = null
@@ -203,6 +211,53 @@ export function useBuilderStore() {
     dropTarget.value = null
   }
 
+  // --- components / instances ---
+
+  // Save a node (and its subtree) as a new reusable component master.
+  async function createComponentFromNode(nodeId: string, name: string) {
+    const found = findNode(tree.value.root, nodeId)
+    if (!found) return
+    const master = cloneTree(found.node)
+    reId(master)
+    const c = await components.create(name, { root: master })
+    toast.success(`Komponen “${c.name}” disimpan`)
+    return c
+  }
+
+  // Insert an instance of a component master into the tree.
+  // ponytail: instance = marker node { type:'component', componentId }. Renderer
+  // resolves the master tree at render time. No per-instance overrides yet —
+  // add instanceOverrides merge when real divergence is needed.
+  function insertInstance(componentId: number, parentId: string | null = null) {
+    const parent = parentId ?? selectedId.value ?? tree.value.root.id
+    const node: Node = {
+      id: makeNode('component').id,
+      type: 'component',
+      name: components.components.value.find((c) => c.id === componentId)?.name ?? 'Component',
+      props: {},
+      classes: [],
+      children: [],
+      componentId,
+    }
+    tree.value = { root: addChild(tree.value.root, parent, node) }
+    selectedId.value = node.id
+    notifyChange()
+  }
+
+  // Break link: resolve master, deep-clone into the instance node, drop componentId.
+  function breakInstance(nodeId: string) {
+    const found = findNode(tree.value.root, nodeId)
+    if (!found || !found.node.componentId) return
+    const master = components.masterRoot(found.node.componentId)
+    if (!master) return
+    const copy = cloneTree(master)
+    reId(copy)
+    // Preserve the instance's own id + position; absorb master's internals.
+    copy.id = found.node.id
+    tree.value = { root: replaceNode(tree.value.root, nodeId, () => copy) }
+    notifyChange()
+  }
+
   // --- publish ---
 
   async function publish() {
@@ -235,6 +290,7 @@ export function useBuilderStore() {
     canvasWidth,
     draggingId,
     dropTarget,
+    components,
     // actions
     load,
     select,
@@ -244,6 +300,9 @@ export function useBuilderStore() {
     removeNode,
     duplicateNode,
     moveSiblingNode,
+    createComponentFromNode,
+    insertInstance,
+    breakInstance,
     dragStart,
     dragEnd,
     dragOver,

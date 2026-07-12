@@ -157,7 +157,10 @@ func (c *LandingPageController) Publish(ctx http.Context) http.Response {
 
 	// Run tree → HTML codegen synchronously at publish time. Cached in published_html,
 	// served raw by the storefront so the published page never depends on the editor.
-	if html, err := renderHTML(page.Tree, page.Name); err == nil {
+	// Component instances are resolved to their master trees first, so published HTML
+	// is self-contained even if a master is later edited or deleted.
+	resolved := services.ResolveComponentInstances(treeToMap(page.Tree))
+	if html, err := renderHTMLFromMap(resolved, page.Name); err == nil {
 		page.PublishedHTML = html
 	}
 
@@ -170,11 +173,20 @@ func (c *LandingPageController) Publish(ctx http.Context) http.Response {
 // renderHTML converts a datatypes.JSON tree into a full HTML document via the
 // LandingCodegen service.
 func renderHTML(tree datatypes.JSON, title string) (string, error) {
+	m := treeToMap(tree)
+	return renderHTMLFromMap(m, title)
+}
+
+func renderHTMLFromMap(m map[string]any, title string) (string, error) {
+	return services.NewLandingCodegen().Generate(m, title), nil
+}
+
+func treeToMap(tree datatypes.JSON) map[string]any {
 	var m map[string]any
 	if err := json.Unmarshal(tree, &m); err != nil {
-		return "", err
+		return map[string]any{"root": map[string]any{}}
 	}
-	return services.NewLandingCodegen().Generate(m, title), nil
+	return m
 }
 
 // Revisions lists the page revision history (newest first).
