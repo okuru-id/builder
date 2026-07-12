@@ -24,7 +24,6 @@ import SizeSection from './inspector/SizeSection.vue'
 import InspectorSection from './inspector/InspectorSection.vue'
 import {
   AlertDialog,
-  AlertDialogTrigger,
   AlertDialogContent,
   AlertDialogTitle,
   AlertDialogDescription,
@@ -42,14 +41,11 @@ function setProp(key: string, value: unknown) {
   if (!node.value) return
   store.patchNode(node.value.id, { props: { ...node.value.props, [key]: value } })
 }
-function setName(value: string) {
+function setName(value: string | number) {
   if (!node.value) return
-  store.patchNode(node.value.id, { name: value })
+  store.patchNode(node.value.id, { name: String(value) })
 }
 
-function del() {
-  if (node.value) store.removeNode(node.value.id)
-}
 const showDeleteConfirm = ref(false)
 function delConfirm() {
   showDeleteConfirm.value = true
