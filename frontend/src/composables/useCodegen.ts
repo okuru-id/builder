@@ -1,6 +1,7 @@
 // TypeScript mirror of the Go codegen. Used for client-side HTML preview/download.
 // Determinisitc: same tree → same bytes. 2-space indent, self-closing void elements.
 import type { Node, TreeShape } from '@/types/page-builder'
+import { ICONS } from '@/lib/icon-map'
 
 export function htmlEscape(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
@@ -43,6 +44,8 @@ function renderNode(n: Node, depth: number): string {
       return renderLink(n, depth)
     case 'section':
       return renderContainer('section', n, depth)
+    case 'form':
+      return renderForm(n, depth)
     case 'frame':
     case 'grid':
     case 'component':
@@ -50,6 +53,10 @@ function renderNode(n: Node, depth: number): string {
       return renderContainer('div', n, depth)
     case 'divider':
       return renderSelfClosing('hr', n, depth)
+    case 'input':
+      return renderInput(n, depth)
+    case 'icon':
+      return renderIcon(n, depth)
   }
 }
 
@@ -75,6 +82,42 @@ function renderHeading(n: Node, depth: number): string {
 
 function renderSelfClosing(tag: string, n: Node, depth: number, ...attrs: string[]): string {
   return `${indent(depth)}<${tag}${attrStr(n, attrs)} />\n`
+}
+
+function renderIcon(n: Node, depth: number): string {
+  const iconName = n.props.icon
+  let svgContent = ''
+  if (iconName && ICONS[iconName]) {
+    const paths = ICONS[iconName]
+    svgContent = paths.map((p: [string, Record<string,string>]) => `<path d="${p[1].d}" />`).join('')
+  } else {
+    svgContent = `<circle cx="12" cy="12" r="4" fill="currentColor" />`
+  }
+  const ind = indent(depth)
+  return `${ind}<span${attrStr(n)}><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">${svgContent}</svg></span>\n`
+}
+
+function renderInput(n: Node, depth: number): string {
+  const ind = indent(depth)
+  const label = n.props.label ? `${ind}<label class="text-sm font-medium">${htmlEscape(n.props.label)}</label>\n` : ''
+  const inputType = n.props.inputType ?? 'text'
+  const placeholder = n.props.placeholder ? ` placeholder="${htmlEscape(n.props.placeholder)}"` : ''
+  const required = n.props.required ? ' required' : ''
+  const inputEl = `${ind}<input type="${inputType}"${placeholder}${required} class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />\n`
+  // Wrap in a div with classes from the node
+  return `${ind}<div${attrStr(n)}>\n${label}${inputEl}${ind}</div>\n`
+}
+
+function renderForm(n: Node, depth: number): string {
+  const ind = indent(depth)
+  const action = n.props.action ? ` action="${htmlEscape(n.props.action)}"` : ''
+  const method = n.props.method ? ` method="${htmlEscape(n.props.method)}"` : ' method="POST"'
+  let out = `${ind}<form${attrStr(n)}${action}${method}>\n`
+  for (const child of n.children) {
+    out += renderNode(child, depth + 1)
+  }
+  out += `${ind}</form>\n`
+  return out
 }
 
 function renderLink(n: Node, depth: number): string {

@@ -15,6 +15,9 @@ import {
   IconGripVertical,
   IconGridDots,
   IconMinus,
+  IconStar,
+  IconForms,
+  IconInputSearch,
 } from '@tabler/icons-vue'
 import type { Node, NodeType } from '@/types/page-builder'
 import { BUILDER_KEY } from '@/components/builder/injection'
@@ -81,6 +84,9 @@ const NODE_ICONS: Record<NodeType, any> = {
   button: IconCircuitPushbutton,
   link: IconLink,
   divider: IconMinus,
+  icon: IconStar,
+  form: IconForms,
+  input: IconInputSearch,
   component: IconComponents,
 }
 
@@ -94,6 +100,9 @@ const NODE_COLORS: Record<NodeType, string> = {
   button: 'text-rose-500',
   link: 'text-blue-500',
   divider: 'text-neutral-400',
+  icon: 'text-amber-500',
+  form: 'text-emerald-500',
+  input: 'text-sky-500',
   component: 'text-purple-500',
 }
 

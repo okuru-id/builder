@@ -12,6 +12,9 @@ import {
   IconLayersIntersect,
   IconGridDots,
   IconMinus,
+  IconStar,
+  IconForms,
+  IconInputSearch,
 } from '@tabler/icons-vue'
 import { PALETTE_TYPES } from '@/types/page-builder'
 import type { NodeType } from '@/types/page-builder'
@@ -31,6 +34,9 @@ const paletteIcons: Record<NodeType, any> = {
   button: IconCircuitPushbutton,
   link: IconLink,
   divider: IconMinus,
+  icon: IconStar,
+  form: IconForms,
+  input: IconInputSearch,
   component: IconSquare,
 }
 
@@ -44,6 +50,9 @@ const paletteLabels: Record<string, string> = {
   button: 'Button',
   link: 'Link',
   divider: 'Divider',
+  icon: 'Icon',
+  form: 'Form',
+  input: 'Input',
 }
 
 const root = computed(() => store.tree.value.root)

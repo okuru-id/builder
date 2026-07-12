@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { BUILDER_KEY } from '@/components/builder/injection'
+import { ICONS, ICON_LIST } from '@/lib/icon-map'
 import LayoutSection from './inspector/LayoutSection.vue'
 import TypographySection from './inspector/TypographySection.vue'
 import SpacingSection from './inspector/SpacingSection.vue'
@@ -180,6 +181,62 @@ function removeClass(idx: number) {
           <div class="flex items-center gap-2">
             <Label class="w-12 shrink-0 text-[11px] text-muted-foreground">Href</Label>
             <Input :model-value="String(node.props.href ?? '#')" class="h-7 flex-1 text-xs" @update:model-value="(v) => setProp('href', v)" />
+          </div>
+        </InspectorSection>
+      </template>
+
+      <template v-if="node.type === 'icon'">
+        <InspectorSection title="Icon" :icon="IconPhoto">
+          <div class="grid grid-cols-6 gap-1">
+            <button
+              v-for="name in ICON_LIST"
+              :key="name"
+              class="flex h-8 w-8 items-center justify-center rounded-md border text-muted-foreground transition-colors"
+              :class="node.props.icon === name ? 'border-primary bg-primary/10 text-primary' : 'border-border hover:bg-muted'"
+              :title="name"
+              @click="setProp('icon', name)"
+            >
+              <svg v-if="ICONS[name]" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" class="size-4">
+                <path v-for="seg in ICONS[name]" :key="seg[1].key" :d="seg[1].d" />
+              </svg>
+            </button>
+          </div>
+        </InspectorSection>
+      </template>
+
+      <template v-if="node.type === 'input'">
+        <InspectorSection title="Input" :icon="IconPhoto">
+          <div class="flex items-center gap-2">
+            <Label class="w-12 shrink-0 text-[11px] text-muted-foreground">Label</Label>
+            <Input :model-value="node.props.label ?? ''" class="h-7 flex-1 text-xs" @update:model-value="(v) => setProp('label', v)" />
+          </div>
+          <div class="flex items-center gap-2">
+            <Label class="w-12 shrink-0 text-[11px] text-muted-foreground">Placeholder</Label>
+            <Input :model-value="node.props.placeholder ?? ''" class="h-7 flex-1 text-xs" @update:model-value="(v) => setProp('placeholder', v)" />
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] text-muted-foreground">Type</span>
+            <select
+              :value="node.props.inputType ?? 'text'"
+              class="h-7 rounded-md border border-input bg-background px-2 text-xs"
+              @change="(e) => setProp('inputType', (e.target as HTMLSelectElement).value)"
+            >
+              <option value="text">text</option>
+              <option value="email">email</option>
+              <option value="tel">tel</option>
+              <option value="number">number</option>
+              <option value="password">password</option>
+              <option value="url">url</option>
+            </select>
+          </div>
+          <div class="flex items-center gap-2">
+            <input
+              type="checkbox"
+              :checked="node.props.required ?? false"
+              class="size-3.5"
+              @change="(e) => setProp('required', (e.target as HTMLInputElement).checked)"
+            />
+            <span class="text-[11px] text-muted-foreground">Required</span>
           </div>
         </InspectorSection>
       </template>

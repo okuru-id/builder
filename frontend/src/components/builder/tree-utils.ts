@@ -41,6 +41,9 @@ export function defaultName(type: NodeType): string {
     button: 'Button',
     link: 'Link',
     divider: 'Divider',
+    icon: 'Icon',
+    form: 'Form',
+    input: 'Input',
     component: 'Component',
   }
   return map[type] ?? 'Node'
@@ -52,12 +55,16 @@ export function defaultProps(type: NodeType): NodeProps {
       return { text: 'New text' }
     case 'heading':
       return { text: 'Judul', level: 2 }
+    case 'icon':
+      return { icon: 'IconStar' }
     case 'button':
       return { text: 'Button' }
     case 'link':
-      return { href: '#', text: 'Tautan' }
+      return { href: '#', text: 'Link' }
     case 'image':
       return { src: '', alt: '' }
+    case 'input':
+      return { label: 'Input', placeholder: 'Enter value', inputType: 'text', required: false }
     default:
       return {}
   }
@@ -75,6 +82,8 @@ export function defaultClasses(type: NodeType): string[] {
       return ['text-base', 'text-neutral-700']
     case 'heading':
       return ['text-3xl', 'font-bold']
+    case 'icon':
+      return ['size-6', 'text-blue-600']
     case 'button':
       return ['inline-flex', 'items-center', 'rounded-lg', 'bg-blue-600', 'px-5', 'py-2.5', 'text-white']
     case 'link':
@@ -83,6 +92,10 @@ export function defaultClasses(type: NodeType): string[] {
       return ['w-full', 'object-cover']
     case 'divider':
       return ['border-t', 'border-border', 'my-8']
+    case 'form':
+      return ['space-y-4']
+    case 'input':
+      return ['flex', 'flex-col', 'gap-1.5']
     default:
       return []
   }

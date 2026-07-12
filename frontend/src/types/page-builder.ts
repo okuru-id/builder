@@ -5,11 +5,14 @@ export type NodeType =
   | 'text'
   | 'heading'
   | 'image'
+  | 'icon'
   | 'button'
   | 'link'
   | 'section'
   | 'divider'
   | 'grid'
+  | 'form'
+  | 'input'
   | 'component'
 
 export interface NodeProps {
@@ -19,6 +22,13 @@ export interface NodeProps {
   href?: string
   level?: number
   placeholder?: string
+  icon?: string
+  label?: string
+  inputType?: string
+  required?: boolean
+  action?: string
+  method?: string
+  options?: string
   [key: string]: unknown
 }
 
@@ -66,8 +76,9 @@ export const CONTAINER_TYPES: ReadonlySet<NodeType> = new Set([
   'frame',
   'section',
   'grid',
+  'form',
   'link',
   'component',
 ])
 // Node types allowed as top-level palette additions.
-export const PALETTE_TYPES: NodeType[] = ['frame', 'section', 'grid', 'text', 'heading', 'image', 'button', 'link', 'divider']
+export const PALETTE_TYPES: NodeType[] = ['frame', 'section', 'grid', 'text', 'heading', 'image', 'icon', 'button', 'link', 'divider', 'form', 'input']

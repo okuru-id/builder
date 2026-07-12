@@ -6,6 +6,7 @@ import { computed, inject, nextTick, ref } from 'vue'
 import type { Node } from '@/types/page-builder'
 import { CONTAINER_TYPES, TEXT_TYPES } from '@/types/page-builder'
 import { BUILDER_KEY } from '@/components/builder/injection'
+import { ICONS } from '@/lib/icon-map'
 
 const props = withDefaults(
   defineProps<{ node: Node; depth?: number; readonly?: boolean }>(),
@@ -59,8 +60,11 @@ function tagFor(n: Node): string {
       return 'a'
     case 'section':
       return 'section'
+    case 'form':
+      return 'form'
     case 'frame':
     case 'grid':
+    case 'input':
     case 'component':
     default:
       return 'div'
@@ -69,6 +73,9 @@ function tagFor(n: Node): string {
 
 function attrsFor(n: Node): Record<string, unknown> {
   const a: Record<string, unknown> = {}
+  if (n.type === 'icon') {
+    return {}
+  }
   if (n.type === 'image') {
     if (n.props.src) a.src = n.props.src
     if (n.props.alt) a.alt = n.props.alt
@@ -184,6 +191,26 @@ function onDragEnd() {
     </template>
     <template v-else-if="displayNode.type === 'button'">
       {{ displayNode.props.text }}
+    </template>
+    <template v-else-if="displayNode.type === 'icon'">
+      <span v-if="displayNode.props.icon && ICONS[displayNode.props.icon]" class="inline-flex items-center justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <template v-for="seg in ICONS[displayNode.props.icon]" :key="seg[1].key">
+            <path :d="seg[1].d" />
+          </template>
+        </svg>
+      </span>
+      <span v-else>{{ displayNode.props.icon ?? '✦' }}</span>
+    </template>
+    <template v-else-if="displayNode.type === 'input'">
+      <label v-if="displayNode.props.label" class="text-sm font-medium">{{ displayNode.props.label }}</label>
+      <input
+        :type="displayNode.props.inputType ?? 'text'"
+        :placeholder="displayNode.props.placeholder ?? ''"
+        :required="displayNode.props.required ?? false"
+        class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+        @click.stop
+      />
     </template>
     <template v-else-if="displayNode.type === 'image'">
       <!-- void element, no children -->
