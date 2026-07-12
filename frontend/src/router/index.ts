@@ -10,6 +10,12 @@ const router = createRouter({
       meta: { public: true },
     },
     {
+      // Builder: fullscreen route, no AdminLayout/sidebar.
+      path: '/builder/:id',
+      name: 'builder',
+      component: () => import('@/views/Builder.vue'),
+    },
+    {
       path: '/',
       component: () => import('@/layouts/AdminLayout.vue'),
       children: [
@@ -21,6 +27,7 @@ const router = createRouter({
         { path: 'open-source', name: 'open-source', component: () => import('@/views/OpenSource.vue') },
         { path: 'products', name: 'products', component: () => import('@/views/Products.vue') },
         { path: 'inbox', name: 'inbox', component: () => import('@/views/Inbox.vue') },
+        { path: 'pages', name: 'pages', component: () => import('@/views/LandingPages.vue') },
       ],
     },
   ],

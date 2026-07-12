@@ -9,7 +9,7 @@ Figma-like canvas editor untuk okuru.id. Tree JSON source of truth, direct manip
 | 0 | Cleanup legacy | ✅ done | `998200c` | [phase-0-cleanup.md](phase-0-cleanup.md) |
 | 1 | Data model + API | ✅ done | `d8bc2f2` | [phase-1-data-model.md](phase-1-data-model.md) |
 | 2 | Codegen + publish | ✅ done | _(this commit)_ | [phase-2-codegen.md](phase-2-codegen.md) |
-| 3 | Canvas editor | ⬜ todo | — | [phase-3-canvas-editor.md](phase-3-canvas-editor.md) |
+| 3 | Canvas editor | ✅ done | _(this commit)_ | [phase-3-canvas-editor.md](phase-3-canvas-editor.md) |
 | 4 | Drag/snap/multi-select | ⬜ todo | — | [phase-4-drag-snap.md](phase-4-drag-snap.md) |
 | 5 | Component system | ⬜ todo | — | [phase-5-components.md](phase-5-components.md) |
 | 6 | Style panel + token | ⬜ todo | — | [phase-6-style-panel.md](phase-6-style-panel.md) |

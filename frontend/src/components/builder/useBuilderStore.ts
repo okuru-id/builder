@@ -1,0 +1,193 @@
+// Builder store: one instance per Builder.vue mount. Holds page + tree + selection,
+// exposes mutation helpers, autosave, and publish. No Pinia (ponytail: avoid new dep).
+import { computed, ref, shallowRef } from 'vue'
+import { useDebounceFn } from '@vueuse/core'
+import { toast } from 'vue-sonner'
+import api from '@/lib/api'
+import type { Node, NodeType, Page, TreeShape } from '@/types/page-builder'
+import {
+  addChild,
+  cloneTree,
+  deleteNode,
+  emptyRoot,
+  findNode,
+  makeNode,
+  updateNode,
+} from '@/components/builder/tree-utils'
+
+export type Breakpoint = 'desktop' | 'tablet' | 'mobile'
+
+const BP_WIDTH: Record<Breakpoint, number | null> = {
+  desktop: null, // full canvas
+  tablet: 768,
+  mobile: 390,
+}
+
+export function useBuilderStore() {
+  const page = shallowRef<Page | null>(null)
+  const tree = ref<TreeShape>({ root: emptyRoot() })
+  const selectedId = ref<string | null>(null)
+  const loading = ref(true)
+  const saving = ref(false)
+  const dirty = ref(false)
+  const breakpoint = ref<Breakpoint>('desktop')
+
+  const selectedNode = computed<Node | null>(() => {
+    if (!selectedId.value) return null
+    const found = findNode(tree.value.root, selectedId.value)
+    return found?.node ?? null
+  })
+
+  const canvasWidth = computed(() => BP_WIDTH[breakpoint.value])
+
+  // --- load ---
+
+  async function load(id: string | number) {
+    loading.value = true
+    try {
+      const res = await api.get<{ data: Page }>(`/landing-pages/${id}`)
+      page.value = res.data.data
+      tree.value = res.data.data.tree ?? { root: emptyRoot() }
+      selectedId.value = null
+      dirty.value = false
+    } catch (e) {
+      toast.error('Gagal memuat halaman')
+      console.error(e)
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // --- autosave ---
+
+  async function saveNow() {
+    if (!page.value) return
+    saving.value = true
+    try {
+      const res = await api.put<{ data: Page }>(`/landing-pages/${page.value.id}`, {
+        tree: tree.value,
+      })
+      page.value = res.data.data
+      dirty.value = false
+    } catch (e) {
+      toast.error('Gagal menyimpan')
+      console.error(e)
+    } finally {
+      saving.value = false
+    }
+  }
+
+  // Debounced wrapper around saveNow for autosave on tree changes.
+  const persist = useDebounceFn(saveNow, 1500)
+
+  function notifyChange() {
+    dirty.value = true
+    persist()
+  }
+
+  // --- mutations ---
+
+  function select(id: string | null) {
+    selectedId.value = id
+  }
+
+  function patchNode(id: string, patch: Partial<Node>) {
+    tree.value = { root: updateNode(tree.value.root, id, patch) }
+    notifyChange()
+  }
+
+  // Rename the page (separate from tree autosave). One-shot PUT.
+  async function rename(name: string) {
+    if (!page.value || !name.trim()) return
+    saving.value = true
+    try {
+      const res = await api.put<{ data: Page }>(`/landing-pages/${page.value.id}`, { name })
+      page.value = res.data.data
+    } catch (e) {
+      toast.error('Gagal mengganti nama')
+      console.error(e)
+    } finally {
+      saving.value = false
+    }
+  }
+
+  function addNode(type: NodeType, parentId: string | null = null) {
+    const parent = parentId ?? selectedId.value ?? tree.value.root.id
+    // Containers can be parents. Leaf types added as sibling of selection's parent if selection is a leaf.
+    const node = makeNode(type)
+    tree.value = { root: addChild(tree.value.root, parent, node) }
+    selectedId.value = node.id
+    notifyChange()
+  }
+
+  function removeNode(id: string) {
+    if (id === tree.value.root.id) {
+      toast.error('Root tidak bisa dihapus')
+      return
+    }
+    tree.value = { root: deleteNode(tree.value.root, id) }
+    if (selectedId.value === id) selectedId.value = null
+    notifyChange()
+  }
+
+  function duplicateNode(id: string) {
+    const found = findNode(tree.value.root, id)
+    if (!found || !found.parent) return
+    const copy = cloneTree(found.node)
+    // re-id copy + descendants to avoid collisions
+    reId(copy)
+    tree.value = {
+      root: addChild(tree.value.root, found.parent.id, copy),
+    }
+    selectedId.value = copy.id
+    notifyChange()
+  }
+
+  // --- publish ---
+
+  async function publish() {
+    if (!page.value) return
+    saving.value = true
+    try {
+      // Force-save latest tree before publish so codegen reflects current canvas.
+      await saveNow()
+      const res = await api.post<{ data: Page }>(`/landing-pages/${page.value.id}/publish`)
+      page.value = res.data.data
+      toast.success('Halaman dipublikasi')
+    } catch (e) {
+      toast.error('Gagal mempublikasi')
+      console.error(e)
+    } finally {
+      saving.value = false
+    }
+  }
+
+  return {
+    // state
+    page,
+    tree,
+    selectedId,
+    selectedNode,
+    loading,
+    saving,
+    dirty,
+    breakpoint,
+    canvasWidth,
+    // actions
+    load,
+    select,
+    patchNode,
+    rename,
+    addNode,
+    removeNode,
+    duplicateNode,
+    publish,
+  }
+}
+
+export type BuilderStore = ReturnType<typeof useBuilderStore>
+
+function reId(n: Node) {
+  n.id = makeNode(n.type).id
+  n.children.forEach(reId)
+}

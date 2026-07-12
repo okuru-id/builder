@@ -1,23 +1,25 @@
 # Phase 3: Frontend Builder — Canvas Editor
 
-**Status:** ⬜ todo
+**Status:** ✅ done
 **Goal:** Route `/builder/:id`. Recursive `NodeRenderer`. Selection + inline edit. Autosave debounced.
 
 ## Checklist
 
-- [ ] TypeScript types `frontend/src/types/page-builder.ts`
-- [ ] Router: tambah `/builder/:id` (top-level, no sidebar, fullscreen)
-- [ ] `Builder.vue` layout: toolbar top, canvas center, panels kanan
-- [ ] `NodeRenderer.vue` recursive (shared canvas + codegen preview)
-- [ ] `Canvas.vue` viewport (zoom/pan, responsive breakpoints)
-- [ ] `Toolbar.vue`: publish button, undo/redo, breakpoint switch
-- [ ] `InspectorPanel.vue`: props editor (text, src, href, alt, classes)
-- [ ] `NodeTreePanel.vue`: outline tree sidebar
-- [ ] Selection state (click node → highlight border)
-- [ ] Inline text edit (`contenteditable` dblclick → edit → blur save)
-- [ ] Autosave debounced 2s (watch tree → PUT)
-- [ ] Add node palette (frame, text, image, button)
-- [ ] `bun run build` OK
+- [x] TypeScript types `frontend/src/types/page-builder.ts`
+- [x] Router: tambah `/builder/:id` (top-level, fullscreen, no sidebar)
+- [x] `Builder.vue` layout: toolbar top, canvas center, panels kiri (tree) + kanan (inspector)
+- [x] `NodeRenderer.vue` recursive (shared canvas + codegen preview via `readonly` prop)
+- [x] `Canvas.vue` viewport (breakpoint width: desktop/tablet 768/mobile 390)
+- [x] `Toolbar.vue`: page name (editable), breakpoint switch, dirty/saving indicator, publish button
+- [x] `InspectorPanel.vue`: props editor (text, level, src, alt, href, classes textarea, delete/duplicate)
+- [x] `NodeTreePanel.vue` + `TreeRow.vue`: outline tree sidebar + add-node palette
+- [x] Selection state (click node → outline ring; click canvas bg → deselect)
+- [x] Inline text edit (`contenteditable` dblclick → edit → blur/enter/esc save)
+- [x] Autosave debounced 1.5s (watch tree → PUT), `saveNow()` for publish flush
+- [x] Add node palette (frame, section, text, heading, image, button, link)
+- [x] Keyboard: Delete/Backspace hapus, Cmd/Ctrl+D duplikat (skip saat typing)
+- [x] Landing pages list view (`LandingPages.vue`) + sidebar entry
+- [x] `bun run build` OK
 
 ## NodeRenderer.vue (core)
 
@@ -50,12 +52,34 @@ const save = useDebounceFn(() => api.put(`/landing-pages/${id}`, { tree }), 2000
 watch(tree, save, { deep: true })
 ```
 
+## Hasil Verifikasi
+
+```
+bun run build         → ✓ built in 780ms
+GET /admin/builder/:id → 200 (SPA shell, 467 bytes)
+Builder-*.js chunk     → ada di assets/
+API login/list/show    → 200 (builder dependencies OK)
+```
+
+Runtime visual (canvas render, selection, inline edit) butuh verifikasi manual di browser.
+
+## Catatan
+
+- State via composable `useBuilderStore` + provide/inject (BUILDER_KEY). Ponytail: no Pinia, no new dep.
+- `TreeRow.vue` SFC terpisah dengan `defineOptions({ name: 'TreeRow' })` untuk rekursi — lebih bersih dari `h()` recursive yang berisiko typing error.
+- `NodeRenderer.vue` punya prop `readonly` agar bisa dipakai codegen preview / iframe snapshot tanpa interaction layer (Phase 7).
+- `ponytail:` zoom/pan canvas deferred — breakpoint width switch cukup untuk MVP. Tambah zoom saat butuh (Phase 4).
+- `ponytail:` undo/redo belum — butuh history stack. Tambah di Phase 4 bareng dengan drag/snap.
+- `ponytail:` inspector classes = textarea mentah. Style panel UI controls nyata di Phase 6.
+- `ponytail:` drag reorder belum — dnd-kit-vue Phase 4.
+
 ## Files
 
 - Create: `frontend/src/types/page-builder.ts`
-- Create: `frontend/src/views/Builder.vue`
-- Create: `frontend/src/components/builder/{NodeRenderer,Toolbar,InspectorPanel,NodeTreePanel,Canvas}.vue`
-- Modify: `frontend/src/router/index.ts`
+- Create: `frontend/src/components/builder/{tree-utils.ts,useBuilderStore.ts,injection.ts,NodeRenderer.vue,TreeRow.vue,Canvas.vue,Toolbar.vue,InspectorPanel.vue,NodeTreePanel.vue}`
+- Create: `frontend/src/views/{Builder.vue,LandingPages.vue}`
+- Modify: `frontend/src/router/index.ts` (route `/builder/:id`, `/pages`)
+- Modify: `frontend/src/components/AppSidebar.vue` (entry Pages)
 
 ## Commit
 
