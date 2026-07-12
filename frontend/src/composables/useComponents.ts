@@ -38,5 +38,13 @@ export function useComponents() {
     components.value = components.value.filter((c) => c.id !== id)
   }
 
-  return { components, loading, load, masterRoot, create, remove }
+  async function rename(id: number, name: string) {
+    const res = await api.put<{ data: Component }>(`/landing-components/${id}`, { name })
+    const updated = res.data.data
+    const i = components.value.findIndex((c) => c.id === id)
+    if (i >= 0) components.value[i] = updated
+    return updated
+  }
+
+  return { components, loading, load, masterRoot, create, remove, rename }
 }

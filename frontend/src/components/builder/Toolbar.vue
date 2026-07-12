@@ -66,7 +66,7 @@ function openPreview() {
       </button>
       <span class="text-xs text-neutral-400">v{{ store.page.value?.version ?? 0 }}</span>
       <span v-if="store.dirty.value" class="text-xs text-amber-600">●</span>
-      <span v-if="store.saving.value" class="text-xs text-neutral-400">menyimpan…</span>
+      <span v-if="store.saving.value" class="text-xs text-neutral-400">Saving…</span>
     </div>
 
     <div class="ml-4 flex items-center gap-0.5 rounded-lg border border-neutral-200 p-0.5">
@@ -91,12 +91,12 @@ function openPreview() {
       >
         <IconCheck v-if="!store.dirty.value && !store.saving.value" class="size-3.5 text-green-600" />
         <IconDeviceFloppy v-else class="size-3.5" />
-        {{ store.saving.value ? 'Menyimpan…' : store.dirty.value ? 'Simpan' : 'Tersimpan' }}
+        {{ store.saving.value ? 'Saving…' : store.dirty.value ? 'Save' : 'Saved' }}
       </Button>
       <Button variant="outline" size="sm" @click="showExport = true">
         <IconCode class="size-3.5" /> Export
       </Button>
-      <Button variant="outline" size="sm" @click="openPreview" title="Preview di tab baru">
+      <Button variant="outline" size="sm" @click="openPreview" title="Preview in new tab">
         <IconExternalLink class="size-3.5" /> Preview
       </Button>
       <Button variant="default" size="sm" :disabled="store.saving.value" @click="store.publish()">

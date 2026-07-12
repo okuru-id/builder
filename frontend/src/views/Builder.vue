@@ -4,8 +4,13 @@ import { onMounted, onUnmounted, provide, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import Toolbar from '@/components/builder/Toolbar.vue'
 import Canvas from '@/components/builder/Canvas.vue'
-import InspectorPanel from '@/components/builder/InspectorPanel.vue'
+import RightPanel from '@/components/builder/RightPanel.vue'
 import NodeTreePanel from '@/components/builder/NodeTreePanel.vue'
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from '@/components/ui/resizable'
 import { useBuilderStore } from '@/components/builder/useBuilderStore'
 import { BUILDER_KEY } from '@/components/builder/injection'
 
@@ -83,14 +88,26 @@ onUnmounted(() => {
 
 <template>
   <div v-if="store.loading.value" class="flex h-screen items-center justify-center bg-white">
-    <div class="text-sm text-neutral-400">Memuat builder…</div>
+    <div class="text-sm text-neutral-400">Loading builder…</div>
   </div>
   <div v-else class="flex h-screen flex-col bg-neutral-50">
     <Toolbar />
-    <div class="flex min-h-0 flex-1">
-      <NodeTreePanel />
-      <Canvas />
-      <InspectorPanel />
-    </div>
+    <ResizablePanelGroup
+      direction="horizontal"
+      class="flex min-h-0 flex-1"
+      auto-save-id="builder-layout"
+    >
+      <ResizablePanel :default-size="18" :min-size="12" :max-size="28">
+        <NodeTreePanel />
+      </ResizablePanel>
+      <ResizableHandle />
+      <ResizablePanel :default-size="60" :min-size="30">
+        <Canvas />
+      </ResizablePanel>
+      <ResizableHandle />
+      <ResizablePanel :default-size="22" :min-size="16" :max-size="42">
+        <RightPanel />
+      </ResizablePanel>
+    </ResizablePanelGroup>
   </div>
 </template>

@@ -47,11 +47,11 @@ export function defaultName(type: NodeType): string {
 export function defaultProps(type: NodeType): NodeProps {
   switch (type) {
     case 'text':
-      return { text: 'Teks baru' }
+      return { text: 'New text' }
     case 'heading':
       return { text: 'Judul', level: 2 }
     case 'button':
-      return { text: 'Tombol' }
+      return { text: 'Button' }
     case 'link':
       return { href: '#', text: 'Tautan' }
     case 'image':
@@ -191,9 +191,10 @@ export function replaceNode(root: Node, id: string, fn: (n: Node) => Node): Node
   }
 }
 
-// Deep clone via structuredClone (available in modern browsers + Node 17+).
+// Deep clone via JSON parse/stringify — nodes may contain Vue reactive proxies
+// that structuredClone cannot handle. ponytail: plain data tree, no Date/Map/Set.
 export function cloneTree<T>(t: T): T {
-  return structuredClone(t)
+  return JSON.parse(JSON.stringify(t))
 }
 
 export function countNodes(root: Node): number {

@@ -47,6 +47,7 @@ func Api() {
 			uploadController := admin.NewUploadController()
 			landingPageController := admin.NewLandingPageController()
 			landingComponentController := admin.NewLandingComponentController()
+			builderChatController := admin.NewBuilderChatController()
 
 			r.Get("/landing-pages", landingPageController.Index)
 			r.Post("/landing-pages", landingPageController.Store)
@@ -63,6 +64,8 @@ func Api() {
 			r.Get("/landing-components/{id}", landingComponentController.Show)
 			r.Put("/landing-components/{id}", landingComponentController.Update)
 			r.Delete("/landing-components/{id}", landingComponentController.Destroy)
+
+			r.Post("/builder/chat", builderChatController.Chat)
 
 			r.Get("/posts", postController.Index)
 			r.Post("/posts", postController.Store)

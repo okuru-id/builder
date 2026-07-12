@@ -34,6 +34,28 @@ export function currentClass(classes: string[], prefix: string): string | null {
   return val || null
 }
 
+// Exact-match lookup against a candidate set. Use when multiple token families
+// share a prefix (text-3xl vs text-blue-600 vs text-center) and prefix-match
+// would collide. Returns the candidate class present, or null.
+export function currentFromSet(classes: string[], candidates: readonly string[]): string | null {
+  for (const c of classes) {
+    if (candidates.includes(c)) return c
+  }
+  return null
+}
+
+// Extract the inner value of a `prefix-[value]` arbitrary class (e.g.
+// `text-[#abc]` → `#abc`, `w-[320px]` → `320px`). Returns null if absent.
+export function currentArbitrary(classes: string[], prefix: string): string | null {
+  const p = prefix + '-['
+  for (const c of classes) {
+    if (c.startsWith(p) && c.endsWith(']')) {
+      return c.slice(p.length, -1)
+    }
+  }
+  return null
+}
+
 // Check if a boolean class is present.
 export function hasClass(classes: string[], cls: string): boolean {
   return classes.includes(cls)

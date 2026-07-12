@@ -1,7 +1,8 @@
 <script setup lang="ts">
 // Right inspector: edits the selected node's props + classes. Delete/duplicate actions.
-import { computed, inject } from 'vue'
-import { IconCopy, IconTrash, IconArrowUp, IconArrowDown, IconUnlink } from '@tabler/icons-vue'
+// `bare` mode drops the <aside> wrapper so it can be embedded inside RightPanel tabs.
+import { computed, inject, ref } from 'vue'
+import { IconCopy, IconTrash, IconArrowUp, IconArrowDown, IconUnlink, IconCode, IconSettings, IconTypography, IconPhoto, IconLink } from '@tabler/icons-vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -20,8 +21,20 @@ import SpacingSection from './inspector/SpacingSection.vue'
 import BackgroundSection from './inspector/BackgroundSection.vue'
 import BorderSection from './inspector/BorderSection.vue'
 import SizeSection from './inspector/SizeSection.vue'
+import InspectorSection from './inspector/InspectorSection.vue'
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from '@/components/ui/alert-dialog'
 
 const store = inject(BUILDER_KEY, null)!
+
+withDefaults(defineProps<{ bare?: boolean }>(), { bare: false })
 
 const node = computed(() => store.selectedNode.value)
 
@@ -29,9 +42,23 @@ function setProp(key: string, value: unknown) {
   if (!node.value) return
   store.patchNode(node.value.id, { props: { ...node.value.props, [key]: value } })
 }
+function setName(value: string) {
+  if (!node.value) return
+  store.patchNode(node.value.id, { name: value })
+}
 
 function del() {
   if (node.value) store.removeNode(node.value.id)
+}
+const showDeleteConfirm = ref(false)
+function delConfirm() {
+  showDeleteConfirm.value = true
+}
+function confirmDelete() {
+  if (node.value) {
+    store.removeNode(node.value.id)
+    showDeleteConfirm.value = false
+  }
 }
 function dup() {
   if (node.value) store.duplicateNode(node.value.id)
@@ -64,77 +91,102 @@ function removeClass(idx: number) {
 </script>
 
 <template>
-  <aside class="flex w-72 flex-col border-l border-neutral-200 bg-white">
-    <div class="border-b border-neutral-200 px-4 py-3">
+  <component :is="bare ? 'div' : 'aside'" :class="bare ? 'flex h-full min-h-0 flex-col' : 'flex w-72 flex-col border-l border-neutral-200 bg-white'">
+    <div v-if="!bare" class="border-b border-neutral-200 px-4 py-3">
       <h2 class="text-sm font-semibold">Inspector</h2>
+      <p v-if="node" class="mt-0.5 text-[11px] text-neutral-400">{{ node.type }} · {{ node.name }}</p>
     </div>
 
     <div v-if="!node" class="p-4 text-sm text-neutral-400">
-      Pilih sebuah node di canvas untuk mengubah propertinya.
+      Select a node on the canvas to edit its properties.
     </div>
 
-    <div v-else class="flex-1 space-y-4 overflow-auto p-4">
-      <div class="space-y-1.5">
-        <Label class="text-xs">Nama</Label>
-        <Input :model-value="node.name" class="h-8" @update:model-value="(v) => setProp('name', v)" />
-        <!-- ponytail: name lives on the node for tree-panel display; we store it on props
-             as a UI convenience but the canonical name field is node.name. -->
-      </div>
-
-      <div class="space-y-1.5">
-        <Label class="text-xs">Tipe</Label>
-        <div class="text-sm text-neutral-600">{{ node.type }}</div>
-      </div>
-
-      <div
-        v-if="node.componentId"
-        class="flex items-center justify-between rounded-md border border-blue-200 bg-blue-50 px-3 py-2"
-      >
-        <div class="text-xs text-blue-700">
-          Instance dari komponen #{{ node.componentId }}
+    <div v-else class="flex-1 overflow-auto">
+      <!-- Umum: identity + actions, same shell as style sections -->
+      <InspectorSection title="General" :icon="IconSettings">
+        <div v-if="node.id !== 'root'" class="flex items-center justify-center gap-1 rounded-md border border-neutral-200 bg-neutral-50 p-1">
+          <Button variant="ghost" size="icon-sm" title="Move up" @click="moveUp">
+            <IconArrowUp class="size-4" />
+          </Button>
+          <Button variant="ghost" size="icon-sm" title="Move down" @click="moveDown">
+            <IconArrowDown class="size-4" />
+          </Button>
+          <Button variant="ghost" size="icon-sm" title="Duplicate" @click="dup">
+            <IconCopy class="size-4" />
+          </Button>
+          <Button variant="ghost" size="icon-sm" class="text-red-500 hover:bg-red-50 hover:text-red-600" title="Delete" @click="delConfirm">
+            <IconTrash class="size-4" />
+          </Button>
         </div>
-        <Button variant="outline" size="sm" @click="store.breakInstance(node.id)">
-          <IconUnlink class="size-3.5" /> Putus
-        </Button>
-      </div>
+
+        <div class="flex items-center gap-2">
+          <Label class="w-12 shrink-0 text-[11px] text-neutral-400">Name</Label>
+          <Input :model-value="node.name" class="h-7 flex-1 text-xs" @update:model-value="setName" />
+        </div>
+
+        <div class="flex items-center gap-2">
+          <Label class="w-12 shrink-0 text-[11px] text-neutral-400">Type</Label>
+          <div class="flex-1 text-xs text-neutral-600">{{ node.type }}</div>
+        </div>
+
+        <div
+          v-if="node.componentId"
+          class="flex items-center justify-between rounded-md border border-blue-200 bg-blue-50 px-2.5 py-1.5"
+        >
+          <div class="text-[11px] text-blue-700">
+            Instance #{{ node.componentId }}
+          </div>
+          <Button variant="outline" size="sm" class="h-7 px-2 text-xs" @click="store.breakInstance(node.id)">
+            <IconUnlink class="size-3.5" /> Detach
+          </Button>
+        </div>
+      </InspectorSection>
 
       <!-- Text-like: editable text + heading level -->
       <template v-if="node.type === 'text' || node.type === 'heading' || node.type === 'button' || node.type === 'link'">
-        <div class="space-y-1.5">
-          <Label class="text-xs">Teks</Label>
-          <Textarea
-            :model-value="String(node.props.text ?? '')"
-            rows="3"
-            @update:model-value="(v) => setProp('text', v)"
-          />
-        </div>
+        <InspectorSection title="Text" :icon="IconTypography">
+          <div class="flex items-start gap-2">
+            <Label class="mt-1.5 w-12 shrink-0 text-[11px] text-neutral-400">Text</Label>
+            <Textarea
+              :model-value="String(node.props.text ?? '')"
+              rows="2"
+              class="flex-1 text-xs"
+              @update:model-value="(v) => setProp('text', v)"
+            />
+          </div>
+          <div v-if="node.type === 'heading'" class="flex items-center gap-2">
+            <Label class="w-12 shrink-0 text-[11px] text-neutral-400">Level</Label>
+            <Select :model-value="String(node.props.level ?? 2)" @update:model-value="(v) => setProp('level', Number(v))">
+              <SelectTrigger class="h-7 flex-1 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem v-for="l in [1, 2, 3, 4, 5, 6]" :key="l" :value="String(l)">H{{ l }}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </InspectorSection>
       </template>
 
-      <div v-if="node.type === 'heading'" class="space-y-1.5">
-        <Label class="text-xs">Level</Label>
-        <Select :model-value="String(node.props.level ?? 2)" @update:model-value="(v) => setProp('level', Number(v))">
-          <SelectTrigger class="h-8"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem v-for="l in [1, 2, 3, 4, 5, 6]" :key="l" :value="String(l)">H{{ l }}</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      <template v-if="node.type === 'image'">
+        <InspectorSection title="Image" :icon="IconPhoto">
+          <div class="flex items-center gap-2">
+            <Label class="w-12 shrink-0 text-[11px] text-neutral-400">URL</Label>
+            <Input :model-value="String(node.props.src ?? '')" class="h-7 flex-1 text-xs" @update:model-value="(v) => setProp('src', v)" />
+          </div>
+          <div class="flex items-center gap-2">
+            <Label class="w-12 shrink-0 text-[11px] text-neutral-400">Alt</Label>
+            <Input :model-value="String(node.props.alt ?? '')" class="h-7 flex-1 text-xs" @update:model-value="(v) => setProp('alt', v)" />
+          </div>
+        </InspectorSection>
+      </template>
 
-      <div v-if="node.type === 'image'" class="space-y-3">
-        <div class="space-y-1.5">
-          <Label class="text-xs">URL gambar</Label>
-          <Input :model-value="String(node.props.src ?? '')" class="h-8" @update:model-value="(v) => setProp('src', v)" />
-        </div>
-        <div class="space-y-1.5">
-          <Label class="text-xs">Alt</Label>
-          <Input :model-value="String(node.props.alt ?? '')" class="h-8" @update:model-value="(v) => setProp('alt', v)" />
-        </div>
-      </div>
-
-      <div v-if="node.type === 'link'" class="space-y-1.5">
-        <Label class="text-xs">Href</Label>
-        <Input :model-value="String(node.props.href ?? '#')" class="h-8" @update:model-value="(v) => setProp('href', v)" />
-      </div>
+      <template v-if="node.type === 'link'">
+        <InspectorSection title="Link" :icon="IconLink">
+          <div class="flex items-center gap-2">
+            <Label class="w-12 shrink-0 text-[11px] text-neutral-400">Href</Label>
+            <Input :model-value="String(node.props.href ?? '#')" class="h-7 flex-1 text-xs" @update:model-value="(v) => setProp('href', v)" />
+          </div>
+        </InspectorSection>
+      </template>
 
       <!-- Style sections: only for non-instance nodes -->
       <template v-if="!node.componentId">
@@ -146,8 +198,7 @@ function removeClass(idx: number) {
         <SizeSection />
 
         <!-- Custom classes: arbitrary Tailwind class input -->
-        <div class="space-y-2 border-b border-neutral-100 pb-3">
-          <h3 class="text-xs font-medium uppercase tracking-wider text-neutral-500">Custom Class</h3>
+        <InspectorSection title="Custom Class" :icon="IconCode" :default-open="false">
           <div class="flex flex-wrap gap-1">
             <span
               v-for="(cls, idx) in node.classes"
@@ -158,36 +209,36 @@ function removeClass(idx: number) {
               <button
                 class="ml-0.5 rounded-sm text-neutral-400 opacity-0 transition-opacity hover:text-red-500 group-hover:opacity-100"
                 @click="removeClass(idx)"
-                title="Hapus class"
+                title="Remove class"
               >&times;</button>
             </span>
           </div>
           <Input
             :model-value="''"
-            class="h-8 font-mono text-xs"
-            placeholder="Tambah class, tekan Enter"
+            class="h-7 font-mono text-xs"
+            placeholder="Add class, press Enter"
             @keydown.enter.prevent="addClass"
           />
-        </div>
+        </InspectorSection>
       </template>
-      <div v-else class="rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs text-neutral-500">
-        Edit komponen master untuk mengubah instance. Klik &quot;Putus link&quot; di atas untuk jadikan copy independen.
-      </div>
-
-      <div class="flex flex-wrap gap-2 pt-2" v-if="node.id !== 'root'">
-        <Button variant="outline" size="sm" @click="moveUp">
-          <IconArrowUp class="size-4" /> Naik
-        </Button>
-        <Button variant="outline" size="sm" @click="moveDown">
-          <IconArrowDown class="size-4" /> Turun
-        </Button>
-        <Button variant="outline" size="sm" @click="dup">
-          <IconCopy class="size-4" /> Duplikat
-        </Button>
-        <Button variant="destructive" size="sm" @click="del">
-          <IconTrash class="size-4" /> Hapus
-        </Button>
+      <div v-else class="border-b border-neutral-100 px-3 py-2 text-[11px] text-neutral-500">
+        Edit the master component to change instances. Click Detach above to make an independent copy.
       </div>
     </div>
-  </aside>
+
+    <AlertDialog v-model:open="showDeleteConfirm">
+      <AlertDialogContent>
+        <AlertDialogTitle>Delete element</AlertDialogTitle>
+        <AlertDialogDescription>
+          Are you sure you want to delete <strong>{{ node?.name }}</strong>? This action cannot be undone.
+        </AlertDialogDescription>
+        <div class="flex justify-end gap-2">
+          <AlertDialogCancel class="h-8 px-3 text-xs">Cancel</AlertDialogCancel>
+          <AlertDialogAction class="h-8 px-3 text-xs bg-red-600 hover:bg-red-700 text-white" @click="confirmDelete">
+            Delete
+          </AlertDialogAction>
+        </div>
+      </AlertDialogContent>
+    </AlertDialog>
+  </component>
 </template>

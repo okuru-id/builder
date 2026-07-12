@@ -30,7 +30,7 @@ async function load() {
     const res = await api.get<{ data: Page[] }>('/landing-pages')
     pages.value = res.data.data
   } catch (e) {
-    toast.error('Gagal memuat halaman')
+    toast.error('Failed to load pages')
     console.error(e)
   } finally {
     loading.value = false
@@ -39,10 +39,10 @@ async function load() {
 
 async function createPage() {
   try {
-    const res = await api.post<{ data: Page }>('/landing-pages', { name: 'Halaman baru' })
+    const res = await api.post<{ data: Page }>('/landing-pages', { name: 'New page' })
     router.push({ name: 'builder', params: { id: res.data.data.id } })
   } catch (e) {
-    toast.error('Gagal membuat halaman')
+    toast.error('Failed to create page')
     console.error(e)
   }
 }
@@ -58,22 +58,22 @@ function preview(p: Page) {
 async function duplicate(p: Page) {
   try {
     const res = await api.post<{ data: Page }>(`/landing-pages/${p.id}/duplicate`)
-    toast.success(`"${p.name}" diduplikasi`)
+    toast.success(`"${p.name}" duplicated`)
     pages.value.unshift(res.data.data)
   } catch (e) {
-    toast.error('Gagal menduplikasi halaman')
+    toast.error('Failed to duplicate page')
     console.error(e)
   }
 }
 
 async function deletePage(p: Page) {
-  if (!confirm(`Hapus halaman "${p.name}"? Tindakan ini tidak bisa dibatalkan.`)) return
+  if (!confirm(`Delete page "${p.name}"? This action cannot be undone.`)) return
   try {
     await api.delete(`/landing-pages/${p.id}`)
     pages.value = pages.value.filter((x) => x.id !== p.id)
-    toast.success(`"${p.name}" dihapus`)
+    toast.success(`"${p.name}" deleted`)
   } catch (e) {
-    toast.error('Gagal menghapus halaman')
+    toast.error('Failed to delete page')
     console.error(e)
   }
 }
@@ -83,10 +83,10 @@ function timeAgo(dateStr: string): string {
   const d = new Date(dateStr)
   const now = new Date()
   const diff = Math.floor((now.getTime() - d.getTime()) / 1000)
-  if (diff < 60) return 'baru saja'
-  if (diff < 3600) return `${Math.floor(diff / 60)} menit lalu`
-  if (diff < 86400) return `${Math.floor(diff / 3600)} jam lalu`
-  if (diff < 2592000) return `${Math.floor(diff / 86400)} hari lalu`
+  if (diff < 60) return 'just now'
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
+  if (diff < 2592000) return `${Math.floor(diff / 86400)}d ago`
   return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
@@ -98,14 +98,14 @@ onMounted(load)
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-semibold tracking-tight">Landing Pages</h1>
-        <p class="text-sm text-muted-foreground">Kelola halaman landing builder canvas.</p>
+        <p class="text-sm text-muted-foreground">Manage builder canvas landing pages.</p>
       </div>
       <div class="flex gap-2">
         <Button variant="outline" @click="showImport = true">
           <IconUpload class="size-4" /> Import
         </Button>
         <Button @click="createPage">
-          <IconPlus class="size-4" /> Halaman baru
+          <IconPlus class="size-4" /> New page
         </Button>
       </div>
     </div>
@@ -128,11 +128,11 @@ onMounted(load)
           <IconPlus class="size-6 text-muted-foreground" />
         </div>
         <div>
-          <p class="font-medium">Belum ada halaman</p>
-          <p class="text-sm text-muted-foreground">Buat halaman pertama Anda.</p>
+          <p class="font-medium">No pages yet</p>
+          <p class="text-sm text-muted-foreground">Create your first page.</p>
         </div>
         <Button @click="createPage">
-          <IconPlus class="size-4" /> Halaman baru
+          <IconPlus class="size-4" /> New page
         </Button>
       </CardContent>
     </Card>
@@ -175,14 +175,14 @@ onMounted(load)
             </span>
             <span
               class="flex size-9 items-center justify-center rounded-md bg-white/95 text-neutral-700 shadow hover:bg-white"
-              title="Duplikasi"
+              title="Duplicate"
               @click.stop="duplicate(p)"
             >
               <IconCopy class="size-4" />
             </span>
             <span
               class="flex size-9 items-center justify-center rounded-md bg-white/95 text-red-600 shadow hover:bg-white"
-              title="Hapus"
+              title="Delete"
               @click.stop="deletePage(p)"
             >
               <IconTrash class="size-4" />

@@ -42,13 +42,13 @@ function doParse() {
     const isVue = fileName.value.endsWith('.vue') || src.includes('<template>')
     parsedTree = isVue ? parseVueTemplate(src) : parseHTML(src)
     if (!parsedTree || (!parsedTree.children?.length && !parsedTree.props?.text)) {
-      parseError.value = 'Tidak ditemukan elemen yang bisa di-parse. Periksa HTML.'
+      parseError.value = 'No parseable elements found. Check the HTML.'
     } else {
       countNodes(parsedTree)
       if (!pageName.value) pageName.value = fileName.value.replace(/\.\w+$/, '') || 'Imported'
     }
   } catch (e: any) {
-    parseError.value = e?.message || 'Gagal parse HTML'
+    parseError.value = e?.message || 'Failed to parse HTML'
     parsedTree = null
   } finally {
     parsing.value = false
@@ -76,7 +76,7 @@ function onFileInput(e: Event) {
 
 function readFile(file: File) {
   if (!file.name.match(/\.(html?|vue|htm)$/i)) {
-    toast.warning('Hanya file .html, .htm, atau .vue')
+    toast.warning('Only .html, .htm, or .vue files')
     return
   }
   fileName.value = file.name
@@ -98,10 +98,10 @@ async function createPage() {
       tree: { root: parsedTree },
     })
     created.value = true
-    toast.success('Halaman dibuat dari import')
+    toast.success('Page created from import')
     router.push({ name: 'builder', params: { id: res.data.data.id } })
   } catch (e: any) {
-    toast.error(e?.response?.data?.error || 'Gagal membuat halaman')
+    toast.error(e?.response?.data?.error || 'Failed to create page')
   } finally {
     creating.value = false
   }
@@ -133,7 +133,7 @@ const creating = ref(false)
               v-model="rawHtml"
               rows="10"
               class="min-h-[200px] resize-y font-mono text-xs"
-              placeholder="Tempel HTML atau Vue template di sini..."
+              placeholder="Paste HTML or Vue template here…"
             />
           </TabsContent>
 
@@ -147,8 +147,8 @@ const creating = ref(false)
               @click="fileInput?.click()"
             >
               <IconUpload class="mb-2 size-8 text-neutral-400" />
-              <p class="text-sm text-neutral-600">Seret file .html atau .vue ke sini</p>
-              <p class="mt-1 text-xs text-neutral-400">atau klik untuk pilih file</p>
+              <p class="text-sm text-neutral-600">Drag .html or .vue files here</p>
+              <p class="mt-1 text-xs text-neutral-400">or click to choose a file</p>
               <input ref="fileInput" type="file" accept=".html,.htm,.vue" class="hidden" @change="onFileInput" />
             </div>
           </TabsContent>
@@ -156,7 +156,7 @@ const creating = ref(false)
           <!-- Parse controls -->
           <div v-if="tab === 'paste'" class="flex justify-end pt-2">
             <Button size="sm" :disabled="!rawHtml.trim() || parsing" @click="doParse">
-              {{ parsing ? 'Mem-parse…' : 'Parse' }}
+              {{ parsing ? 'Parsing…' : 'Parse' }}
             </Button>
           </div>
 
@@ -173,14 +173,14 @@ const creating = ref(false)
             </div>
 
             <div class="space-y-1.5">
-              <Label class="text-xs">Nama halaman</Label>
-              <Input v-model="pageName" class="h-8" placeholder="Nama halaman baru" />
+              <Label class="text-xs">Page name</Label>
+              <Input v-model="pageName" class="h-8" placeholder="New page name" />
             </div>
 
             <div class="flex justify-end gap-2 pt-2">
-              <Button variant="outline" size="sm" @click="emit('close')">Batal</Button>
+              <Button variant="outline" size="sm" @click="emit('close')">Cancel</Button>
               <Button size="sm" :disabled="!pageName.trim() || creating" @click="createPage">
-                {{ creating ? 'Membuat…' : 'Buat Halaman' }}
+                {{ creating ? 'Creating…' : 'Create Page' }}
               </Button>
             </div>
           </div>

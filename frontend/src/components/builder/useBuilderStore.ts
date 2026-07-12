@@ -11,6 +11,7 @@ import {
   deleteNode,
   emptyRoot,
   findNode,
+  insertChild,
   makeNode,
   moveSibling,
   reparent as reparentTree,
@@ -65,7 +66,7 @@ export function useBuilderStore() {
       selectedId.value = null
       dirty.value = false
     } catch (e) {
-      toast.error('Gagal memuat halaman')
+      toast.error('Failed to load page')
       console.error(e)
     } finally {
       loading.value = false
@@ -84,7 +85,7 @@ export function useBuilderStore() {
       page.value = res.data.data
       dirty.value = false
     } catch (e) {
-      toast.error('Gagal menyimpan')
+      toast.error('Failed to save')
       console.error(e)
     } finally {
       saving.value = false
@@ -118,7 +119,7 @@ export function useBuilderStore() {
       const res = await api.put<{ data: Page }>(`/landing-pages/${page.value.id}`, { name })
       page.value = res.data.data
     } catch (e) {
-      toast.error('Gagal mengganti nama')
+      toast.error('Failed to rename')
       console.error(e)
     } finally {
       saving.value = false
@@ -136,7 +137,7 @@ export function useBuilderStore() {
 
   function removeNode(id: string) {
     if (id === tree.value.root.id) {
-      toast.error('Root tidak bisa dihapus')
+      toast.error('Root cannot be deleted')
       return
     }
     tree.value = { root: deleteNode(tree.value.root, id) }
@@ -151,7 +152,7 @@ export function useBuilderStore() {
     // re-id copy + descendants to avoid collisions
     reId(copy)
     tree.value = {
-      root: addChild(tree.value.root, found.parent.id, copy),
+      root: insertChild(tree.value.root, found.parent.id, copy, found.index + 1),
     }
     selectedId.value = copy.id
     notifyChange()
@@ -220,7 +221,7 @@ export function useBuilderStore() {
     const master = cloneTree(found.node)
     reId(master)
     const c = await components.create(name, { root: master })
-    toast.success(`Komponen “${c.name}” disimpan`)
+    toast.success(`Component “${c.name}” saved`)
     return c
   }
 
@@ -268,9 +269,9 @@ export function useBuilderStore() {
       await saveNow()
       const res = await api.post<{ data: Page }>(`/landing-pages/${page.value.id}/publish`)
       page.value = res.data.data
-      toast.success('Halaman dipublikasi')
+      toast.success('Page published')
     } catch (e) {
-      toast.error('Gagal mempublikasi')
+      toast.error('Failed to publish')
       console.error(e)
     } finally {
       saving.value = false

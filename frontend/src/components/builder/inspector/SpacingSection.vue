@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { inject, computed } from 'vue'
 import { BUILDER_KEY } from '../injection'
-import { replaceClass, currentClass, SPACING } from '@/types/tokens'
-import { Label } from '@/components/ui/label'
+import { replaceClass, currentFromSet, SPACING } from '@/types/tokens'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import InspectorSection from './InspectorSection.vue'
+import { IconArrowsHorizontal } from '@tabler/icons-vue'
 
 const store = inject(BUILDER_KEY, null)!
 const node = computed(() => store.selectedNode.value)
@@ -14,41 +15,50 @@ function cls(patterns: string[], add: string | null) {
 }
 
 function spacingOpts(prefix: string) {
-  const v = currentClass(node.value!.classes, prefix)
-  return { model: v ?? '0', set: (val: unknown) => cls([prefix], val === '0' ? null : `${prefix}-${String(val)}`) }
+  const cands = SPACING.map((s) => `${prefix}-${s}`)
+  const v = currentFromSet(node.value!.classes, cands)?.slice(prefix.length + 1)
+  return {
+    model: v ?? '0',
+    set: (val: unknown) => cls([prefix], val === '0' ? null : `${prefix}-${String(val)}`),
+  }
 }
+
+// Two groups: padding (p/px/py) and margin (m/mx/my). Rendered as compact
+// label-left / control-right rows.
+const groups = [
+  { title: 'Padding', items: [
+    { prefix: 'p', label: 'All' },
+    { prefix: 'px', label: 'Horizontal' },
+    { prefix: 'py', label: 'Vertical' },
+  ]},
+  { title: 'Margin', items: [
+    { prefix: 'm', label: 'All' },
+    { prefix: 'mx', label: 'Horizontal' },
+    { prefix: 'my', label: 'Vertical' },
+  ]},
+]
 </script>
 
 <template>
-  <div v-if="node" class="space-y-2 border-b border-neutral-100 pb-3">
-    <h3 class="text-xs font-medium uppercase tracking-wider text-neutral-500">Spasi</h3>
-
-    <!-- Padding: grouped all, x, y -->
-    <div v-for="grp in [{prefix:'p',label:'Padding semua'},{prefix:'px',label:'Padding kiri/kanan'},{prefix:'py',label:'Padding atas/bawah'}]" :key="grp.prefix" class="space-y-1">
-      <Label class="text-xs">{{ grp.label }}</Label>
-      <Select
-        :model-value="spacingOpts(grp.prefix).model"
-        @update:model-value="spacingOpts(grp.prefix).set"
+  <InspectorSection title="Spacing" :icon="IconArrowsHorizontal" :show="!!node">
+    <div v-for="grp in groups" :key="grp.title" class="space-y-1">
+      <div class="text-[10px] font-medium uppercase tracking-wide text-neutral-400">{{ grp.title }}</div>
+      <div
+        v-for="item in grp.items"
+        :key="item.prefix"
+        class="flex items-center justify-between gap-2"
       >
-        <SelectTrigger class="h-8"><SelectValue /></SelectTrigger>
-        <SelectContent>
-          <SelectItem v-for="s in SPACING" :key="s" :value="s">{{ s }}</SelectItem>
-        </SelectContent>
-      </Select>
+        <span class="text-[11px] text-neutral-500">{{ item.label }}</span>
+        <Select
+          :model-value="spacingOpts(item.prefix).model"
+          @update:model-value="spacingOpts(item.prefix).set"
+        >
+          <SelectTrigger class="h-7 w-20 px-2 text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem v-for="s in SPACING" :key="s" :value="s">{{ s }}</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
     </div>
-
-    <!-- Margin: grouped all, x, y -->
-    <div v-for="grp in [{prefix:'m',label:'Margin semua'},{prefix:'mx',label:'Margin kiri/kanan'},{prefix:'my',label:'Margin atas/bawah'}]" :key="grp.prefix" class="space-y-1">
-      <Label class="text-xs">{{ grp.label }}</Label>
-      <Select
-        :model-value="spacingOpts(grp.prefix).model"
-        @update:model-value="spacingOpts(grp.prefix).set"
-      >
-        <SelectTrigger class="h-8"><SelectValue /></SelectTrigger>
-        <SelectContent>
-          <SelectItem v-for="s in SPACING" :key="s" :value="s">{{ s }}</SelectItem>
-        </SelectContent>
-      </Select>
-    </div>
-  </div>
+  </InspectorSection>
 </template>

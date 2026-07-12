@@ -73,9 +73,9 @@ function doSafelistDownload() {
 
         <TabsContent value="safelist" class="flex flex-1 flex-col overflow-hidden p-5 pt-3">
           <p class="mb-2 text-xs text-neutral-500">
-            Daftar unik semua Tailwind class yang digunakan di halaman ini. Tempel ke
+            Unique list of every Tailwind class used on this page. Paste it into
             <code class="rounded bg-neutral-100 px-1">tailwind.config.safelist</code>
-            untuk mencegah purging.
+            to prevent purging.
           </p>
           <textarea
             readonly
@@ -96,7 +96,7 @@ function doSafelistDownload() {
           <Button variant="outline" size="sm" @click="doCopy">
             <IconCopy v-if="!copied" class="size-3.5" />
             <IconCheck v-else class="size-3.5 text-green-600" />
-            {{ copied ? 'Tersalin' : 'Salin HTML' }}
+            {{ copied ? 'Copied' : 'Copy HTML' }}
           </Button>
           <Button variant="default" size="sm" @click="doDownload">
             <IconDownload class="size-3.5" /> Download HTML

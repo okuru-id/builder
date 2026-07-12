@@ -33,10 +33,10 @@ const paletteIcons: Record<NodeType, any> = {
 const paletteLabels: Record<string, string> = {
   frame: 'Frame',
   section: 'Section',
-  text: 'Teks',
+  text: 'Text',
   heading: 'Heading',
-  image: 'Gambar',
-  button: 'Tombol',
+  image: 'Image',
+  button: 'Button',
   link: 'Link',
 }
 
@@ -56,7 +56,7 @@ function addType(t: NodeType) {
 </script>
 
 <template>
-  <aside class="flex w-60 flex-col border-r border-neutral-200 bg-white">
+  <aside class="flex h-full w-full flex-col border-r border-neutral-200 bg-white">
     <!-- Header -->
     <div class="flex items-center justify-between border-b border-neutral-200 px-3 py-2.5">
       <div class="flex items-center gap-1.5">
@@ -80,13 +80,13 @@ function addType(t: NodeType) {
 
     <!-- Add node palette -->
     <div class="border-t border-neutral-200 p-2">
-      <div class="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-neutral-400">Tambah Node</div>
+      <div class="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-neutral-400">Add Node</div>
       <div class="grid grid-cols-4 gap-1">
         <button
           v-for="t in PALETTE_TYPES"
           :key="t"
           class="flex flex-col items-center gap-0.5 rounded-md border border-neutral-200 py-1.5 text-[10px] text-neutral-600 transition-colors hover:border-neutral-300 hover:bg-neutral-50 active:bg-neutral-100"
-          :title="`Tambah ${paletteLabels[t] ?? t}`"
+          :title="`Add ${paletteLabels[t] ?? t}`"
           @click="addType(t)"
         >
           <component :is="paletteIcons[t]" class="size-3.5" />

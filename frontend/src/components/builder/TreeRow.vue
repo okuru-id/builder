@@ -46,7 +46,6 @@ const expanded = ref(true)
 const INDENT = 20
 const pad = (d: number) => d * INDENT + 8
 const guideX = (d: number) => d * INDENT + 16
-const iconX = (d: number) => pad(d) + 18
 
 const selected = () => store.selectedId.value === props.node.id
 
@@ -138,7 +137,7 @@ function onDragEnd() {
       @dragend="onDragEnd"
     >
       <!-- Ancestor vertical lines -->
-      <template v-for="(parentLast, idx) in ancestorLines" :key="idx">
+      <template v-for="(_parentLast, idx) in ancestorLines" :key="idx">
         <span
           v-if="!ancestorsIsLast[idx + 1]"
           class="pointer-events-none absolute border-l border-neutral-300"

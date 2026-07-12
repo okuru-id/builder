@@ -1,14 +1,32 @@
 <script setup lang="ts">
 import { inject, computed } from 'vue'
 import { BUILDER_KEY } from '../injection'
-import { replaceClass, hasClass, currentClass, BORDER_WIDTHS, BORDER_RADII } from '@/types/tokens'
+import {
+  replaceClass,
+  hasClass,
+  currentFromSet,
+  currentArbitrary,
+  BORDER_WIDTHS,
+  BORDER_RADII,
+} from '@/types/tokens'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Input } from '@/components/ui/input'
+import InspectorSection from './InspectorSection.vue'
+import { IconBorderAll } from '@tabler/icons-vue'
 
 const store = inject(BUILDER_KEY, null)!
 const node = computed(() => store.selectedNode.value)
+
+const WIDTH_CLASSES = BORDER_WIDTHS.map((w) => (w === '1' ? 'border' : `border-${w}`))
+const RADIUS_CLASSES = BORDER_RADII.map((r) => {
+  if (r === 'none') return 'rounded-none'
+  if (r === 'md') return 'rounded-md'
+  if (r === 'lg') return 'rounded-lg'
+  return `rounded-${r}`
+})
+const BORDER_COLOR_PRESETS = ['gray-300', 'gray-500', 'blue-500', 'red-500', 'green-500', 'amber-500', 'neutral-900', 'white', 'black']
 
 function cls(patterns: string[], add: string | null) {
   if (!node.value) return
@@ -17,41 +35,47 @@ function cls(patterns: string[], add: string | null) {
 
 function setBorderColor(e: Event) {
   const hex = (e.target as HTMLInputElement).value
-  cls(['border-gray', 'border-blue', 'border-green', 'border-red', 'border-amber', 'border-neutral', 'border', 'border-white', 'border-black'], hex ? `border-[${hex}]` : null)
-  // Ensure border is visible when color is set
+  cls(['border-[', ...BORDER_COLOR_PRESETS.map((c) => `border-${c}`)], hex ? `border-[${hex}]` : null)
   if (hex && !hasClass(node.value!.classes, 'border')) {
     store.patchNode(node.value!.id, { classes: [...node.value!.classes, 'border'] })
   }
 }
 
-function currentBorderHex(): string {
-  const v = currentClass(node.value!.classes, 'border')
-  if (!v) return '#000000'
-  const m = v.match(/\[(#[\da-fA-F]{3,8})\]/)
-  return m?.[1] ?? '#000000'
+function currentWidth() {
+  return currentFromSet(node.value!.classes, WIDTH_CLASSES) ?? '1'
+}
+function currentRadius() {
+  return currentFromSet(node.value!.classes, RADIUS_CLASSES) ?? 'none'
+}
+function currentBorderClass() {
+  const arb = currentArbitrary(node.value!.classes, 'border')
+  if (arb) return `border-[${arb}]`
+  return node.value!.classes.find((c) => /^border-(gray|blue|green|red|amber|neutral|slate|zinc|stone)-?\d{0,3}$/.test(c)) ?? null
+}
+function currentBorderHex() {
+  return currentArbitrary(node.value!.classes, 'border') ?? '#000000'
 }
 </script>
 
 <template>
-  <div v-if="node" class="space-y-2 border-b border-neutral-100 pb-3">
-    <h3 class="text-xs font-medium uppercase tracking-wider text-neutral-500">Garis</h3>
+  <InspectorSection title="Border" :icon="IconBorderAll" :show="!!node">
 
     <div class="flex items-center justify-between">
-      <Label class="text-xs">Tampilkan Garis</Label>
+      <Label class="text-[11px] text-neutral-400">Show Border</Label>
       <Switch
-        :model-value="hasClass(node.classes, 'border')"
-        @update:model-value="(v) => cls(['border', 'border-0', 'border-2', 'border-4', 'border-8'], v ? 'border' : null)"
+        :model-value="hasClass(node?.classes ?? [], 'border')"
+        @update:model-value="(v) => cls(['border', ...WIDTH_CLASSES], v ? 'border' : null)"
       />
     </div>
 
-    <template v-if="hasClass(node.classes, 'border')">
+    <template v-if="hasClass(node?.classes ?? [], 'border')">
       <div class="space-y-1.5">
-        <Label class="text-xs">Tebal</Label>
+        <Label class="text-[11px] text-neutral-400">Width</Label>
         <Select
-          :model-value="currentClass(node.classes, 'border') ?? '1'"
-          @update:model-value="(v) => cls(['border-0', 'border-2', 'border-4', 'border-8'], v === '1' ? null : `border-${String(v)}`)"
+          :model-value="currentWidth()"
+          @update:model-value="(v) => cls([...WIDTH_CLASSES], String(v) === '1' ? 'border' : `border-${String(v)}`)"
         >
-          <SelectTrigger class="h-8"><SelectValue /></SelectTrigger>
+          <SelectTrigger class="h-7 text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem v-for="w in BORDER_WIDTHS" :key="w" :value="w">{{ w === '1' ? 'default' : w }}</SelectItem>
           </SelectContent>
@@ -59,35 +83,35 @@ function currentBorderHex(): string {
       </div>
 
       <div class="space-y-1.5">
-        <Label class="text-xs">Warna Garis</Label>
+        <Label class="text-[11px] text-neutral-400">Border Color</Label>
         <div class="flex items-center gap-2">
           <input
             type="color"
             :value="currentBorderHex()"
-            class="h-7 w-10 cursor-pointer rounded border border-neutral-300 p-0.5"
+            class="h-7 w-10 shrink-0 cursor-pointer rounded border border-neutral-300 p-0.5"
             @input="setBorderColor"
           />
           <Input
-            :model-value="currentClass(node.classes, 'border') ?? ''"
+            :model-value="currentBorderClass() ?? ''"
             class="h-8 flex-1 font-mono text-xs"
             placeholder="border-gray-300"
-            @update:model-value="(v) => cls(['border'], String(v) || null)"
+            @update:model-value="(v) => cls(['border-[', ...BORDER_COLOR_PRESETS.map((c) => `border-${c}`)], String(v) || null)"
           />
         </div>
       </div>
 
       <div class="space-y-1.5">
-        <Label class="text-xs">Sudut Lengkung</Label>
+        <Label class="text-[11px] text-neutral-400">Radius</Label>
         <Select
-          :model-value="currentClass(node.classes, 'rounded') ?? 'none'"
-          @update:model-value="(v) => cls(['rounded-none', 'rounded-sm', 'rounded', 'rounded-md', 'rounded-lg', 'rounded-xl', 'rounded-2xl', 'rounded-3xl', 'rounded-full'], v === 'none' ? null : (v === 'md' ? 'rounded-md' : `rounded-${String(v)}`))"
+          :model-value="currentRadius()"
+          @update:model-value="(v) => cls([...RADIUS_CLASSES], v === 'none' ? null : (v === 'md' ? 'rounded-md' : `rounded-${String(v)}`))"
         >
-          <SelectTrigger class="h-8"><SelectValue /></SelectTrigger>
+          <SelectTrigger class="h-7 text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem v-for="r in BORDER_RADII" :key="r" :value="r">{{ r }}</SelectItem>
           </SelectContent>
         </Select>
       </div>
     </template>
-  </div>
+  </InspectorSection>
 </template>
