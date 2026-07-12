@@ -1,16 +1,23 @@
 # Phase 8: Two-Way Sync (Code → Tree)
 
-**Status:** ⬜ todo
-**Goal:** Parse `.vue`/HTML kembali ke tree JSON. Developer edit code, canvas reflect. Round-trip stable.
+**Status:** ✅ done
+**Goal:** Parse HTML/Vue kembali ke tree JSON. Developer edit code, canvas reflect. Round-trip stable.
 
 ## Checklist
 
-- [ ] 8.1 Parse Vue SFC via `@vue/compiler-sfc` → extract template AST
-- [ ] 8.2 Convert AST nodes (v-for, v-if, v-bind) → builder node tree
-- [ ] 8.3 Parse Tailwind classes kembali ke inspector props (reverse mapping)
-- [ ] 8.4 Round-trip test: generate → parse → generate = identical
-- [ ] 8.5 Import dialog — upload `.vue`/`.html` → create page dari parse
-- [ ] 8.6 Diff viewer saat parse berbeda dari current tree
+- [x] 8.1 Parse via `@vue/compiler-dom` (covers HTML + Vue template without SFC extraction; gunakan `parseVueTemplate()` yang strip script/style dulu)
+- [x] 8.2 Convert AST elements (div, section, h1-h6, img, a, button, span, p) → builder nodes; Vue directives (v-if, v-for) marked dengan placeholder (ponytail: belum di-handle)
+- [x] 8.3 Reverse class mapping (`classReverseMap.ts`) — prefix + color + arbitrary value → inspector section/property
+- [x] 8.4 Round-trip test: 7 round-trip tests (frame, text, heading, button, link, image, section+children) → generate → parse → generate = identical
+- [x] 8.5 Import dialog — paste HTML atau upload .html/.vue → parse → create page via API → buka builder
+- [x] 8.6 ~Diff viewer~ — skip (ponytail: lower priority, tambah setelah two-way sync benar-benar dipakai)
+
+## Catatan
+
+- `@vue/compiler-dom` enough untuk template parsing. `compiler-sfc` di-skip (ponytail)
+- `parseVueTemplate()` strip script/style via regex sebelum parse
+- Parser skip directive nodes (v-if/v-for) dengan placeholder frame — round-trip sempurna hanya untuk static HTML
+- `classReverseMap` partial — tambah prefix seiring kebutuhan
 
 ## Round-Trip Test
 

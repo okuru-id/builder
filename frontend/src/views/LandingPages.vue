@@ -3,11 +3,12 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
-import { IconPlus, IconEdit, IconExternalLink } from '@tabler/icons-vue'
+import { IconPlus, IconEdit, IconExternalLink, IconUpload } from '@tabler/icons-vue'
 import api from '@/lib/api'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import ImportDialog from '@/components/builder/ImportDialog.vue'
 
 interface Page {
   id: number
@@ -20,6 +21,7 @@ interface Page {
 const router = useRouter()
 const pages = ref<Page[]>([])
 const loading = ref(true)
+const showImport = ref(false)
 
 async function load() {
   loading.value = true
@@ -62,9 +64,14 @@ onMounted(load)
         <h1 class="text-2xl font-semibold tracking-tight">Landing Pages</h1>
         <p class="text-sm text-muted-foreground">Kelola halaman landing builder canvas.</p>
       </div>
-      <Button @click="createPage">
-        <IconPlus class="size-4" /> Halaman baru
-      </Button>
+      <div class="flex gap-2">
+        <Button variant="outline" @click="showImport = true">
+          <IconUpload class="size-4" /> Import
+        </Button>
+        <Button @click="createPage">
+          <IconPlus class="size-4" /> Halaman baru
+        </Button>
+      </div>
     </div>
 
     <Card v-if="loading">
@@ -100,4 +107,6 @@ onMounted(load)
       </Card>
     </div>
   </div>
+
+  <ImportDialog v-if="showImport" @close="showImport = false" />
 </template>
