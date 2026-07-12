@@ -10,6 +10,7 @@ import (
 
 	"okuru/app/facades"
 	"okuru/app/models"
+	"okuru/app/services"
 )
 
 type LandingPageController struct{}
@@ -153,10 +154,27 @@ func (c *LandingPageController) Publish(ctx http.Context) http.Response {
 	}
 	page.PublishedTree = page.Tree
 	page.Status = "published"
+
+	// Run tree → HTML codegen synchronously at publish time. Cached in published_html,
+	// served raw by the storefront so the published page never depends on the editor.
+	if html, err := renderHTML(page.Tree, page.Name); err == nil {
+		page.PublishedHTML = html
+	}
+
 	if _, err := facades.Orm().Query().Where("id = ?", id).Update(&page); err != nil {
 		return ctx.Response().Json(http.StatusInternalServerError, http.Json{"error": err.Error()})
 	}
 	return ctx.Response().Success().Json(http.Json{"data": page})
+}
+
+// renderHTML converts a datatypes.JSON tree into a full HTML document via the
+// LandingCodegen service.
+func renderHTML(tree datatypes.JSON, title string) (string, error) {
+	var m map[string]any
+	if err := json.Unmarshal(tree, &m); err != nil {
+		return "", err
+	}
+	return services.NewLandingCodegen().Generate(m, title), nil
 }
 
 // Revisions lists the page revision history (newest first).
