@@ -16,30 +16,43 @@ const BG_REPEAT_CLASSES = ['bg-repeat', 'bg-no-repeat', 'bg-repeat-x', 'bg-repea
 const BG_POS_CLASSES = ['bg-center', 'bg-top', 'bg-bottom', 'bg-left', 'bg-right', 'bg-left-top', 'bg-right-top', 'bg-left-bottom', 'bg-right-bottom'] as const
 const ALL_BG_ASPECT_CLASSES = [...BG_SIZE_CLASSES, ...BG_REPEAT_CLASSES, ...BG_POS_CLASSES]
 
-// Curated swatch palette spanning neutral + brand families. Rendered as a
-// 2-row wrap grid; arbitrary hex still available via the color picker above.
-const BG_COLOR_PRESETS = [
-  'white', 'black',
-  'slate-50', 'slate-100', 'slate-200', 'slate-800', 'slate-900',
-  'gray-50', 'gray-100', 'gray-200', 'gray-500', 'gray-800', 'gray-900',
-  'red-50', 'red-100', 'red-500', 'red-600',
-  'orange-50', 'orange-100', 'orange-500',
-  'amber-50', 'amber-100', 'amber-500',
-  'yellow-50', 'yellow-100',
-  'lime-100', 'lime-500',
-  'green-50', 'green-100', 'green-500', 'green-600',
-  'emerald-50', 'emerald-100', 'emerald-500',
-  'teal-50', 'teal-100', 'teal-500',
-  'cyan-50', 'cyan-100', 'cyan-500',
-  'sky-50', 'sky-100', 'sky-500',
-  'blue-50', 'blue-100', 'blue-500', 'blue-600',
-  'indigo-50', 'indigo-100', 'indigo-500',
-  'violet-50', 'violet-100', 'violet-500',
-  'purple-50', 'purple-100', 'purple-500',
-  'fuchsia-50', 'fuchsia-100', 'fuchsia-500',
-  'pink-50', 'pink-100', 'pink-500',
-  'rose-50', 'rose-100', 'rose-500',
+// Color swatches grouped by family for visual hierarchy.
+const BG_COLOR_GROUPS: { label: string; colors: string[] }[] = [
+  { label: 'Neutral', colors: [
+    'white', 'black',
+    'slate-50', 'slate-100', 'slate-200', 'slate-800', 'slate-900',
+    'gray-50', 'gray-100', 'gray-200', 'gray-500', 'gray-800', 'gray-900',
+  ]},
+  { label: 'Red / Orange / Amber', colors: [
+    'red-50', 'red-100', 'red-500', 'red-600',
+    'orange-50', 'orange-100', 'orange-500',
+    'amber-50', 'amber-100', 'amber-500',
+  ]},
+  { label: 'Yellow / Lime / Green', colors: [
+    'yellow-50', 'yellow-100',
+    'lime-100', 'lime-500',
+    'green-50', 'green-100', 'green-500', 'green-600',
+    'emerald-50', 'emerald-100', 'emerald-500',
+  ]},
+  { label: 'Teal / Cyan / Sky', colors: [
+    'teal-50', 'teal-100', 'teal-500',
+    'cyan-50', 'cyan-100', 'cyan-500',
+    'sky-50', 'sky-100', 'sky-500',
+  ]},
+  { label: 'Blue / Indigo / Violet', colors: [
+    'blue-50', 'blue-100', 'blue-500', 'blue-600',
+    'indigo-50', 'indigo-100', 'indigo-500',
+    'violet-50', 'violet-100', 'violet-500',
+  ]},
+  { label: 'Purple / Pink / Rose', colors: [
+    'purple-50', 'purple-100', 'purple-500',
+    'fuchsia-50', 'fuchsia-100', 'fuchsia-500',
+    'pink-50', 'pink-100', 'pink-500',
+    'rose-50', 'rose-100', 'rose-500',
+  ]},
 ]
+
+const BG_COLOR_PRESETS = BG_COLOR_GROUPS.flatMap((g) => g.colors)
 
 function cls(patterns: string[], add: string | null) {
   if (!node.value) return
@@ -76,15 +89,20 @@ function currentBgHex() {
           @update:model-value="(v) => cls(['bg-[', ...BG_COLOR_PRESETS.map((c) => `bg-${c}`)], String(v) || null)"
         />
       </div>
-      <div class="flex flex-wrap gap-1">
-        <button
-          v-for="c in BG_COLOR_PRESETS"
-          :key="c"
-          class="h-5 w-5 rounded-full border border-border"
-          :class="`bg-${c}`"
-          :title="c"
-          @click="cls(['bg-[', ...BG_COLOR_PRESETS.map((x) => `bg-${x}`)], `bg-${c}`)"
-        />
+      <div class="space-y-2">
+        <div v-for="grp in BG_COLOR_GROUPS" :key="grp.label" class="space-y-0.5">
+          <span class="text-[10px] font-medium uppercase tracking-wide text-muted-foreground/60">{{ grp.label }}</span>
+          <div class="flex flex-wrap gap-0.5">
+            <button
+              v-for="c in grp.colors"
+              :key="c"
+              class="h-5 w-5 rounded-full border border-border"
+              :class="`bg-${c}`"
+              :title="c"
+              @click="cls(['bg-[', ...BG_COLOR_PRESETS.map((x) => `bg-${x}`)], `bg-${c}`)"
+            />
+          </div>
+        </div>
       </div>
     </div>
 
