@@ -17,6 +17,10 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { IconPlus, IconEdit, IconTrash, IconX } from '@tabler/icons-vue'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+
+const showDelete = ref(false)
+const deletingId = ref(0)
 
 const idr = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' })
 const types = ['ebook', 'template', 'source_code', 'donation']
@@ -93,14 +97,19 @@ async function save() {
   }
 }
 
-async function remove(id: number) {
-  if (!confirm('Delete this product?')) return
+function confirmRemove(id: number) {
+  deletingId.value = id
+  showDelete.value = true
+}
+async function doDelete() {
   try {
-    await api.delete(`/products/${id}`)
-    products.value = products.value.filter((p) => p.id !== id)
+    await api.delete(`/products/${deletingId.value}`)
+    products.value = products.value.filter((p) => p.id !== deletingId.value)
     toast.success('Deleted')
   } catch (e: any) {
     toast.error(e.response?.data?.error || 'Delete failed')
+  } finally {
+    showDelete.value = false
   }
 }
 
@@ -119,7 +128,7 @@ const columns: ColumnDef<ProductRow>[] = [
     enableSorting: false,
     cell: ({ row }) => h('div', { class: 'flex justify-end gap-1' }, [
       h(Button, { variant: 'ghost', size: 'icon-sm', onClick: () => startEdit(row.original) }, () => h(IconEdit, { class: 'size-4' })),
-      h(Button, { variant: 'ghost', size: 'icon-sm', onClick: () => remove(row.original.id) }, () => h(IconTrash, { class: 'size-4 text-destructive' })),
+      h(Button, { variant: 'ghost', size: 'icon-sm', onClick: () => confirmRemove(row.original.id) }, () => h(IconTrash, { class: 'size-4 text-destructive' })),
     ]),
   },
 ]
@@ -180,4 +189,6 @@ onMounted(load)
 
     <DataTable :data="products" :columns="columns" :loading="loading" :draggable="false" search-key="title" search-placeholder="Search products…" />
   </div>
+
+  <ConfirmDialog v-model:open="showDelete" title="Delete product" description="Are you sure you want to delete this product?" @confirm="doDelete" />
 </template>

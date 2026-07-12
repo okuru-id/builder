@@ -1,7 +1,8 @@
 <script setup lang="ts">
 // Landing pages list: index of builder pages. Entry point to open the canvas.
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { toast } from 'vue-sonner'
 import { IconPlus, IconEdit, IconExternalLink, IconUpload, IconCopy, IconTrash } from '@tabler/icons-vue'
 import api from '@/lib/api'
@@ -66,8 +67,19 @@ async function duplicate(p: Page) {
   }
 }
 
-async function deletePage(p: Page) {
-  if (!confirm(`Delete page "${p.name}"? This action cannot be undone.`)) return
+const showDelete = ref(false)
+const deletingPage = ref<Page | null>(null)
+const deleteDesc = computed(() => deletingPage.value
+  ? `Are you sure you want to delete "${deletingPage.value.name}"? This action cannot be undone.`
+  : '')
+
+function confirmDelete(p: Page) {
+  deletingPage.value = p
+  showDelete.value = true
+}
+async function doDelete() {
+  const p = deletingPage.value
+  if (!p) return
   try {
     await api.delete(`/landing-pages/${p.id}`)
     pages.value = pages.value.filter((x) => x.id !== p.id)
@@ -75,6 +87,9 @@ async function deletePage(p: Page) {
   } catch (e) {
     toast.error('Failed to delete page')
     console.error(e)
+  } finally {
+    showDelete.value = false
+    deletingPage.value = null
   }
 }
 
@@ -183,7 +198,7 @@ onMounted(load)
             <span
               class="flex size-9 items-center justify-center rounded-md bg-white/95 text-red-600 shadow hover:bg-white"
               title="Delete"
-              @click.stop="deletePage(p)"
+              @click.stop="confirmDelete(p)"
             >
               <IconTrash class="size-4" />
             </span>
@@ -205,5 +220,6 @@ onMounted(load)
     </div>
   </div>
 
+  <ConfirmDialog v-model:open="showDelete" title="Delete page" :description="deleteDesc" @confirm="doDelete" />
   <ImportDialog v-if="showImport" @close="showImport = false" />
 </template>

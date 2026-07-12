@@ -8,6 +8,7 @@ import DataTable from '@/components/DataTable.vue'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { IconPlus, IconEdit, IconTrash } from '@tabler/icons-vue'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 
 interface Post {
   id: number
@@ -38,14 +39,22 @@ async function load() {
   }
 }
 
-async function remove(id: number) {
-  if (!confirm('Delete this post?')) return
+const showDelete = ref(false)
+const deletingId = ref(0)
+
+function confirmRemove(id: number) {
+  deletingId.value = id
+  showDelete.value = true
+}
+async function doDelete() {
   try {
-    await api.delete(`/posts/${id}`)
-    posts.value = posts.value.filter((p) => p.id !== id)
+    await api.delete(`/posts/${deletingId.value}`)
+    posts.value = posts.value.filter((p) => p.id !== deletingId.value)
     toast.success('Post deleted')
   } catch (e: any) {
     toast.error(e.response?.data?.error || 'Delete failed')
+  } finally {
+    showDelete.value = false
   }
 }
 
@@ -83,7 +92,7 @@ const columns: ColumnDef<Post>[] = [
       }, () => h(IconEdit, { class: 'size-4' })),
       h(Button, {
         variant: 'ghost', size: 'icon-sm',
-        onClick: () => remove(row.original.id),
+        onClick: () => confirmRemove(row.original.id),
       }, () => h(IconTrash, { class: 'size-4 text-destructive' })),
     ]),
   },
@@ -104,4 +113,6 @@ onMounted(load)
 
     <DataTable :data="posts" :columns="columns" :loading="loading" search-key="title_en" search-placeholder="Search posts…" />
   </div>
+
+  <ConfirmDialog v-model:open="showDelete" title="Delete post" description="Are you sure you want to delete this post?" @confirm="doDelete" />
 </template>

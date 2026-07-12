@@ -13,6 +13,7 @@ import {
   SidebarMenuItem,
 } from '@/components/ui/sidebar'
 import { IconArchive, IconMailOpened, IconInbox, IconMailbox, IconMail, IconTrash } from '@tabler/icons-vue'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 
 interface Message {
   id: number
@@ -112,15 +113,23 @@ async function archive(m: Message) {
   }
 }
 
-async function remove(id: number) {
-  if (!confirm('Delete this message?')) return
+const showDelete = ref(false)
+const deletingId = ref(0)
+
+function confirmRemove(id: number) {
+  deletingId.value = id
+  showDelete.value = true
+}
+async function doDelete() {
   try {
-    await api.delete(`/messages/${id}`)
-    messages.value = messages.value.filter((m) => m.id !== id)
-    if (selected.value?.id === id) selected.value = null
+    await api.delete(`/messages/${deletingId.value}`)
+    messages.value = messages.value.filter((m) => m.id !== deletingId.value)
+    if (selected.value?.id === deletingId.value) selected.value = null
     toast.success('Deleted')
   } catch (e: any) {
     toast.error(e.response?.data?.error || 'Delete failed')
+  } finally {
+    showDelete.value = false
   }
 }
 
@@ -257,11 +266,13 @@ onMounted(load)
           <Button size="sm" variant="outline" @click="archive(selected)">
             <IconArchive class="size-4" /> Archive
           </Button>
-          <Button size="sm" variant="destructive" class="ml-auto" @click="remove(selected.id)">
+          <Button size="sm" variant="destructive" class="ml-auto" @click="confirmRemove(selected.id)">
             <IconTrash class="size-4" /> Delete
           </Button>
         </div>
       </template>
     </div>
   </div>
+
+  <ConfirmDialog v-model:open="showDelete" title="Delete message" description="Are you sure you want to delete this message?" @confirm="doDelete" />
 </template>

@@ -1,8 +1,9 @@
 <script setup lang="ts">
 // Component palette: list reusable masters. Click to insert instance, "save" to
 // create master from selected node. Lives at the bottom of the left panel.
-import { inject } from 'vue'
+import { inject, ref, computed } from 'vue'
 import { IconPlus, IconBookmark, IconUnlink, IconTrash, IconPencil } from '@tabler/icons-vue'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { BUILDER_KEY } from '@/components/builder/injection'
 
 const store = inject(BUILDER_KEY, null)!
@@ -23,9 +24,24 @@ function breakLink() {
   if (store.selectedId.value) store.breakInstance(store.selectedId.value)
 }
 
+const showDelete = ref(false)
+const deletingComponent = ref<{ id: number; name: string } | null>(null)
+const deleteDesc = computed(() => deletingComponent.value
+  ? `Delete master component "${deletingComponent.value.name}"? Existing instances will not resolve.`
+  : '')
+
 async function del(id: number, name: string) {
-  if (confirm(`Delete master component "${name}"? Existing instances will not resolve.`)) {
-    await store.components.remove(id)
+  deletingComponent.value = { id, name }
+  showDelete.value = true
+}
+async function doDelete() {
+  const dc = deletingComponent.value
+  if (!dc) return
+  try {
+    await store.components.remove(dc.id)
+  } finally {
+    showDelete.value = false
+    deletingComponent.value = null
   }
 }
 
@@ -100,4 +116,6 @@ const canSave = () => !!store.selectedId.value && store.selectedId.value !== sto
       </div>
     </div>
   </div>
+
+  <ConfirmDialog v-model:open="showDelete" title="Delete component" :description="deleteDesc" @confirm="doDelete" />
 </template>

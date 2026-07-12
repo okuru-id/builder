@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { IconPlus, IconEdit, IconTrash, IconX } from '@tabler/icons-vue'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 
 interface ProjectRow {
   id: number
@@ -102,14 +103,22 @@ async function save() {
   }
 }
 
-async function remove(id: number) {
-  if (!confirm('Delete this project?')) return
+const showDelete = ref(false)
+const deletingId = ref(0)
+
+function confirmRemove(id: number) {
+  deletingId.value = id
+  showDelete.value = true
+}
+async function doDelete() {
   try {
-    await api.delete(`/projects/${id}`)
-    projects.value = projects.value.filter((p) => p.id !== id)
+    await api.delete(`/projects/${deletingId.value}`)
+    projects.value = projects.value.filter((p) => p.id !== deletingId.value)
     toast.success('Deleted')
   } catch (e: any) {
     toast.error(e.response?.data?.error || 'Delete failed')
+  } finally {
+    showDelete.value = false
   }
 }
 
@@ -129,7 +138,7 @@ const columns: ColumnDef<ProjectRow>[] = [
     enableSorting: false,
     cell: ({ row }) => h('div', { class: 'flex justify-end gap-1' }, [
       h(Button, { variant: 'ghost', size: 'icon-sm', onClick: () => startEdit(row.original) }, () => h(IconEdit, { class: 'size-4' })),
-      h(Button, { variant: 'ghost', size: 'icon-sm', onClick: () => remove(row.original.id) }, () => h(IconTrash, { class: 'size-4 text-destructive' })),
+      h(Button, { variant: 'ghost', size: 'icon-sm', onClick: () => confirmRemove(row.original.id) }, () => h(IconTrash, { class: 'size-4 text-destructive' })),
     ]),
   },
 ]
@@ -175,4 +184,6 @@ onMounted(load)
 
     <DataTable :data="projects" :columns="columns" :loading="loading" search-key="title_en" search-placeholder="Search projects…" />
   </div>
+
+  <ConfirmDialog v-model:open="showDelete" title="Delete project" description="Are you sure you want to delete this project?" @confirm="doDelete" />
 </template>
