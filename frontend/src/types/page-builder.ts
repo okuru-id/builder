@@ -8,6 +8,8 @@ export type NodeType =
   | 'button'
   | 'link'
   | 'section'
+  | 'divider'
+  | 'grid'
   | 'component'
 
 export interface NodeProps {
@@ -63,8 +65,9 @@ export const TEXT_TYPES: ReadonlySet<NodeType> = new Set(['text', 'heading'])
 export const CONTAINER_TYPES: ReadonlySet<NodeType> = new Set([
   'frame',
   'section',
+  'grid',
   'link',
   'component',
 ])
 // Node types allowed as top-level palette additions.
-export const PALETTE_TYPES: NodeType[] = ['frame', 'section', 'text', 'heading', 'image', 'button', 'link']
+export const PALETTE_TYPES: NodeType[] = ['frame', 'section', 'grid', 'text', 'heading', 'image', 'button', 'link', 'divider']

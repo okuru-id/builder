@@ -13,6 +13,8 @@ import {
   IconChevronRight,
   IconChevronDown,
   IconGripVertical,
+  IconGridDots,
+  IconMinus,
 } from '@tabler/icons-vue'
 import type { Node, NodeType } from '@/types/page-builder'
 import { BUILDER_KEY } from '@/components/builder/injection'
@@ -60,7 +62,7 @@ const resolved = computed(() => {
   return props.node
 })
 const isContainer = () => CONTAINER_TYPES.has(props.node.type)
-const hasChildren = () => resolved.value.children.length > 0
+const hasChildren = () => (resolved.value.children ?? []).length > 0
 const hasChevron = computed(() => isContainer() && hasChildren())
 const elbowWidth = computed(() => hasChevron.value ? 12 : 30)
 const dragging = () => store.draggingId.value === props.node.id
@@ -72,22 +74,26 @@ const dropInside = () => {
 const NODE_ICONS: Record<NodeType, any> = {
   frame: IconSquare,
   section: IconSection,
+  grid: IconGridDots,
   text: IconTypography,
   heading: IconH1,
   image: IconPhoto,
   button: IconCircuitPushbutton,
   link: IconLink,
+  divider: IconMinus,
   component: IconComponents,
 }
 
 const NODE_COLORS: Record<NodeType, string> = {
   frame: 'text-violet-500',
   section: 'text-sky-500',
+  grid: 'text-cyan-500',
   text: 'text-muted-foreground',
   heading: 'text-amber-500',
   image: 'text-emerald-500',
   button: 'text-rose-500',
   link: 'text-blue-500',
+  divider: 'text-neutral-400',
   component: 'text-purple-500',
 }
 
@@ -186,7 +192,7 @@ function onDragEnd() {
         v-if="isContainer() && hasChildren() && !expanded"
         class="shrink-0 rounded-full bg-muted px-1.5 text-[10px] text-muted-foreground"
       >
-        {{ resolved.children.length }}
+        {{ (resolved.children ?? []).length }}
       </span>
 
       <!-- Drag handle (right side, visible on hover) -->

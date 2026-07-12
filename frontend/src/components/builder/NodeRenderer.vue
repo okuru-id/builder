@@ -51,6 +51,8 @@ function tagFor(n: Node): string {
     }
     case 'image':
       return 'img'
+    case 'divider':
+      return 'hr'
     case 'button':
       return 'button'
     case 'link':
@@ -58,6 +60,7 @@ function tagFor(n: Node): string {
     case 'section':
       return 'section'
     case 'frame':
+    case 'grid':
     case 'component':
     default:
       return 'div'

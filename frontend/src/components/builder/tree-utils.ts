@@ -34,11 +34,13 @@ export function defaultName(type: NodeType): string {
   const map: Record<NodeType, string> = {
     frame: 'Frame',
     section: 'Section',
+    grid: 'Grid',
     text: 'Text',
     heading: 'Heading',
     image: 'Image',
     button: 'Button',
     link: 'Link',
+    divider: 'Divider',
     component: 'Component',
   }
   return map[type] ?? 'Node'
@@ -67,6 +69,8 @@ export function defaultClasses(type: NodeType): string[] {
       return ['flex', 'flex-col', 'gap-4']
     case 'section':
       return ['py-16', 'px-6']
+    case 'grid':
+      return ['grid', 'grid-cols-2', 'gap-6']
     case 'text':
       return ['text-base', 'text-neutral-700']
     case 'heading':
@@ -77,6 +81,8 @@ export function defaultClasses(type: NodeType): string[] {
       return ['text-blue-600', 'underline']
     case 'image':
       return ['w-full', 'object-cover']
+    case 'divider':
+      return ['border-t', 'border-border', 'my-8']
     default:
       return []
   }

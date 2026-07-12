@@ -44,9 +44,12 @@ function renderNode(n: Node, depth: number): string {
     case 'section':
       return renderContainer('section', n, depth)
     case 'frame':
+    case 'grid':
     case 'component':
     default:
       return renderContainer('div', n, depth)
+    case 'divider':
+      return renderSelfClosing('hr', n, depth)
   }
 }
 

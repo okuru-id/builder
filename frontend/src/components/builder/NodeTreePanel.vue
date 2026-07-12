@@ -10,6 +10,8 @@ import {
   IconCircuitPushbutton,
   IconLink,
   IconLayersIntersect,
+  IconGridDots,
+  IconMinus,
 } from '@tabler/icons-vue'
 import { PALETTE_TYPES } from '@/types/page-builder'
 import type { NodeType } from '@/types/page-builder'
@@ -22,22 +24,26 @@ const store = inject(BUILDER_KEY, null)!
 const paletteIcons: Record<NodeType, any> = {
   frame: IconSquare,
   section: IconSection,
+  grid: IconGridDots,
   text: IconTypography,
   heading: IconH1,
   image: IconPhoto,
   button: IconCircuitPushbutton,
   link: IconLink,
+  divider: IconMinus,
   component: IconSquare,
 }
 
 const paletteLabels: Record<string, string> = {
   frame: 'Frame',
   section: 'Section',
+  grid: 'Grid',
   text: 'Text',
   heading: 'Heading',
   image: 'Image',
   button: 'Button',
   link: 'Link',
+  divider: 'Divider',
 }
 
 const root = computed(() => store.tree.value.root)
