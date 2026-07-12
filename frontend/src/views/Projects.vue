@@ -76,7 +76,7 @@ function startEdit(p: ProjectRow) {
 
 async function save() {
   if (!form.value.title_en) {
-    toast.error('Title (EN) is required')
+    toast.warning('Title (EN) is required')
     return
   }
   const stack = form.value.tech_stack

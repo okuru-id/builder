@@ -34,8 +34,21 @@ function onKey(e: KeyboardEvent) {
     (target.isContentEditable ||
       ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))
   ) {
+    // Allow Ctrl+S even from inputs.
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
+      e.preventDefault()
+      store.save()
+    }
     return
   }
+
+  // Ctrl+S — save
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
+    e.preventDefault()
+    store.save()
+    return
+  }
+
   const id = store.selectedId.value
   if (!id || id === store.tree.value.root.id) return
 
@@ -51,8 +64,21 @@ function onKey(e: KeyboardEvent) {
   }
 }
 
-onMounted(() => window.addEventListener('keydown', onKey))
-onUnmounted(() => window.removeEventListener('keydown', onKey))
+// Warn before closing/navigating away with unsaved changes.
+function onBeforeUnload(e: BeforeUnloadEvent) {
+  if (store.dirty.value) {
+    e.preventDefault()
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', onKey)
+  window.addEventListener('beforeunload', onBeforeUnload)
+})
+onUnmounted(() => {
+  window.removeEventListener('keydown', onKey)
+  window.removeEventListener('beforeunload', onBeforeUnload)
+})
 </script>
 
 <template>

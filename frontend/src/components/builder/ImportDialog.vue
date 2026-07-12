@@ -76,7 +76,7 @@ function onFileInput(e: Event) {
 
 function readFile(file: File) {
   if (!file.name.match(/\.(html?|vue|htm)$/i)) {
-    toast.error('Hanya file .html, .htm, atau .vue')
+    toast.warning('Hanya file .html, .htm, atau .vue')
     return
   }
   fileName.value = file.name

@@ -71,7 +71,7 @@ function startEdit(p: ProductRow) {
 
 async function save() {
   if (!form.value.title || !form.value.slug) {
-    toast.error('Title and Slug are required')
+    toast.warning('Title and Slug are required')
     return
   }
   const payload: any = {

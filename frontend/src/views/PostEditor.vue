@@ -79,7 +79,7 @@ async function load() {
 
 async function save() {
   if (!form.value.title_en || !form.value.slug) {
-    toast.error('Title (EN) and Slug are required')
+    toast.warning('Title (EN) and Slug are required')
     return
   }
   saving.value = true

@@ -32,7 +32,7 @@ function storeToken(token: string) {
 
 async function submitLogin() {
   if (!email.value || !password.value) {
-    toast.error('Email and password are required')
+    toast.warning('Email and password are required')
     return
   }
   loading.value = true
@@ -73,7 +73,7 @@ async function setupTotp() {
 
 async function submitTotp() {
   if (!code.value) {
-    toast.error('Code is required')
+    toast.warning('Code is required')
     return
   }
   loading.value = true
@@ -92,7 +92,7 @@ async function submitTotp() {
 
 async function submitTotpSetup() {
   if (!code.value) {
-    toast.error('Code is required')
+    toast.warning('Code is required')
     return
   }
   loading.value = true

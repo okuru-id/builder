@@ -78,7 +78,7 @@ function startEdit(o: OSSRow) {
 
 async function save() {
   if (!form.value.title_en || !form.value.github_url) {
-    toast.error('Title (EN) and GitHub URL are required')
+    toast.warning('Title (EN) and GitHub URL are required')
     return
   }
   const techs = form.value.technologies.split(',').map((s) => s.trim()).filter(Boolean)

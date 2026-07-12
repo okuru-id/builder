@@ -32,9 +32,10 @@ export default defineConfig({
       name: 'proxy-root-to-backend',
       configureServer(server) {
         server.middlewares.use((req, res, next) => {
-          if (req.url !== '/') return next()
+          const parsed = new URL(req.url ?? '/', `http://${req.headers.host}`)
+          if (parsed.pathname !== '/') return next()
           const proxyReq = http.request(
-            { host: 'localhost', port: 3000, path: '/', method: req.method, headers: req.headers },
+            { host: 'localhost', port: 3000, path: req.url, method: req.method, headers: req.headers },
             (proxyRes) => {
               res.writeHead(proxyRes.statusCode ?? 200, proxyRes.headers)
               proxyRes.pipe(res)

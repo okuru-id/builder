@@ -1,8 +1,8 @@
 <script setup lang="ts">
-// Top toolbar: back, page name, breakpoint switch, save state, publish, export.
+// Top toolbar: back, page name, breakpoint switch, save, publish, export.
 import { inject, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { IconArrowLeft, IconDeviceDesktop, IconDeviceTablet, IconDeviceMobile, IconCode } from '@tabler/icons-vue'
+import { IconArrowLeft, IconDeviceDesktop, IconDeviceTablet, IconDeviceMobile, IconCode, IconDeviceFloppy, IconCheck, IconExternalLink } from '@tabler/icons-vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { BUILDER_KEY } from '@/components/builder/injection'
@@ -34,11 +34,16 @@ const bps: { key: Breakpoint; icon: any; label: string }[] = [
   { key: 'tablet', icon: IconDeviceTablet, label: 'Tablet' },
   { key: 'mobile', icon: IconDeviceMobile, label: 'Mobile' },
 ]
+
+function openPreview() {
+  const id = store.page.value?.id
+  if (id) window.open(`/?preview=${id}`, '_blank')
+}
 </script>
 
 <template>
   <header class="flex h-14 items-center gap-3 border-b border-neutral-200 bg-white px-3">
-    <Button variant="ghost" size="icon" @click="router.push('/')">
+    <Button variant="ghost" size="icon" @click="router.push('/pages')">
       <IconArrowLeft class="size-4" />
     </Button>
 
@@ -78,8 +83,21 @@ const bps: { key: Breakpoint; icon: any; label: string }[] = [
     </div>
 
     <div class="ml-auto flex items-center gap-2">
+      <Button
+        variant="outline"
+        size="sm"
+        :disabled="store.saving.value || !store.dirty.value"
+        @click="store.save()"
+      >
+        <IconCheck v-if="!store.dirty.value && !store.saving.value" class="size-3.5 text-green-600" />
+        <IconDeviceFloppy v-else class="size-3.5" />
+        {{ store.saving.value ? 'Menyimpan…' : store.dirty.value ? 'Simpan' : 'Tersimpan' }}
+      </Button>
       <Button variant="outline" size="sm" @click="showExport = true">
         <IconCode class="size-3.5" /> Export
+      </Button>
+      <Button variant="outline" size="sm" @click="openPreview" title="Preview di tab baru">
+        <IconExternalLink class="size-3.5" /> Preview
       </Button>
       <Button variant="default" size="sm" :disabled="store.saving.value" @click="store.publish()">
         Publish

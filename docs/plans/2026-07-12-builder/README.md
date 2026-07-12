@@ -6,15 +6,17 @@ Figma-like canvas editor untuk okuru.id. Tree JSON source of truth, direct manip
 
 | Phase | Nama | Status | Commit | File |
 |-------|------|--------|--------|------|
+| Phase | Nama | Status | Commit | File |
+|-------|------|--------|--------|------|
 | 0 | Cleanup legacy | ✅ done | `998200c` | [phase-0-cleanup.md](phase-0-cleanup.md) |
 | 1 | Data model + API | ✅ done | `d8bc2f2` | [phase-1-data-model.md](phase-1-data-model.md) |
-| 2 | Codegen + publish | ✅ done | _(this commit)_ | [phase-2-codegen.md](phase-2-codegen.md) |
-| 3 | Canvas editor | ✅ done | _(this commit)_ | [phase-3-canvas-editor.md](phase-3-canvas-editor.md) |
-| 4 | Drag/snap/multi-select | ✅ done (partial) | _(this commit)_ | [phase-4-drag-snap.md](phase-4-drag-snap.md) |
-| 5 | Component system | ⬜ todo | — | [phase-5-components.md](phase-5-components.md) |
+| 2 | Codegen + publish | ✅ done | — | [phase-2-codegen.md](phase-2-codegen.md) |
+| 3 | Canvas editor | ✅ done | — | [phase-3-canvas-editor.md](phase-3-canvas-editor.md) |
+| 4 | Drag/snap/multi-select | ✅ done (partial) | `2554897` | [phase-4-drag-snap.md](phase-4-drag-snap.md) |
+| 5 | Component system | ✅ done | `48515d1` | [phase-5-components.md](phase-5-components.md) |
 | 6 | Style panel + token | ✅ done | `46b23de` | [phase-6-style-panel.md](phase-6-style-panel.md) |
-| 7 | Codegen export | ✅ done | _(this commit)_ | [phase-7-codegen-export.md](phase-7-codegen-export.md) |
-| 8 | Two-way sync | ✅ done | _(this commit)_ | [phase-8-two-way-sync.md](phase-8-two-way-sync.md) |
+| 7 | Codegen export | ✅ done | `d805585` | [phase-7-codegen-export.md](phase-7-codegen-export.md) |
+| 8 | Two-way sync | ✅ done | `a90fabc` | [phase-8-two-way-sync.md](phase-8-two-way-sync.md) |
 
 ## Arsitektur
 

@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"encoding/json"
 	"strings"
 
 	"github.com/goravel/framework/contracts/http"
@@ -8,10 +9,23 @@ import (
 	"okuru/app/http/controllers"
 	"okuru/app/facades"
 	"okuru/app/models"
+	"okuru/app/services"
 )
 
 func Web() {
 	facades.Route().Get("/", func(ctx http.Context) http.Response {
+		// Preview mode: render the draft (working) tree for a specific page.
+		previewID := ctx.Request().Query("preview", "")
+		if previewID != "" {
+			var page models.LandingPage
+			if err := facades.Orm().Query().Where("id = ?", previewID).First(&page); err != nil || page.ID == 0 {
+				return ctx.Response().String(http.StatusNotFound, "Halaman tidak ditemukan")
+			}
+			// Render the working tree (not published) so the preview shows current edits.
+			html := renderPreviewHTML(page)
+			return ctx.Response().Header("Content-Type", "text/html; charset=utf-8").String(http.StatusOK, html)
+		}
+
 		// Storefront: serve the most recently published landing page's cached HTML.
 		// Falls back to a placeholder when nothing is published yet.
 		var page models.LandingPage
@@ -53,6 +67,17 @@ func Web() {
 			"status": "ok",
 		})
 	})
+}
+
+// renderPreviewHTML converts a page's working tree into a full HTML document
+// using the codegen pipeline. Used for ?preview= mode.
+func renderPreviewHTML(page models.LandingPage) string {
+	var m map[string]any
+	if err := json.Unmarshal(page.Tree, &m); err != nil {
+		return defaultStorefrontHTML()
+	}
+	resolved := services.ResolveComponentInstances(m)
+	return services.NewLandingCodegen().Generate(resolved, page.Name+" (preview)")
 }
 
 // defaultStorefrontHTML is the placeholder shown when no landing page is published.

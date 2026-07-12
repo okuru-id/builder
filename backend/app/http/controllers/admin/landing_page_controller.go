@@ -56,7 +56,11 @@ func (c *LandingPageController) Index(ctx http.Context) http.Response {
 	}
 	items := make([]listItem, 0, len(pages))
 	for _, p := range pages {
-		items = append(items, listItem{p.ID, p.Slug, p.Name, p.Status, p.Version, ""})
+		updatedAt := ""
+		if !p.UpdatedAt.IsZero() {
+			updatedAt = p.UpdatedAt.ToDateTimeString()
+		}
+		items = append(items, listItem{p.ID, p.Slug, p.Name, p.Status, p.Version, updatedAt})
 	}
 	return ctx.Response().Success().Json(http.Json{"data": items})
 }
@@ -129,7 +133,6 @@ func (c *LandingPageController) Update(ctx http.Context) http.Response {
 	}
 
 	page.Tree = datatypes.JSON(in.Tree)
-	page.Version = page.Version + 1
 	if in.Name != "" {
 		page.Name = in.Name
 	}
@@ -154,6 +157,7 @@ func (c *LandingPageController) Publish(ctx http.Context) http.Response {
 	}
 	page.PublishedTree = page.Tree
 	page.Status = "published"
+	page.Version = page.Version + 1
 
 	// Run tree → HTML codegen synchronously at publish time. Cached in published_html,
 	// served raw by the storefront so the published page never depends on the editor.
@@ -222,6 +226,44 @@ func (c *LandingPageController) RestoreRevision(ctx http.Context) http.Response 
 		return ctx.Response().Json(http.StatusInternalServerError, http.Json{"error": err.Error()})
 	}
 	return ctx.Response().Success().Json(http.Json{"data": page})
+}
+
+// Destroy deletes a landing page and its revisions.
+func (c *LandingPageController) Destroy(ctx http.Context) http.Response {
+	id := ctx.Request().Input("id")
+	var page models.LandingPage
+	if err := facades.Orm().Query().Where("id = ?", id).First(&page); err != nil {
+		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "page not found"})
+	}
+	if page.ID == 0 {
+		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "page not found"})
+	}
+	// Delete associated revisions first.
+	facades.Orm().Query().Where("landing_page_id = ?", id).Delete(&models.LandingPageRevision{})
+	facades.Orm().Query().Where("id = ?", id).Delete(&models.LandingPage{})
+	return ctx.Response().Success().Json(http.Json{"deleted": true})
+}
+
+// Duplicate creates a copy of an existing page with "(copy)" suffix.
+func (c *LandingPageController) Duplicate(ctx http.Context) http.Response {
+	id := ctx.Request().Input("id")
+	var page models.LandingPage
+	if err := facades.Orm().Query().Where("id = ?", id).First(&page); err != nil {
+		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "page not found"})
+	}
+	if page.ID == 0 {
+		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "page not found"})
+	}
+	copy := models.LandingPage{
+		Name:   page.Name + " (copy)",
+		Slug:   slugify(page.Name + " copy"),
+		Status: "draft",
+		Tree:   page.Tree,
+	}
+	if err := facades.Orm().Query().Create(&copy); err != nil {
+		return ctx.Response().Json(http.StatusInternalServerError, http.Json{"error": err.Error()})
+	}
+	return ctx.Response().Success().Json(http.Json{"data": copy})
 }
 
 func slugify(s string) string {

@@ -42,6 +42,25 @@ function moveUp() {
 function moveDown() {
   if (node.value) store.moveSiblingNode(node.value.id, 1)
 }
+
+function addClass(e: Event) {
+  const input = e.target as HTMLInputElement
+  const cls = input.value.trim()
+  if (!cls || !node.value) return
+  // Support space-separated classes
+  const newClasses = cls.split(/\s+/).filter((c) => c && !node.value!.classes.includes(c))
+  if (newClasses.length) {
+    store.patchNode(node.value.id, { classes: [...node.value.classes, ...newClasses] })
+  }
+  input.value = ''
+}
+
+function removeClass(idx: number) {
+  if (!node.value) return
+  const classes = [...node.value.classes]
+  classes.splice(idx, 1)
+  store.patchNode(node.value.id, { classes })
+}
 </script>
 
 <template>
@@ -125,6 +144,31 @@ function moveDown() {
         <BackgroundSection />
         <BorderSection />
         <SizeSection />
+
+        <!-- Custom classes: arbitrary Tailwind class input -->
+        <div class="space-y-2 border-b border-neutral-100 pb-3">
+          <h3 class="text-xs font-medium uppercase tracking-wider text-neutral-500">Custom Class</h3>
+          <div class="flex flex-wrap gap-1">
+            <span
+              v-for="(cls, idx) in node.classes"
+              :key="idx"
+              class="group inline-flex items-center gap-0.5 rounded bg-neutral-100 px-1.5 py-0.5 text-[11px] font-mono text-neutral-700"
+            >
+              {{ cls }}
+              <button
+                class="ml-0.5 rounded-sm text-neutral-400 opacity-0 transition-opacity hover:text-red-500 group-hover:opacity-100"
+                @click="removeClass(idx)"
+                title="Hapus class"
+              >&times;</button>
+            </span>
+          </div>
+          <Input
+            :model-value="''"
+            class="h-8 font-mono text-xs"
+            placeholder="Tambah class, tekan Enter"
+            @keydown.enter.prevent="addClass"
+          />
+        </div>
       </template>
       <div v-else class="rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs text-neutral-500">
         Edit komponen master untuk mengubah instance. Klik &quot;Putus link&quot; di atas untuk jadikan copy independen.

@@ -293,6 +293,7 @@ export function useBuilderStore() {
     components,
     // actions
     load,
+    save: saveNow,
     select,
     patchNode,
     rename,

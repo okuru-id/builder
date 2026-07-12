@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { onMounted, computed } from 'vue'
 import { RouterView } from 'vue-router'
-import { Toaster } from 'vue-sonner'
-import 'vue-sonner/style.css'
+import { Toaster } from '@/components/ui/sonner'
 import { useTheme } from '@/lib/theme'
 
 const { init, theme } = useTheme()
@@ -13,5 +12,5 @@ onMounted(init)
 
 <template>
   <RouterView />
-  <Toaster position="top-right" rich-colors close-button :theme="toasterTheme" />
+  <Toaster position="bottom-center" :theme="toasterTheme" />
 </template>
