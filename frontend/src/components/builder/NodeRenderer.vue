@@ -4,7 +4,7 @@
 //   - readonly: pure render for export preview / iframe snapshot
 import { computed, inject, nextTick, ref } from 'vue'
 import type { Node } from '@/types/page-builder'
-import { TEXT_TYPES } from '@/types/page-builder'
+import { CONTAINER_TYPES, TEXT_TYPES } from '@/types/page-builder'
 import { BUILDER_KEY } from '@/components/builder/injection'
 
 const props = withDefaults(
@@ -106,19 +106,65 @@ const interactiveAttrs = computed(() =>
         suppressContentEditableWarning: 'true',
       },
 )
+
+// --- drag-and-drop ---
+const isContainer = computed(() => CONTAINER_TYPES.has(props.node.type))
+const dropInside = computed(() => {
+  const t = store?.dropTarget.value
+  return !!t && t.pos === 'inside' && t.parentId === props.node.id
+})
+const dragging = computed(
+  () => !props.readonly && store?.draggingId.value === props.node.id,
+)
+
+function onDragStart(e: DragEvent) {
+  if (props.readonly || !store) return
+  store.dragStart(props.node.id)
+  if (e.dataTransfer) {
+    e.dataTransfer.effectAllowed = 'move'
+    // Firefox requires setData to start DnD.
+    e.dataTransfer.setData('text/plain', props.node.id)
+  }
+}
+function onDragOver(e: DragEvent) {
+  if (props.readonly || !store) return
+  store.dragOver(props.node.id, e, isContainer.value)
+}
+function onDragLeave() {
+  // ponytail: we do not clear dropTarget here — dragover fires continuously on
+  // adjacent nodes and would flicker. Cleared on drop/dragend.
+}
+function onDrop(e: DragEvent) {
+  if (props.readonly || !store) return
+  e.preventDefault()
+  e.stopPropagation()
+  store.drop()
+}
+function onDragEnd() {
+  store?.dragEnd()
+}
 </script>
 
 <template>
   <component
     :is="tag"
     :ref="(el: unknown) => { if (editing) elRef = el as HTMLElement }"
-    :class="classList"
+    :class="[classList, {
+      'opacity-40': dragging,
+      'ring-2 ring-blue-500 ring-inset': dropInside,
+    }]"
+    :draggable="!readonly && !editing"
     v-bind="{ ...attrsFor(node), ...interactiveAttrs }"
     @click="onClick"
     @dblclick="onDblClick"
     @blur="onBlur"
     @keydown.enter.prevent="commitText"
     @keydown.esc.prevent="commitText"
+    @dragstart="onDragStart"
+    @dragover="onDragOver"
+    @dragleave="onDragLeave"
+    @drop="onDrop"
+    @dragend="onDragEnd"
   >
     <template v-if="isTextLike">
       {{ node.props.text }}

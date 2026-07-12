@@ -45,6 +45,9 @@ function onKey(e: KeyboardEvent) {
   } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'd') {
     e.preventDefault()
     store.duplicateNode(id)
+  } else if ((e.metaKey || e.ctrlKey) && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+    e.preventDefault()
+    store.moveSiblingNode(id, e.key === 'ArrowUp' ? -1 : 1)
   }
 }
 

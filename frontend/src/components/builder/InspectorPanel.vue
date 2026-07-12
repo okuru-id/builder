@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Right inspector: edits the selected node's props + classes. Delete/duplicate actions.
 import { computed, inject, watch, ref } from 'vue'
-import { IconCopy, IconTrash } from '@tabler/icons-vue'
+import { IconCopy, IconTrash, IconArrowUp, IconArrowDown } from '@tabler/icons-vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -48,6 +48,12 @@ function del() {
 }
 function dup() {
   if (node.value) store.duplicateNode(node.value.id)
+}
+function moveUp() {
+  if (node.value) store.moveSiblingNode(node.value.id, -1)
+}
+function moveDown() {
+  if (node.value) store.moveSiblingNode(node.value.id, 1)
 }
 </script>
 
@@ -117,7 +123,13 @@ function dup() {
         <Textarea v-model="classesText" rows="6" @blur="commitClasses" />
       </div>
 
-      <div class="flex gap-2 pt-2" v-if="node.id !== 'root'">
+      <div class="flex flex-wrap gap-2 pt-2" v-if="node.id !== 'root'">
+        <Button variant="outline" size="sm" @click="moveUp">
+          <IconArrowUp class="size-4" /> Naik
+        </Button>
+        <Button variant="outline" size="sm" @click="moveDown">
+          <IconArrowDown class="size-4" /> Turun
+        </Button>
         <Button variant="outline" size="sm" @click="dup">
           <IconCopy class="size-4" /> Duplikat
         </Button>

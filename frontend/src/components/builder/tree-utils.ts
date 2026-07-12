@@ -134,6 +134,63 @@ export function addChild(root: Node, parentId: string | null, child: Node): Node
   }
 }
 
+// Insert child at a specific index within parentId's children. -1 = append.
+export function insertChild(root: Node, parentId: string, child: Node, index: number): Node {
+  if (root.id === parentId) {
+    const kids = [...root.children]
+    const at = index < 0 || index > kids.length ? kids.length : index
+    kids.splice(at, 0, child)
+    return { ...root, children: kids }
+  }
+  return {
+    ...root,
+    children: root.children.map((c) => insertChild(c, parentId, child, index)),
+  }
+}
+
+// Move a node one slot up/down within its parent's children. No-op at edges.
+export function moveSibling(root: Node, id: string, dir: -1 | 1): Node {
+  const found = findNode(root, id)
+  if (!found || !found.parent) return root
+  const siblings = found.parent.children
+  const i = found.index
+  const j = i + dir
+  if (j < 0 || j >= siblings.length) return root
+  // Rebuild root with the swapped parent.
+  return replaceNode(root, found.parent.id, (p) => {
+    const kids = [...p.children]
+    ;[kids[i], kids[j]] = [kids[j], kids[i]]
+    return { ...p, children: kids }
+  })
+}
+
+// Reparent: remove nodeId from its current location, insert under newParentId at index.
+// Guards: cannot drop a node into itself or one of its own descendants.
+export function reparent(root: Node, nodeId: string, newParentId: string, index: number): Node {
+  const moving = findNode(root, nodeId)
+  if (!moving || nodeId === newParentId || isDescendant(moving.node, newParentId)) {
+    return root
+  }
+  const detached = deleteNode(root, nodeId)
+  return insertChild(detached, newParentId, moving.node, index)
+}
+
+// True if `descendantId` is found anywhere under `node`.
+export function isDescendant(node: Node, descendantId: string): boolean {
+  return node.children.some(
+    (c) => c.id === descendantId || isDescendant(c, descendantId),
+  )
+}
+
+// Immutable node replacement by id via callback.
+export function replaceNode(root: Node, id: string, fn: (n: Node) => Node): Node {
+  if (root.id === id) return fn(root)
+  return {
+    ...root,
+    children: root.children.map((c) => replaceNode(c, id, fn)),
+  }
+}
+
 // Deep clone via structuredClone (available in modern browsers + Node 17+).
 export function cloneTree<T>(t: T): T {
   return structuredClone(t)

@@ -12,6 +12,8 @@ import {
   emptyRoot,
   findNode,
   makeNode,
+  moveSibling,
+  reparent as reparentTree,
   updateNode,
 } from '@/components/builder/tree-utils'
 
@@ -31,6 +33,10 @@ export function useBuilderStore() {
   const saving = ref(false)
   const dirty = ref(false)
   const breakpoint = ref<Breakpoint>('desktop')
+
+  // Drag-and-drop state. draggingId = node being dragged; dropTarget computed in dragOver.
+  const draggingId = ref<string | null>(null)
+  const dropTarget = ref<{ parentId: string; index: number; pos: 'before' | 'after' | 'inside' } | null>(null)
 
   const selectedNode = computed<Node | null>(() => {
     if (!selectedId.value) return null
@@ -143,6 +149,60 @@ export function useBuilderStore() {
     notifyChange()
   }
 
+  // Move a node one slot up/down within its current parent (keyboard shortcut).
+  function moveSiblingNode(id: string, dir: -1 | 1) {
+    tree.value = { root: moveSibling(tree.value.root, id, dir) }
+    notifyChange()
+  }
+
+  // --- HTML5 drag-and-drop handlers (no dnd-kit-vue dep). Used by NodeRenderer + TreeRow. ---
+  function dragStart(id: string) {
+    draggingId.value = id
+  }
+  function dragEnd() {
+    draggingId.value = null
+    dropTarget.value = null
+  }
+  // Compute drop zone from pointer Y relative to target bounding box.
+  // pos: 'before' (top third), 'after' (bottom third), 'inside' (middle, containers only).
+  function dragOver(targetId: string, e: DragEvent, isContainer: boolean) {
+    if (!draggingId.value || draggingId.value === targetId) return
+    e.preventDefault() // allow drop
+    const el = e.currentTarget as HTMLElement
+    const rect = el.getBoundingClientRect()
+    const y = e.clientY - rect.top
+    const h = rect.height
+    let pos: 'before' | 'after' | 'inside'
+    let parentId: string
+    let index: number
+    const found = findNode(tree.value.root, targetId)
+    const parent = found?.parent
+    if (isContainer && y > h * 0.33 && y < h * 0.66) {
+      pos = 'inside'
+      parentId = targetId
+      index = -1
+    } else if (y < h / 2) {
+      pos = 'before'
+      parentId = parent?.id ?? tree.value.root.id
+      index = parent ? found!.index : 0
+    } else {
+      pos = 'after'
+      parentId = parent?.id ?? tree.value.root.id
+      index = parent ? found!.index + 1 : 0
+    }
+    dropTarget.value = { parentId, index, pos }
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'move'
+  }
+  function drop() {
+    const t = dropTarget.value
+    const d = draggingId.value
+    if (!t || !d) return
+    tree.value = { root: reparentTree(tree.value.root, d, t.parentId, t.index) }
+    notifyChange()
+    draggingId.value = null
+    dropTarget.value = null
+  }
+
   // --- publish ---
 
   async function publish() {
@@ -173,6 +233,8 @@ export function useBuilderStore() {
     dirty,
     breakpoint,
     canvasWidth,
+    draggingId,
+    dropTarget,
     // actions
     load,
     select,
@@ -181,6 +243,11 @@ export function useBuilderStore() {
     addNode,
     removeNode,
     duplicateNode,
+    moveSiblingNode,
+    dragStart,
+    dragEnd,
+    dragOver,
+    drop,
     publish,
   }
 }
