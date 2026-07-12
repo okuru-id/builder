@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Right inspector: edits the selected node's props + classes. Delete/duplicate actions.
-import { computed, inject, watch, ref } from 'vue'
+import { computed, inject } from 'vue'
 import { IconCopy, IconTrash, IconArrowUp, IconArrowDown, IconUnlink } from '@tabler/icons-vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -14,29 +14,16 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { BUILDER_KEY } from '@/components/builder/injection'
+import LayoutSection from './inspector/LayoutSection.vue'
+import TypographySection from './inspector/TypographySection.vue'
+import SpacingSection from './inspector/SpacingSection.vue'
+import BackgroundSection from './inspector/BackgroundSection.vue'
+import BorderSection from './inspector/BorderSection.vue'
+import SizeSection from './inspector/SizeSection.vue'
 
 const store = inject(BUILDER_KEY, null)!
 
 const node = computed(() => store.selectedNode.value)
-
-// Local buffer for classes textarea; sync when selection changes.
-const classesText = ref('')
-watch(
-  () => node.value?.id,
-  () => {
-    classesText.value = node.value?.classes.join('\n') ?? ''
-  },
-  { immediate: true },
-)
-
-function commitClasses() {
-  if (!node.value) return
-  const classes = classesText.value
-    .split(/\s+/)
-    .map((s) => s.trim())
-    .filter(Boolean)
-  store.patchNode(node.value.id, { classes })
-}
 
 function setProp(key: string, value: unknown) {
   if (!node.value) return
@@ -130,13 +117,17 @@ function moveDown() {
         <Input :model-value="String(node.props.href ?? '#')" class="h-8" @update:model-value="(v) => setProp('href', v)" />
       </div>
 
-      <div v-if="!node.componentId" class="space-y-1.5">
-        <Label class="text-xs">Classes (satu per baris atau dipisah spasi)</Label>
-        <Textarea v-model="classesText" rows="6" @blur="commitClasses" />
-      </div>
-
-      <div v-if="node.componentId" class="rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs text-neutral-500">
-        Edit komponen master untuk mengubah instance.
+      <!-- Style sections: only for non-instance nodes -->
+      <template v-if="!node.componentId">
+        <LayoutSection />
+        <TypographySection />
+        <SpacingSection />
+        <BackgroundSection />
+        <BorderSection />
+        <SizeSection />
+      </template>
+      <div v-else class="rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs text-neutral-500">
+        Edit komponen master untuk mengubah instance. Klik &quot;Putus link&quot; di atas untuk jadikan copy independen.
       </div>
 
       <div class="flex flex-wrap gap-2 pt-2" v-if="node.id !== 'root'">
