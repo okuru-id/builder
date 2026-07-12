@@ -20,93 +20,126 @@ type LandingCodegen struct{}
 
 func NewLandingCodegen() *LandingCodegen { return &LandingCodegen{} }
 
-// Generate produces a full HTML document from a tree.
+// Generate produces a full HTML document from a tree with 2-space indent.
 // title = page name used in <title>.
 func (g *LandingCodegen) Generate(tree map[string]any, title string) string {
-	body := g.renderNode(asNode(tree["root"]))
+	body := g.renderNodeDepth(asNode(tree["root"]), 2)
 	return g.document(title, body)
 }
 
-// GenerateFragment renders only the body inner HTML (no doctype/html/head wrapper).
+// GenerateFragment renders only the body inner HTML (no wrapper).
 // Useful for diffs, tests, and embedded previews.
 func (g *LandingCodegen) GenerateFragment(tree map[string]any) string {
-	return g.renderNode(asNode(tree["root"]))
+	return g.renderNodeDepth(asNode(tree["root"]), 0)
 }
 
-// renderNode dispatches a single node to its element renderer. depth controls indent.
-func (g *LandingCodegen) renderNode(n nodeMap) string {
+// ── Safelist ────────────────────────────────────────────────────
+
+// GenerateSafelist walks the tree and collects every distinct Tailwind utility
+// class (class="...") from every node. Returns sorted, deduplicated slice.
+// Useful for Tailwind JIT safelist configuration so no utility is purged.
+func (g *LandingCodegen) GenerateSafelist(tree map[string]any) []string {
+	set := make(map[string]struct{})
+	g.collectClasses(asNode(tree["root"]), set)
+	out := make([]string, 0, len(set))
+	for c := range set {
+		out = append(out, c)
+	}
+	sort.Strings(out)
+	return out
+}
+
+func (g *LandingCodegen) collectClasses(n nodeMap, out map[string]struct{}) {
+	if n == nil {
+		return
+	}
+	if raw, ok := n["classes"]; ok {
+		for _, s := range toStringSlice(raw) {
+			out[s] = struct{}{}
+		}
+	}
+	for _, c := range n.children() {
+		g.collectClasses(asNode(c), out)
+	}
+}
+
+// ── internal renderers (depth-aware) ────────────────────────────
+
+func (g *LandingCodegen) renderNodeDepth(n nodeMap, depth int) string {
 	if n == nil {
 		return ""
 	}
 	t := n.typeStr()
 	switch t {
 	case "text":
-		return g.renderLeaf("span", n)
+		return g.renderLeafDepth("span", n, depth)
 	case "heading":
-		return g.renderHeading(n)
+		return g.renderHeadingDepth(n, depth)
 	case "image":
-		return g.renderSelfClosing("img", n, "src", "alt")
+		return g.renderSelfClosingDepth("img", n, depth, "src", "alt")
 	case "button":
-		return g.renderLeaf("button", n)
+		return g.renderLeafDepth("button", n, depth)
 	case "link":
-		return g.renderLink(n)
+		return g.renderLinkDepth(n, depth)
 	case "section":
-		return g.renderContainer("section", n)
+		return g.renderContainerDepth("section", n, depth)
 	case "frame", "":
-		return g.renderContainer("div", n)
+		return g.renderContainerDepth("div", n, depth)
 	default:
-		// unknown types fall back to a neutral div
-		return g.renderContainer("div", n)
+		return g.renderContainerDepth("div", n, depth)
 	}
 }
 
-// renderContainer renders a node that has children.
-func (g *LandingCodegen) renderContainer(tag string, n nodeMap) string {
+func (g *LandingCodegen) renderContainerDepth(tag string, n nodeMap, depth int) string {
+	indent := strings.Repeat("  ", depth)
 	var b strings.Builder
-	b.WriteString("<" + tag + g.attrStr(n) + ">")
+	b.WriteString(indent + "<" + tag + g.attrStr(n) + ">\n")
 	for _, c := range n.children() {
-		b.WriteString(g.renderNode(asNode(c)))
+		b.WriteString(g.renderNodeDepth(asNode(c), depth+1))
 	}
-	b.WriteString("</" + tag + ">")
+	b.WriteString(indent + "</" + tag + ">\n")
 	return b.String()
 }
 
-// renderLeaf renders a node whose only content is props.text.
-func (g *LandingCodegen) renderLeaf(tag string, n nodeMap) string {
-	return fmt.Sprintf(
-		"<%s%s>%s</%s>",
-		tag, g.attrStr(n), html.EscapeString(n.propStr("text")), tag,
-	)
+func (g *LandingCodegen) renderLeafDepth(tag string, n nodeMap, depth int) string {
+	indent := strings.Repeat("  ", depth)
+	return fmt.Sprintf("%s<%s%s>%s</%s>\n",
+		indent, tag, g.attrStr(n), html.EscapeString(n.propStr("text")), tag)
 }
 
-// renderHeading maps props.level → h1..h6 (default h2).
-func (g *LandingCodegen) renderHeading(n nodeMap) string {
+func (g *LandingCodegen) renderHeadingDepth(n nodeMap, depth int) string {
 	lvl := n.propInt("level")
 	if lvl < 1 || lvl > 6 {
 		lvl = 2
 	}
 	tag := fmt.Sprintf("h%d", lvl)
-	return g.renderLeaf(tag, n)
+	return g.renderLeafDepth(tag, n, depth)
 }
 
-// renderSelfClosing renders void elements (img, input, br).
-func (g *LandingCodegen) renderSelfClosing(tag string, n nodeMap, attrs ...string) string {
-	return "<" + tag + g.attrStr(n, attrs...) + " />"
+func (g *LandingCodegen) renderSelfClosingDepth(tag string, n nodeMap, depth int, attrs ...string) string {
+	indent := strings.Repeat("  ", depth)
+	return indent + "<" + tag + g.attrStr(n, attrs...) + " />\n"
 }
 
-// renderLink prefers children, falls back to props.text.
-func (g *LandingCodegen) renderLink(n nodeMap) string {
+func (g *LandingCodegen) renderLinkDepth(n nodeMap, depth int) string {
+	indent := strings.Repeat("  ", depth)
 	var inner string
 	kids := n.children()
 	if len(kids) > 0 {
+		// Links with children render as a container block
+		var b strings.Builder
+		b.WriteString(indent + "<a" + g.attrStr(n, "href") + ">\n")
 		for _, c := range kids {
-			inner += g.renderNode(asNode(c))
+			b.WriteString(g.renderNodeDepth(asNode(c), depth+1))
 		}
-	} else {
-		inner = html.EscapeString(n.propStr("text"))
+		b.WriteString(indent + "</a>\n")
+		return b.String()
 	}
-	return fmt.Sprintf("<a%s>%s</a>", g.attrStr(n, "href"), inner)
+	inner = html.EscapeString(n.propStr("text"))
+	return fmt.Sprintf("%s<a%s>%s</a>\n", indent, g.attrStr(n, "href"), inner)
 }
+
+// ── attribute builder ───────────────────────────────────────────
 
 // attrStr builds the attribute string. class always first, then named attrs in
 // the order given (deterministic). Only non-empty values are emitted.
@@ -123,7 +156,8 @@ func (g *LandingCodegen) attrStr(n nodeMap, extra ...string) string {
 	return b.String()
 }
 
-// document wraps body HTML with a minimal HTML5 doc + Tailwind CDN.
+// ── document wrapper ────────────────────────────────────────────
+
 func (g *LandingCodegen) document(title, body string) string {
 	const tpl = `<!DOCTYPE html>
 <html lang="en">
@@ -134,13 +168,12 @@ func (g *LandingCodegen) document(title, body string) string {
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body>
-%s
-</body>
+%s</body>
 </html>`
 	return fmt.Sprintf(tpl, html.EscapeString(title), body)
 }
 
-// --- node map helpers ---
+// ── node map helpers ────────────────────────────────────────────
 
 type nodeMap map[string]any
 
@@ -198,9 +231,9 @@ func (n nodeMap) propInt(key string) int {
 	}
 }
 
-// classStr joins node.classes deterministically. If classes is an []any (from
-// JSON unmarshal) we sort-copy to avoid map-order drift, but preserve original
-// order since a slice already is ordered.
+// classStr joins deduplicated classes deterministically. Duplicates (which
+// can arise from style panel interactions) are silently dropped, first
+// occurrence wins (stable order in, stable order out).
 func (n nodeMap) classStr() string {
 	if n == nil {
 		return ""
@@ -210,7 +243,7 @@ func (n nodeMap) classStr() string {
 		return ""
 	}
 	parts := toStringSlice(raw)
-	return strings.Join(parts, " ")
+	return strings.Join(dedup(parts), " ")
 }
 
 func (n nodeMap) children() []any {
@@ -222,8 +255,6 @@ func (n nodeMap) children() []any {
 }
 
 // toStringSlice accepts []string, []any (JSON shape), and returns stable slice.
-// ponytail: no dedup yet — codegen output matches input order. Add dedup when
-// style panel emits duplicates (Phase 6).
 func toStringSlice(raw any) []string {
 	switch t := raw.(type) {
 	case []string:
@@ -241,9 +272,24 @@ func toStringSlice(raw any) []string {
 	}
 }
 
-// SortedClasses is exported for tests and Phase 7 deterministic comparisons.
-// It returns the class list sorted alphabetically — used to detect class-set
-// equality without caring about order.
+// dedup removes duplicates while preserving order. First occurrence wins.
+func dedup(in []string) []string {
+	if len(in) < 2 {
+		return in
+	}
+	seen := make(map[string]struct{}, len(in))
+	out := make([]string, 0, len(in))
+	for _, s := range in {
+		if _, ok := seen[s]; ok {
+			continue
+		}
+		seen[s] = struct{}{}
+		out = append(out, s)
+	}
+	return out
+}
+
+// SortedClasses is exported for tests. Returns class list sorted alphabetically.
 func SortedClasses(raw any) []string {
 	out := toStringSlice(raw)
 	sort.Strings(out)

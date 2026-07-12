@@ -1,16 +1,16 @@
 # Phase 7: One-Way Codegen (Tree → HTML/Vue Export)
 
-**Status:** ⬜ todo
+**Status:** ✅ done
 **Goal:** Generate clean downloadable HTML+Tailwind (atau Vue SFC) dari tree. Deterministic, idempotent. Tests.
 
 ## Checklist
 
-- [ ] 7.1 Go codegen `services/codegen.go` refine — deterministic, idempotent
-- [ ] 7.2 TypeScript codegen mirror (live preview export)
-- [ ] 7.3 Download button — export HTML atau Vue SFC
-- [ ] 7.4 Codegen tests: input tree X → expected output (snapshot/hash)
-- [ ] 7.5 Safelist generator — scan tree classes → `safelist.txt` untuk Tailwind JIT build
-- [ ] 7.6 Output **pure Tailwind utilities**, 0 import `@/components/ui/*`
+- [x] 7.1 Go codegen `services/codegen.go` refine — deterministic, idempotent, indent 2sp, class dedup
+- [x] 7.2 TypeScript codegen mirror (`frontend/src/composables/useCodegen.ts`)
+- [x] 7.3 Download button — ExportDialog (HTML preview, copy, download, safelist export)
+- [x] 7.4 Codegen tests: 12 tests (empty, deterministic×2, nested, no-shadcn, classes, dedup, self-closing, heading, link, safelist, whitespace)
+- [x] 7.5 Safelist generator — `GenerateSafelist()` (Go) + `collectClasses()` (TS)
+- [x] 7.6 Output pure Tailwind utilities — 0 shadcn imports (verified by test)
 
 ## Tests (critical)
 

@@ -1,12 +1,13 @@
 <script setup lang="ts">
-// Top toolbar: back, page name, breakpoint switch, save state, publish.
+// Top toolbar: back, page name, breakpoint switch, save state, publish, export.
 import { inject, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { IconArrowLeft, IconDeviceDesktop, IconDeviceTablet, IconDeviceMobile } from '@tabler/icons-vue'
+import { IconArrowLeft, IconDeviceDesktop, IconDeviceTablet, IconDeviceMobile, IconCode } from '@tabler/icons-vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { BUILDER_KEY } from '@/components/builder/injection'
 import type { Breakpoint } from '@/components/builder/useBuilderStore'
+import ExportDialog from './ExportDialog.vue'
 
 const store = inject(BUILDER_KEY, null)!
 const router = useRouter()
@@ -25,6 +26,8 @@ function commitName() {
   }
   editingName.value = false
 }
+
+const showExport = ref(false)
 
 const bps: { key: Breakpoint; icon: any; label: string }[] = [
   { key: 'desktop', icon: IconDeviceDesktop, label: 'Desktop' },
@@ -75,9 +78,14 @@ const bps: { key: Breakpoint; icon: any; label: string }[] = [
     </div>
 
     <div class="ml-auto flex items-center gap-2">
+      <Button variant="outline" size="sm" @click="showExport = true">
+        <IconCode class="size-3.5" /> Export
+      </Button>
       <Button variant="default" size="sm" :disabled="store.saving.value" @click="store.publish()">
         Publish
       </Button>
     </div>
   </header>
+
+  <ExportDialog v-if="showExport" @close="showExport = false" />
 </template>
