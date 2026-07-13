@@ -23,7 +23,7 @@ import { useComponents } from '@/composables/useComponents'
 export type Breakpoint = 'desktop' | 'tablet' | 'mobile'
 
 const BP_WIDTH: Record<Breakpoint, number | null> = {
-  desktop: null, // full canvas
+  desktop: 1920, // 1080p laptop
   tablet: 768,
   mobile: 390,
 }
@@ -349,5 +349,5 @@ export type BuilderStore = ReturnType<typeof useBuilderStore>
 
 function reId(n: Node) {
   n.id = makeNode(n.type).id
-  n.children.forEach(reId)
+  if (Array.isArray(n.children)) n.children.forEach(reId)
 }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Builder shell: top-level fullscreen route. Wires store → provide → 3-pane layout.
-import { onMounted, onUnmounted, provide, watch } from 'vue'
+import { onMounted, onUnmounted, provide, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import Toolbar from '@/components/builder/Toolbar.vue'
 import Canvas from '@/components/builder/Canvas.vue'
@@ -17,6 +17,10 @@ import { BUILDER_KEY } from '@/components/builder/injection'
 const route = useRoute()
 const store = useBuilderStore()
 provide(BUILDER_KEY, store)
+
+// Side-panel visibility (UI-only, not persisted). ponytail: no localStorage.
+const showLeft = ref(true)
+const showRight = ref(true)
 
 onMounted(() => {
   const id = route.params.id as string
@@ -91,21 +95,21 @@ onUnmounted(() => {
     <div class="text-sm text-muted-foreground">Loading builder…</div>
   </div>
   <div v-else class="flex h-screen flex-col bg-muted">
-    <Toolbar />
+    <Toolbar :show-left="showLeft" :show-right="showRight" @toggle-left="showLeft = !showLeft" @toggle-right="showRight = !showRight" />
     <ResizablePanelGroup
       direction="horizontal"
       class="flex min-h-0 flex-1"
       auto-save-id="builder-layout"
     >
-      <ResizablePanel :default-size="18" :min-size="12" :max-size="28">
+      <ResizablePanel v-if="showLeft" :default-size="18" :min-size="12" :max-size="28">
         <NodeTreePanel />
       </ResizablePanel>
-      <ResizableHandle />
+      <ResizableHandle v-if="showLeft" />
       <ResizablePanel :default-size="60" :min-size="30">
         <Canvas />
       </ResizablePanel>
-      <ResizableHandle />
-      <ResizablePanel :default-size="22" :min-size="16" :max-size="42">
+      <ResizableHandle v-if="showRight" />
+      <ResizablePanel v-if="showRight" :default-size="22" :min-size="16" :max-size="42">
         <RightPanel />
       </ResizablePanel>
     </ResizablePanelGroup>

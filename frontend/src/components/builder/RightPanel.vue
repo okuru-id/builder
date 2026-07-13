@@ -12,7 +12,7 @@ const tab = ref<'inspector' | 'agent'>('inspector')
 </script>
 
 <template>
-  <aside class="flex h-full w-full shrink-0 flex-col border-l border-border bg-background">
+  <aside class="flex h-full w-full shrink-0 flex-col border-l border-border bg-card">
     <Tabs v-model="tab" class="flex h-full min-h-0 flex-col">
       <div class="flex justify-center border-b border-border py-1">
         <TabsList class="h-9">

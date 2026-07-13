@@ -69,6 +69,9 @@ func (g *LandingCodegen) renderNodeDepth(n nodeMap, depth int) string {
 	if n == nil {
 		return ""
 	}
+	if n.hidden() {
+		return ""
+	}
 	t := n.typeStr()
 	switch t {
 	case "text":
@@ -85,6 +88,14 @@ func (g *LandingCodegen) renderNodeDepth(n nodeMap, depth int) string {
 		return g.renderContainerDepth("section", n, depth)
 	case "frame", "":
 		return g.renderContainerDepth("div", n, depth)
+	case "divider":
+		return g.renderSelfClosingDepth("hr", n, depth)
+	case "form":
+		return g.renderFormDepth(n, depth)
+	case "input":
+		return g.renderInputDepth(n, depth)
+	case "icon":
+		return g.renderIconDepth(n, depth)
 	default:
 		return g.renderContainerDepth("div", n, depth)
 	}
@@ -139,6 +150,65 @@ func (g *LandingCodegen) renderLinkDepth(n nodeMap, depth int) string {
 	return fmt.Sprintf("%s<a%s>%s</a>\n", indent, g.attrStr(n, "href"), inner)
 }
 
+// ── form, input, icon renderers ─────────────────────────────────
+
+func (g *LandingCodegen) renderFormDepth(n nodeMap, depth int) string {
+	indent := strings.Repeat("  ", depth)
+	au := g.attrStr(n)
+	action := n.propStr("action")
+	method := n.propStr("method")
+	if method == "" {
+		method = "POST"
+	}
+	var b strings.Builder
+	if action != "" {
+		b.WriteString(fmt.Sprintf(` action=%q`, action))
+	}
+	b.WriteString(fmt.Sprintf(` method=%q`, method))
+	var inner strings.Builder
+	for _, c := range n.children() {
+		inner.WriteString(g.renderNodeDepth(asNode(c), depth+1))
+	}
+	return fmt.Sprintf("%s<form%s%s>\n%s%s</form>\n", indent, au, b.String(), inner.String(), indent)
+}
+
+func (g *LandingCodegen) renderInputDepth(n nodeMap, depth int) string {
+	indent := strings.Repeat("  ", depth)
+	label := n.propStr("label")
+	inputType := n.propStr("inputType")
+	if inputType == "" {
+		inputType = "text"
+	}
+	placeholder := n.propStr("placeholder")
+	req := n.propStr("required")
+	var b strings.Builder
+	b.WriteString(indent + "<div" + g.attrStr(n) + ">\n")
+	if label != "" {
+		b.WriteString(fmt.Sprintf("%s  <label class=\"text-sm font-medium\">%s</label>\n", indent, html.EscapeString(label)))
+	}
+	b.WriteString(indent + "  <input")
+	b.WriteString(fmt.Sprintf(` type=%q`, inputType))
+	if placeholder != "" {
+		b.WriteString(fmt.Sprintf(` placeholder=%q`, html.EscapeString(placeholder)))
+	}
+	if req == "true" || req == "1" {
+		b.WriteString(` required`)
+	}
+	b.WriteString(` class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"`)
+	b.WriteString(" />\n")
+	b.WriteString(indent + "</div>\n")
+	return b.String()
+}
+
+func (g *LandingCodegen) renderIconDepth(n nodeMap, depth int) string {
+	indent := strings.Repeat("  ", depth)
+	// Fallback SVG circle when icon map is not embedded.
+	// ponytail: full tabler icon map (21KB) skipped. Upgrade when server-side icon
+	// rendering is needed — embed the map as a Go file or serve via API.
+	svg := `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4" fill="currentColor" /></svg>`
+	return fmt.Sprintf("%s<span%s>%s</span>\n", indent, g.attrStr(n), svg)
+}
+
 // ── attribute builder ───────────────────────────────────────────
 
 // attrStr builds the attribute string. class always first, then named attrs in
@@ -165,7 +235,10 @@ func (g *LandingCodegen) document(title, body string) string {
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>%s</title>
-<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
 <body>
 %s</body>
@@ -185,6 +258,11 @@ func asNode(v any) nodeMap {
 func (n nodeMap) typeStr() string {
 	s, _ := n["type"].(string)
 	return s
+}
+
+func (n nodeMap) hidden() bool {
+	b, _ := n["hidden"].(bool)
+	return b
 }
 
 func (n nodeMap) propStr(key string) string {

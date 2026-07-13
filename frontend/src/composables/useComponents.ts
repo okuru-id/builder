@@ -8,11 +8,22 @@ export function useComponents() {
   const components = ref<Component[]>([])
   const loading = ref(false)
 
+  // Normalize tree: ensure every node has children:[] (not null/undefined).
+  // Fixes seeded components where Go marshal produced null for empty children.
+  function normalizeTree(root: Node): Node {
+    if (!root.children) root.children = []
+    root.children.forEach(normalizeTree)
+    return root
+  }
+
   async function load() {
     loading.value = true
     try {
       const res = await api.get<{ data: Component[] }>('/landing-components')
-      components.value = res.data.data ?? []
+      components.value = (res.data.data ?? []).map(c => ({
+        ...c,
+        tree: c.tree ? { ...c.tree, root: normalizeTree(c.tree.root) } : c.tree,
+      }))
     } catch (e) {
       console.error('failed to load components', e)
     } finally {

@@ -3,7 +3,8 @@
 // `bare` mode drops the <aside> wrapper so it can be embedded inside RightPanel tabs.
 import { computed, inject, ref } from 'vue'
 import { IconCopy, IconTrash, IconArrowUp, IconArrowDown, IconUnlink, IconCode, IconSettings, IconTypography, IconPhoto, IconLink } from '@tabler/icons-vue'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
@@ -15,6 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { BUILDER_KEY } from '@/components/builder/injection'
+import { findNode } from '@/components/builder/tree-utils'
 import { ICONS, ICON_LIST } from '@/lib/icon-map'
 import LayoutSection from './inspector/LayoutSection.vue'
 import TypographySection from './inspector/TypographySection.vue'
@@ -60,6 +62,17 @@ function confirmDelete() {
 function dup() {
   if (node.value) store.duplicateNode(node.value.id)
 }
+// Sibling position for up/down disabled state.
+const atTop = computed(() => {
+  if (!node.value) return true
+  const f = findNode(store.tree.value.root, node.value.id)
+  return !f || !f.parent || f.index === 0
+})
+const atBottom = computed(() => {
+  if (!node.value) return true
+  const f = findNode(store.tree.value.root, node.value.id)
+  return !f || !f.parent || f.index >= f.parent.children.length - 1
+})
 function moveUp() {
   if (node.value) store.moveSiblingNode(node.value.id, -1)
 }
@@ -101,16 +114,18 @@ function removeClass(idx: number) {
     <div v-else class="flex-1 overflow-auto">
       <!-- Umum: identity + actions, same shell as style sections -->
       <InspectorSection title="General" :icon="IconSettings">
-        <div v-if="node.id !== 'root'" class="flex items-center justify-center gap-1 rounded-md border border-border bg-muted/50 p-1">
-          <Button variant="ghost" size="icon-sm" title="Move up" @click="moveUp">
-            <IconArrowUp class="size-4" />
-          </Button>
-          <Button variant="ghost" size="icon-sm" title="Move down" @click="moveDown">
-            <IconArrowDown class="size-4" />
-          </Button>
-          <Button variant="ghost" size="icon-sm" title="Duplicate" @click="dup">
-            <IconCopy class="size-4" />
-          </Button>
+        <div v-if="node.id !== 'root'" class="flex items-center justify-between">
+          <div class="flex items-center gap-0.5">
+            <Button variant="ghost" size="icon-sm" :disabled="atTop" title="Move up" @click="moveUp">
+              <IconArrowUp class="size-4" />
+            </Button>
+            <Button variant="ghost" size="icon-sm" :disabled="atBottom" title="Move down" @click="moveDown">
+              <IconArrowDown class="size-4" />
+            </Button>
+            <Button variant="ghost" size="icon-sm" title="Duplicate" @click="dup">
+              <IconCopy class="size-4" />
+            </Button>
+          </div>
           <Button variant="ghost" size="icon-sm" class="text-red-500 hover:bg-red-500/10 hover:text-red-600 dark:text-red-400" title="Delete" @click="delConfirm">
             <IconTrash class="size-4" />
           </Button>
@@ -286,8 +301,8 @@ function removeClass(idx: number) {
           Are you sure you want to delete <strong>{{ node?.name }}</strong>? This action cannot be undone.
         </AlertDialogDescription>
         <div class="flex justify-end gap-2">
-          <AlertDialogCancel class="h-8 px-3 text-xs">Cancel</AlertDialogCancel>
-          <AlertDialogAction class="h-8 px-3 text-xs bg-red-600 hover:bg-red-700 text-white" @click="confirmDelete">
+          <AlertDialogCancel :class="cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'text-xs')">Cancel</AlertDialogCancel>
+          <AlertDialogAction :class="cn(buttonVariants({ variant: 'destructive', size: 'sm' }), 'text-xs')" @click="confirmDelete">
             Delete
           </AlertDialogAction>
         </div>

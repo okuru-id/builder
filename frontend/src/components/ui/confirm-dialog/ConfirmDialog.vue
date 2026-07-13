@@ -9,6 +9,8 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from '@/components/ui/alert-dialog'
+import { buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 defineProps<{ open: boolean }>()
 const emit = defineEmits<{ 'update:open': [v: boolean]; confirm: [] }>()
@@ -22,8 +24,8 @@ const emit = defineEmits<{ 'update:open': [v: boolean]; confirm: [] }>()
         <slot name="description">Are you sure?</slot>
       </AlertDialogDescription>
       <div class="flex justify-end gap-2">
-        <AlertDialogCancel class="h-8 px-3 text-xs" @click="$emit('update:open', false)">Cancel</AlertDialogCancel>
-        <AlertDialogAction class="h-8 px-3 text-xs bg-red-600 hover:bg-red-700 text-white" @click="$emit('confirm')">
+        <AlertDialogCancel :class="cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'text-xs')" @click="$emit('update:open', false)">Cancel</AlertDialogCancel>
+        <AlertDialogAction :class="cn(buttonVariants({ variant: 'destructive', size: 'sm' }), 'text-xs')" @click="$emit('confirm')">
           <slot name="confirm">Delete</slot>
         </AlertDialogAction>
       </div>

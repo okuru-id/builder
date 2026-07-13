@@ -9,13 +9,16 @@ import { BUILDER_KEY } from '@/components/builder/injection'
 import { ICONS } from '@/lib/icon-map'
 
 const props = withDefaults(
-  defineProps<{ node: Node; depth?: number; readonly?: boolean }>(),
-  { depth: 0, readonly: false },
+  defineProps<{ node: Node; depth?: number; readonly?: boolean; ancestorId?: string }>(),
+  { depth: 0, readonly: false, ancestorId: '' },
 )
 
 const store = inject(BUILDER_KEY, null)
 const editing = ref(false)
 const elRef = ref<HTMLElement | null>(null)
+
+// If this node is inside a component instance, detach on first edit.
+const instanceOwner = computed(() => props.ancestorId || (isInstance.value ? props.node.id : ''))
 
 const tag = computed<string>(() => tagFor(displayNode.value))
 const isTextLike = computed(() => TEXT_TYPES.has(displayNode.value.type))
@@ -32,6 +35,7 @@ const displayNode = computed<Node>(() => {
   return props.node
 })
 const isInstance = computed(() => props.node.type === 'component' && !!props.node.componentId)
+const inInstance = computed(() => !!instanceOwner.value)
 const classList = computed(() => {
   const base = displayNode.value.classes
   if (props.readonly) return base
@@ -85,14 +89,24 @@ function attrsFor(n: Node): Record<string, unknown> {
   return a
 }
 function onClick(e: MouseEvent) {
-  if (props.readonly) return
+  if (props.readonly && !inInstance.value) return
   e.stopPropagation()
-  store?.select(props.node.id)
+  // Click inside an instance selects the instance itself.
+  const targetId = inInstance.value ? instanceOwner.value : props.node.id
+  store?.select(targetId || props.node.id)
 }
 
 async function onDblClick(e: MouseEvent) {
-  // Instances: double-click selects but does not inline-edit (edit master instead).
-  if (props.readonly || !isTextLike.value || !store || isInstance.value) return
+  if (!isTextLike.value || !store) return
+  // Allow breaking instances even in readonly mode.
+  if (props.readonly && !inInstance.value) return
+  // Instances: break (detach) on first edit, then let user edit the copy directly.
+  if (inInstance.value || isInstance.value) {
+    e.stopPropagation()
+    const id = inInstance.value ? instanceOwner.value : props.node.id
+    if (id) store.breakInstance(id)
+    return
+  }
   e.stopPropagation()
   editing.value = true
   await nextTick()
@@ -173,6 +187,7 @@ function onDragEnd() {
       'opacity-40': dragging,
       'ring-2 ring-blue-500 ring-inset': dropInside,
     }]"
+    :style="props.node.hidden ? { display: 'none' } : undefined"
     :draggable="!readonly && !editing"
     v-bind="{ ...attrsFor(displayNode), ...interactiveAttrs }"
     @click="onClick"
@@ -190,6 +205,9 @@ function onDragEnd() {
       {{ displayNode.props.text }}
     </template>
     <template v-else-if="displayNode.type === 'button'">
+      {{ displayNode.props.text }}
+    </template>
+    <template v-else-if="displayNode.type === 'link' && (!displayNode.children || displayNode.children.length === 0)">
       {{ displayNode.props.text }}
     </template>
     <template v-else-if="displayNode.type === 'icon'">
@@ -222,6 +240,7 @@ function onDragEnd() {
         :node="child"
         :depth="depth + 1"
         :readonly="readonly || isInstance"
+        :ancestor-id="instanceOwner"
       />
     </template>
   </component>

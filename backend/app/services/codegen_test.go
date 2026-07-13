@@ -13,7 +13,9 @@ func TestLandingCodegen_EmptyFrame(t *testing.T) {
 			"children": []any{},
 		},
 	}
-	want := `<div class="min-h-screen"></div>`
+	want := `<div class="min-h-screen">
+</div>
+`
 	got := NewLandingCodegen().GenerateFragment(tree)
 	if got != want {
 		t.Fatalf("got %q, want %q", got, want)
@@ -89,7 +91,12 @@ func TestLandingCodegen_NestedFrame(t *testing.T) {
 		},
 	}
 	got := NewLandingCodegen().GenerateFragment(tree)
-	want := `<section class="p-4"><div class="flex"><button class="bg-blue-500">Go</button></div></section>`
+	want := `<section class="p-4">
+  <div class="flex">
+    <button class="bg-blue-500">Go</button>
+  </div>
+</section>
+`
 	if got != want {
 		t.Fatalf("got %q, want %q", got, want)
 	}
@@ -123,7 +130,10 @@ func TestLandingCodegen_LinkWithChildren(t *testing.T) {
 		},
 	}
 	got := NewLandingCodegen().GenerateFragment(tree)
-	want := `<a href="https://okuru.id"><span>Visit</span></a>`
+	want := `<a href="https://okuru.id">
+  <span>Visit</span>
+</a>
+`
 	if got != want {
 		t.Fatalf("got %q, want %q", got, want)
 	}
@@ -153,8 +163,8 @@ func TestLandingCodegen_FullDocumentHasTailwind(t *testing.T) {
 	if !strings.HasPrefix(got, "<!DOCTYPE html>") {
 		t.Error("missing doctype")
 	}
-	if !strings.Contains(got, "cdn.tailwindcss.com") {
-		t.Error("missing tailwind CDN")
+	if !strings.Contains(got, "tailwindcss/browser@4") {
+		t.Error("missing tailwind v4 CDN")
 	}
 	if !strings.Contains(got, "<title>Home</title>") {
 		t.Error("missing title")

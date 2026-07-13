@@ -1,8 +1,22 @@
 <script setup lang="ts">
-// Top toolbar: back, page name, breakpoint switch, save, publish, export.
+// Top toolbar: 3-column layout. Left=identity, center=toggles+breakpoint, right=actions.
+// All action buttons icon-only with native title tooltips. ponytail: title attr
+// over Tooltip component — zero provider wiring, native, sufficient.
 import { inject, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { IconArrowLeft, IconDeviceDesktop, IconDeviceTablet, IconDeviceMobile, IconCode, IconDeviceFloppy, IconCheck, IconExternalLink } from '@tabler/icons-vue'
+import {
+  IconArrowLeft,
+  IconDeviceDesktop,
+  IconDeviceTablet,
+  IconDeviceMobile,
+  IconCode,
+  IconDeviceFloppy,
+  IconCheck,
+  IconExternalLink,
+  IconLayoutSidebar,
+  IconLayoutSidebarRight,
+  IconRocket,
+} from '@tabler/icons-vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { BUILDER_KEY } from '@/components/builder/injection'
@@ -11,6 +25,9 @@ import ExportDialog from './ExportDialog.vue'
 
 const store = inject(BUILDER_KEY, null)!
 const router = useRouter()
+
+defineProps<{ showLeft: boolean; showRight: boolean }>()
+defineEmits<{ 'toggle-left': []; 'toggle-right': [] }>()
 
 const editingName = ref(false)
 const nameBuffer = ref('')
@@ -35,6 +52,13 @@ const bps: { key: Breakpoint; icon: any; label: string }[] = [
   { key: 'mobile', icon: IconDeviceMobile, label: 'Mobile' },
 ]
 
+// Save button label for tooltip + icon state.
+const saveState = () => {
+  if (store.saving.value) return { label: 'Saving…', icon: IconDeviceFloppy, spin: true }
+  if (store.dirty.value) return { label: 'Save', icon: IconDeviceFloppy, spin: false }
+  return { label: 'Saved', icon: IconCheck, spin: false }
+}
+
 function openPreview() {
   const id = store.page.value?.id
   if (id) window.open(`/?preview=${id}`, '_blank')
@@ -42,34 +66,37 @@ function openPreview() {
 </script>
 
 <template>
-  <header class="flex h-14 items-center gap-3 border-b border-border bg-background px-3">
-    <Button variant="ghost" size="icon" @click="router.push('/pages')">
-      <IconArrowLeft class="size-4" />
-    </Button>
+  <header class="flex h-14 items-stretch border-b border-border bg-card">
+    <!-- Left: identity -->
+    <div class="flex flex-1 items-center gap-1 pl-3">
+      <Button variant="ghost" size="icon" title="Back to pages" @click="router.push('/pages')">
+        <IconArrowLeft class="size-4" />
+      </Button>
 
-    <div class="flex items-center gap-2">
-      <Input
-        v-if="editingName"
-        v-model="nameBuffer"
-        class="h-8 w-48"
-        autofocus
-        @blur="commitName"
-        @keydown.enter.prevent="commitName"
-        @keydown.esc.prevent="editingName = false"
-      />
-      <button
-        v-else
-        class="rounded px-2 py-1 text-sm font-medium hover:bg-muted"
-        @click="startEditName"
-      >
-        {{ store.page.value?.name ?? '—' }}
-      </button>
-      <span class="text-xs text-muted-foreground">v{{ store.page.value?.version ?? 0 }}</span>
-      <span v-if="store.dirty.value" class="text-xs text-amber-600">●</span>
-      <span v-if="store.saving.value" class="text-xs text-muted-foreground">Saving…</span>
+      <div class="flex items-center gap-2">
+        <Input
+          v-if="editingName"
+          v-model="nameBuffer"
+          class="h-8 w-48"
+          autofocus
+          @blur="commitName"
+          @keydown.enter.prevent="commitName"
+          @keydown.esc.prevent="editingName = false"
+        />
+        <button
+          v-else
+          class="rounded px-2 py-1 text-sm font-medium hover:bg-muted"
+          @click="startEditName"
+        >
+          {{ store.page.value?.name ?? '—' }}
+        </button>
+        <span class="text-xs text-muted-foreground">v{{ store.page.value?.version ?? 0 }}</span>
+        <span v-if="store.dirty.value" class="text-xs text-amber-600">●</span>
+      </div>
     </div>
 
-    <div class="ml-4 flex items-center gap-0.5 rounded-lg border border-border p-0.5">
+    <!-- Center: breakpoint (perfectly centered) -->
+    <div class="flex shrink-0 items-center gap-0.5 rounded-lg border border-border p-0.5 my-2">
       <button
         v-for="bp in bps"
         :key="bp.key"
@@ -82,25 +109,48 @@ function openPreview() {
       </button>
     </div>
 
-    <div class="ml-auto flex items-center gap-2">
+    <!-- Right: panel toggles + actions (icon-only) -->
+    <div class="flex flex-1 items-center justify-end gap-0 pr-3">
+      <div class="flex items-center gap-0">
+        <Button
+          variant="ghost"
+          size="icon"
+          :class="!showLeft ? 'bg-muted' : ''"
+          title="Toggle left panel"
+          @click="$emit('toggle-left')"
+        >
+          <IconLayoutSidebar class="size-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          :class="!showRight ? 'bg-muted' : ''"
+          title="Toggle right panel"
+          @click="$emit('toggle-right')"
+        >
+          <IconLayoutSidebarRight class="size-4" />
+        </Button>
+      </div>
+
+      <div class="mx-0.5 h-5 w-px shrink-0 bg-border" />
+
       <Button
-        variant="outline"
-        size="sm"
+        variant="ghost"
+        size="icon"
         :disabled="store.saving.value || !store.dirty.value"
+        :title="saveState().label"
         @click="store.save()"
       >
-        <IconCheck v-if="!store.dirty.value && !store.saving.value" class="size-3.5 text-green-600" />
-        <IconDeviceFloppy v-else class="size-3.5" />
-        {{ store.saving.value ? 'Saving…' : store.dirty.value ? 'Save' : 'Saved' }}
+        <component :is="saveState().icon" class="size-4" :class="saveState().spin ? 'animate-spin' : (!store.dirty.value && !store.saving.value ? 'text-green-600' : '')" />
       </Button>
-      <Button variant="outline" size="sm" @click="showExport = true">
-        <IconCode class="size-3.5" /> Export
+      <Button variant="ghost" size="icon" title="Export" @click="showExport = true">
+        <IconCode class="size-4" />
       </Button>
-      <Button variant="outline" size="sm" @click="openPreview" title="Preview in new tab">
-        <IconExternalLink class="size-3.5" /> Preview
+      <Button variant="ghost" size="icon" title="Preview" @click="openPreview">
+        <IconExternalLink class="size-4" />
       </Button>
-      <Button variant="default" size="sm" :disabled="store.saving.value" @click="store.publish()">
-        Publish
+      <Button variant="default" size="icon" :disabled="store.saving.value" title="Publish" @click="store.publish()">
+        <IconRocket class="size-4" />
       </Button>
     </div>
   </header>

@@ -18,6 +18,8 @@ import {
   IconStar,
   IconForms,
   IconInputSearch,
+  IconEye,
+  IconEyeOff,
 } from '@tabler/icons-vue'
 import type { Node, NodeType } from '@/types/page-builder'
 import { BUILDER_KEY } from '@/components/builder/injection'
@@ -42,7 +44,6 @@ const ancestorLines = computed(() => props.ancestorsIsLast.slice(0, -1))
 
 const store = inject(BUILDER_KEY, null)!
 const expanded = ref(true)
-const dropEndActive = ref(false)
 
 // Indent geometry. guideX(d) = x of the vertical guide for children of a
 // Indent geometry. guideX(d) = x of the vertical guide for children of a
@@ -112,6 +113,11 @@ function toggleExpand(e: MouseEvent) {
   expanded.value = !expanded.value
 }
 
+function toggleHidden(e: MouseEvent) {
+  e.stopPropagation()
+  store.patchNode(props.node.id, { hidden: !props.node.hidden })
+}
+
 function onDragStart(e: DragEvent) {
   store.dragStart(props.node.id)
   if (e.dataTransfer) {
@@ -121,9 +127,6 @@ function onDragStart(e: DragEvent) {
 }
 function onDragOver(e: DragEvent) {
   store.dragOver(props.node.id, e, isContainer())
-}
-function onDragOverEnd(e: DragEvent) {
-  store.dragOverEnd(props.node.id, e)
 }
 function onDrop(e: DragEvent) {
   e.preventDefault()
@@ -146,6 +149,7 @@ function onDragEnd() {
           ? 'bg-primary/10 text-primary font-medium'
           : 'text-foreground hover:bg-muted/50',
         dragging() ? 'opacity-30' : '',
+        node.hidden ? 'opacity-50' : '',
         dropInside() ? 'ring-2 ring-blue-400 ring-inset rounded-sm' : '',
       ]"
       :style="{ paddingLeft: `${pad(depth)}px` }"
@@ -159,7 +163,7 @@ function onDragEnd() {
       <template v-for="(_parentLast, idx) in ancestorLines" :key="idx">
         <span
           v-if="!ancestorsIsLast[idx + 1]"
-          class="pointer-events-none absolute border-l border-input"
+          class="pointer-events-none absolute border-l border-neutral-300"
           :style="{ left: `${guideX(idx)}px`, top: 0, height: '100%', zIndex: 1 }"
         />
       </template>
@@ -168,14 +172,14 @@ function onDragEnd() {
            pointing at this node's icon. -->
       <span
         v-if="depth > 0"
-        class="pointer-events-none absolute top-1/2 border-t border-input"
+        class="pointer-events-none absolute top-1/2 border-t border-neutral-300"
         :style="{ left: `${guideX(depth - 1)}px`, width: `${elbowWidth}px`, transform: 'translateY(-50%)', zIndex: 1 }"
       />
       <!-- Vertical guide segment for this row's depth. Last sibling stops at
-           row center; others span the full row height so they chain downward. -->
+           row center (elbow); others span full height to chain downward. -->
       <span
         v-if="depth > 0"
-        class="pointer-events-none absolute border-l border-input"
+        class="pointer-events-none absolute border-l border-neutral-300"
         :style="{ left: `${guideX(depth - 1)}px`, top: 0, height: isLast ? '50%' : '100%', zIndex: 1 }"
       />
 
@@ -208,6 +212,18 @@ function onDragEnd() {
         {{ (resolved.children ?? []).length }}
       </span>
 
+      <!-- Visibility toggle: eye-off shown when hidden, eye on hover when visible -->
+      <button
+        class="flex size-4 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+        :class="node.hidden ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
+        :title="node.hidden ? 'Show layer' : 'Hide layer'"
+        @click.stop="toggleHidden"
+        @mousedown.stop
+      >
+        <IconEyeOff v-if="node.hidden" class="size-3.5" />
+        <IconEye v-else class="size-3.5" />
+      </button>
+
       <!-- Drag handle (right side, visible on hover) -->
       <IconGripVertical
         v-if="depth > 0"
@@ -225,16 +241,6 @@ function onDragEnd() {
           :depth="depth + 1"
           :is-last="i === resolved.children.length - 1"
           :ancestors-is-last="nextAncestorsIsLast"
-        />
-        <!-- Trailing drop zone: drop here appends as last child. Fixes moving
-             the top node below the last sibling (empty space had no handler). -->
-        <div
-          class="h-8 w-full rounded-sm transition-colors"
-          :class="dropEndActive ? 'bg-blue-400/20' : 'hover:bg-muted/30'"
-          @dragover="onDragOverEnd($event)"
-          @dragleave="dropEndActive = false"
-          @dragenter="dropEndActive = true"
-          @drop="onDrop($event); dropEndActive = false"
         />
       </div>
     </div>

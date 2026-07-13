@@ -118,7 +118,7 @@ function startResize(which: 'tree' | 'components', event: MouseEvent) {
 </script>
 
 <template>
-  <aside ref="aside" class="flex h-full w-full flex-col border-r border-border bg-background">
+  <aside ref="aside" class="flex h-full w-full flex-col border-r border-border bg-card">
     <!-- Header -->
     <div ref="header" class="flex shrink-0 items-center justify-between border-b border-border px-3 py-2.5">
       <div class="flex items-center gap-1.5">

@@ -56,6 +56,9 @@ func node(kind, name string, props map[string]any, classes []string, children ..
 	if classes == nil {
 		classes = []string{}
 	}
+	if children == nil {
+		children = []map[string]any{}
+	}
 	return map[string]any{
 		"id":       name,
 		"type":     kind,

@@ -41,6 +41,7 @@ export interface Node {
   children: Node[]
   componentId?: number
   instanceOverrides?: Partial<Node>
+  hidden?: boolean
 }
 
 export interface TreeShape {
