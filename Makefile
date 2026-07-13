@@ -5,6 +5,7 @@ dev-frontend:
 	cd frontend && bun run dev
 
 dev-backend:
+	@fuser -k 3000/tcp 2>/dev/null || true
 	cd backend && go run .
 
 dev:

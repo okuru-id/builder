@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"unicode"
 
 	"github.com/goravel/framework/contracts/http"
 	"gorm.io/datatypes"
@@ -87,6 +88,7 @@ func (c *LandingPageController) Store(ctx http.Context) http.Response {
 	if slug == "" {
 		slug = slugify(in.Name)
 	}
+	slug = uniqueSlug(slug)
 	page := models.LandingPage{
 		Name:   in.Name,
 		Slug:   slug,
@@ -256,7 +258,7 @@ func (c *LandingPageController) Duplicate(ctx http.Context) http.Response {
 	}
 	copy := models.LandingPage{
 		Name:   page.Name + " (copy)",
-		Slug:   slugify(page.Name + " copy"),
+		Slug:   uniqueSlug(slugify(page.Name + " copy")),
 		Status: "draft",
 		Tree:   page.Tree,
 	}
@@ -268,7 +270,36 @@ func (c *LandingPageController) Duplicate(ctx http.Context) http.Response {
 
 func slugify(s string) string {
 	s = strings.ToLower(strings.TrimSpace(s))
-	s = strings.ReplaceAll(s, " ", "-")
-	s = strings.ReplaceAll(s, "_", "-")
-	return s
+	var b strings.Builder
+	prevDash := false
+	for _, r := range s {
+		switch {
+		case unicode.IsLetter(r), unicode.IsNumber(r):
+			b.WriteRune(r)
+			prevDash = false
+		case r == ' ', r == '-', r == '_':
+			if b.Len() > 0 && !prevDash {
+				b.WriteByte('-')
+				prevDash = true
+			}
+		}
+	}
+	out := strings.Trim(b.String(), "-")
+	if out == "" {
+		return "page"
+	}
+	return out
+}
+
+func uniqueSlug(base string) string {
+	base = slugify(base)
+	candidate := base
+	for i := 2; ; i++ {
+		var page models.LandingPage
+		_ = facades.Orm().Query().Where("slug = ?", candidate).First(&page)
+		if page.ID == 0 {
+			return candidate
+		}
+		candidate = fmt.Sprintf("%s-%d", base, i)
+	}
 }

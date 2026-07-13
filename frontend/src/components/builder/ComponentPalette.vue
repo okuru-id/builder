@@ -2,7 +2,7 @@
 // Component palette: list reusable masters. Click to insert instance, "save" to
 // create master from selected node. Lives at the bottom of the left panel.
 import { inject, ref, computed } from 'vue'
-import { IconPlus, IconBookmark, IconUnlink, IconTrash, IconPencil } from '@tabler/icons-vue'
+import { IconPlus, IconBookmark, IconUnlink, IconTrash, IconPencil, IconCopy } from '@tabler/icons-vue'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { BUILDER_KEY } from '@/components/builder/injection'
 
@@ -45,11 +45,20 @@ async function doDelete() {
   }
 }
 
-async function rename(c: { id: number; name: string }) {
+async function rename(c: { id: number; name: string; is_system: boolean }) {
+  if (c.is_system) return
   const name = window.prompt('Rename component?', c.name)
   if (!name?.trim() || name.trim() === c.name) return
   try {
     await store.components.rename(c.id, name.trim())
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+async function duplicate(c: { id: number }) {
+  try {
+    await store.components.duplicate(c.id)
   } catch (e) {
     console.error(e)
   }
@@ -60,7 +69,7 @@ const canSave = () => !!store.selectedId.value && store.selectedId.value !== sto
 </script>
 
 <template>
-  <div class="border-t border-border p-2">
+  <div class="p-2">
     <div class="mb-1.5 flex items-center justify-between">
       <span class="text-xs font-medium text-muted-foreground">Components</span>
       <button
@@ -98,8 +107,17 @@ const canSave = () => !!store.selectedId.value && store.selectedId.value !== sto
         >
           <IconPlus class="size-3.5 text-muted-foreground" />
           <span class="truncate">{{ c.name }}</span>
+          <span v-if="c.is_system" class="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">Default</span>
         </button>
         <button
+          class="rounded p-0.5 text-neutral-300 opacity-0 hover:text-foreground group-hover:opacity-100"
+          title="Duplicate"
+          @click.stop="duplicate(c)"
+        >
+          <IconCopy class="size-3.5" />
+        </button>
+        <button
+          v-if="!c.is_system"
           class="rounded p-0.5 text-neutral-300 opacity-0 hover:text-foreground group-hover:opacity-100"
           title="Rename"
           @click.stop="rename(c)"
@@ -107,6 +125,7 @@ const canSave = () => !!store.selectedId.value && store.selectedId.value !== sto
           <IconPencil class="size-3.5" />
         </button>
         <button
+          v-if="!c.is_system"
           class="rounded p-0.5 text-neutral-300 opacity-0 hover:text-red-500 group-hover:opacity-100"
           title="Delete master"
           @click.stop="del(c.id, c.name)"

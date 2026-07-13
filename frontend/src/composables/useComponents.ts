@@ -46,5 +46,11 @@ export function useComponents() {
     return updated
   }
 
-  return { components, loading, load, masterRoot, create, remove, rename }
+  async function duplicate(id: number) {
+    const res = await api.post<{ data: Component }>(`/landing-components/${id}/duplicate`)
+    components.value.unshift(res.data.data)
+    return res.data.data
+  }
+
+  return { components, loading, load, masterRoot, create, remove, rename, duplicate }
 }

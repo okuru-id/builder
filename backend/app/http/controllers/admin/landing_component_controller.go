@@ -2,6 +2,7 @@ package admin
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/goravel/framework/contracts/http"
 	"gorm.io/datatypes"
@@ -52,13 +53,35 @@ func (c *LandingComponentController) Store(ctx http.Context) http.Response {
 		return ctx.Response().Json(http.StatusBadRequest, http.Json{"error": err.Error()})
 	}
 	comp := models.LandingComponent{
-		Name: in.Name,
-		Tree: datatypes.JSON(in.Tree),
+		Name:     in.Name,
+		Tree:     datatypes.JSON(in.Tree),
+		IsSystem: false,
 	}
 	if err := facades.Orm().Query().Create(&comp); err != nil {
 		return ctx.Response().Json(http.StatusInternalServerError, http.Json{"error": err.Error()})
 	}
 	return ctx.Response().Success().Json(http.Json{"data": comp})
+}
+
+// Duplicate creates an editable copy of a component master.
+func (c *LandingComponentController) Duplicate(ctx http.Context) http.Response {
+	id := ctx.Request().Input("id")
+	var comp models.LandingComponent
+	if err := facades.Orm().Query().Where("id = ?", id).First(&comp); err != nil {
+		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "component not found"})
+	}
+	if comp.ID == 0 {
+		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "component not found"})
+	}
+	copy := models.LandingComponent{
+		Name:     fmt.Sprintf("%s (copy)", comp.Name),
+		Tree:     comp.Tree,
+		IsSystem: false,
+	}
+	if err := facades.Orm().Query().Create(&copy); err != nil {
+		return ctx.Response().Json(http.StatusInternalServerError, http.Json{"error": err.Error()})
+	}
+	return ctx.Response().Success().Json(http.Json{"data": copy})
 }
 
 // Update replaces the master name and/or tree. Instances resolve the new tree
@@ -75,6 +98,9 @@ func (c *LandingComponentController) Update(ctx http.Context) http.Response {
 	var in landingComponentInput
 	if err := ctx.Request().Bind(&in); err != nil {
 		return ctx.Response().Json(http.StatusBadRequest, http.Json{"error": err.Error()})
+	}
+	if comp.IsSystem {
+		return ctx.Response().Json(http.StatusForbidden, http.Json{"error": "system component cannot be modified"})
 	}
 	if in.Name != "" {
 		comp.Name = in.Name
@@ -98,6 +124,9 @@ func (c *LandingComponentController) Destroy(ctx http.Context) http.Response {
 	}
 	if comp.ID == 0 {
 		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "component not found"})
+	}
+	if comp.IsSystem {
+		return ctx.Response().Json(http.StatusForbidden, http.Json{"error": "system component cannot be deleted"})
 	}
 	if _, err := facades.Orm().Query().Where("id = ?", id).Delete(&models.LandingComponent{}); err != nil {
 		return ctx.Response().Json(http.StatusInternalServerError, http.Json{"error": err.Error()})

@@ -63,7 +63,9 @@ export interface Page {
 // Component master — reusable tree fragment referenced by instances via componentId.
 export interface Component {
   id: number
+  key?: string
   name: string
+  is_system: boolean
   tree: TreeShape
   created_at?: string
   updated_at?: string

@@ -21,6 +21,9 @@ func (s *DatabaseSeeder) Run() error {
 	if err := s.seedSettings(); err != nil {
 		return err
 	}
+	if err := seedLandingComponents(); err != nil {
+		return err
+	}
 	return nil
 }
 

@@ -64,6 +64,7 @@ func Api() {
 			r.Get("/landing-components/{id}", landingComponentController.Show)
 			r.Put("/landing-components/{id}", landingComponentController.Update)
 			r.Delete("/landing-components/{id}", landingComponentController.Destroy)
+			r.Post("/landing-components/{id}/duplicate", landingComponentController.Duplicate)
 
 			r.Post("/builder/chat", builderChatController.Chat)
 

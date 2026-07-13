@@ -212,6 +212,16 @@ export function useBuilderStore() {
     dropTarget.value = null
   }
 
+  // Drop zone at the end of a container's children: append dragged node as last child.
+  // Fixes "can't move top node to bottom" when the cursor lands in empty space below
+  // the last sibling (no row there to fire dragover/drop).
+  function dragOverEnd(parentId: string, e: DragEvent) {
+    if (!draggingId.value) return
+    e.preventDefault()
+    dropTarget.value = { parentId, index: -1, pos: 'after' }
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'move'
+  }
+
   // --- components / instances ---
 
   // Save a node (and its subtree) as a new reusable component master.
@@ -250,7 +260,28 @@ export function useBuilderStore() {
     const found = findNode(tree.value.root, nodeId)
     if (!found || !found.node.componentId) return
     const master = components.masterRoot(found.node.componentId)
-    if (!master) return
+    // ponytail: master may be null if deleted — still detach as empty node.
+    if (!master) {
+      tree.value = {
+        root: replaceNode(tree.value.root, nodeId, () => ({
+          id: nodeId,
+          type: 'frame',
+          name: 'Detached (master deleted)',
+          props: {},
+          classes: ['min-h-20', 'flex', 'items-center', 'justify-center', 'border-2', 'border-dashed', 'border-red-300', 'text-xs', 'text-red-400', 'rounded-lg'],
+          children: [{
+            id: nodeId + '_msg',
+            type: 'text',
+            name: 'Message',
+            props: { text: 'Component master was deleted. Replace or remove this block.' },
+            classes: ['text-xs', 'text-red-400'],
+            children: [],
+          }],
+        })),
+      }
+      notifyChange()
+      return
+    }
     const copy = cloneTree(master)
     reId(copy)
     // Preserve the instance's own id + position; absorb master's internals.
@@ -308,6 +339,7 @@ export function useBuilderStore() {
     dragStart,
     dragEnd,
     dragOver,
+    dragOverEnd,
     drop,
     publish,
   }

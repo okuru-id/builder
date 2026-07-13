@@ -42,6 +42,7 @@ const ancestorLines = computed(() => props.ancestorsIsLast.slice(0, -1))
 
 const store = inject(BUILDER_KEY, null)!
 const expanded = ref(true)
+const dropEndActive = ref(false)
 
 // Indent geometry. guideX(d) = x of the vertical guide for children of a
 // Indent geometry. guideX(d) = x of the vertical guide for children of a
@@ -120,6 +121,9 @@ function onDragStart(e: DragEvent) {
 }
 function onDragOver(e: DragEvent) {
   store.dragOver(props.node.id, e, isContainer())
+}
+function onDragOverEnd(e: DragEvent) {
+  store.dragOverEnd(props.node.id, e)
 }
 function onDrop(e: DragEvent) {
   e.preventDefault()
@@ -221,6 +225,16 @@ function onDragEnd() {
           :depth="depth + 1"
           :is-last="i === resolved.children.length - 1"
           :ancestors-is-last="nextAncestorsIsLast"
+        />
+        <!-- Trailing drop zone: drop here appends as last child. Fixes moving
+             the top node below the last sibling (empty space had no handler). -->
+        <div
+          class="h-8 w-full rounded-sm transition-colors"
+          :class="dropEndActive ? 'bg-blue-400/20' : 'hover:bg-muted/30'"
+          @dragover="onDragOverEnd($event)"
+          @dragleave="dropEndActive = false"
+          @dragenter="dropEndActive = true"
+          @drop="onDrop($event); dropEndActive = false"
         />
       </div>
     </div>
