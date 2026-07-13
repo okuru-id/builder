@@ -65,6 +65,7 @@ export function useBuilderStore() {
       tree.value = res.data.data.tree ?? { root: emptyRoot() }
       selectedId.value = null
       dirty.value = false
+      resetHistory()
     } catch (e) {
       toast.error('Failed to load page')
       console.error(e)
@@ -100,6 +101,57 @@ export function useBuilderStore() {
     persist()
   }
 
+  // --- undo / redo (client-side history) ---
+  // ponytail: snapshot whole tree root per edit group. Trees are small JSON;
+  // structuredClone can't handle Vue proxies, so cloneTree (JSON round-trip).
+  const undoStack = ref<Node[]>([])
+  const redoStack = ref<Node[]>([])
+  let lastSnapshotAt = 0
+  const COALESCE_MS = 500 // collapse rapid edits (slider drags) into one undo
+  const MAX_HISTORY = 100
+
+  // Capture PRE-mutation state. Called at the start of every tree mutation.
+  // Within COALESCE_MS of the last snapshot we skip pushing so a burst of
+  // changes counts as a single undo step.
+  function pushHistory() {
+    const now = Date.now()
+    if (now - lastSnapshotAt < COALESCE_MS) {
+      lastSnapshotAt = now
+      return
+    }
+    undoStack.value.push(cloneTree(tree.value.root))
+    if (undoStack.value.length > MAX_HISTORY) undoStack.value.shift()
+    redoStack.value = []
+    lastSnapshotAt = now
+  }
+
+  const canUndo = computed(() => undoStack.value.length > 0)
+  const canRedo = computed(() => redoStack.value.length > 0)
+
+  function undo() {
+    if (!undoStack.value.length) return
+    redoStack.value.push(cloneTree(tree.value.root))
+    const prev = undoStack.value.pop()!
+    tree.value = { root: prev }
+    selectedId.value = null
+    lastSnapshotAt = 0 // start a fresh edit group after navigation
+    notifyChange()
+  }
+  function redo() {
+    if (!redoStack.value.length) return
+    undoStack.value.push(cloneTree(tree.value.root))
+    const next = redoStack.value.pop()!
+    tree.value = { root: next }
+    selectedId.value = null
+    lastSnapshotAt = 0
+    notifyChange()
+  }
+  function resetHistory() {
+    undoStack.value = []
+    redoStack.value = []
+    lastSnapshotAt = 0
+  }
+
   // --- mutations ---
 
   function select(id: string | null) {
@@ -107,6 +159,7 @@ export function useBuilderStore() {
   }
 
   function patchNode(id: string, patch: Partial<Node>) {
+    pushHistory()
     tree.value = { root: updateNode(tree.value.root, id, patch) }
     notifyChange()
   }
@@ -127,9 +180,25 @@ export function useBuilderStore() {
   }
 
   function addNode(type: NodeType, parentId: string | null = null) {
-    const parent = parentId ?? selectedId.value ?? tree.value.root.id
-    // Containers can be parents. Leaf types added as sibling of selection's parent if selection is a leaf.
+    pushHistory()
+    // Leaf nodes (text, image, etc.) cannot be parents — add as sibling instead.
+    const LEAF_TYPES = new Set<NodeType>(['text', 'heading', 'image', 'divider', 'icon', 'button', 'input'])
+    let resolvedParent = parentId ?? selectedId.value ?? tree.value.root.id
+    // If the resolved parent is a leaf, walk up to its own parent.
+    const candidate = findNode(tree.value.root, resolvedParent)
+    if (candidate && LEAF_TYPES.has(candidate.node.type) && candidate.parent) {
+      resolvedParent = candidate.parent.id
+    }
     const node = makeNode(type)
+    tree.value = { root: addChild(tree.value.root, resolvedParent, node) }
+    selectedId.value = node.id
+    notifyChange()
+  }
+
+  // Append a pre-built node (e.g. from the AI agent) under a parent. History-aware.
+  function appendNode(node: Node, parentId: string | null = null) {
+    pushHistory()
+    const parent = parentId ?? selectedId.value ?? tree.value.root.id
     tree.value = { root: addChild(tree.value.root, parent, node) }
     selectedId.value = node.id
     notifyChange()
@@ -140,6 +209,7 @@ export function useBuilderStore() {
       toast.error('Root cannot be deleted')
       return
     }
+    pushHistory()
     tree.value = { root: deleteNode(tree.value.root, id) }
     if (selectedId.value === id) selectedId.value = null
     notifyChange()
@@ -148,6 +218,7 @@ export function useBuilderStore() {
   function duplicateNode(id: string) {
     const found = findNode(tree.value.root, id)
     if (!found || !found.parent) return
+    pushHistory()
     const copy = cloneTree(found.node)
     // re-id copy + descendants to avoid collisions
     reId(copy)
@@ -160,6 +231,7 @@ export function useBuilderStore() {
 
   // Move a node one slot up/down within its current parent (keyboard shortcut).
   function moveSiblingNode(id: string, dir: -1 | 1) {
+    pushHistory()
     tree.value = { root: moveSibling(tree.value.root, id, dir) }
     notifyChange()
   }
@@ -206,6 +278,7 @@ export function useBuilderStore() {
     const t = dropTarget.value
     const d = draggingId.value
     if (!t || !d) return
+    pushHistory()
     tree.value = { root: reparentTree(tree.value.root, d, t.parentId, t.index) }
     notifyChange()
     draggingId.value = null
@@ -240,6 +313,7 @@ export function useBuilderStore() {
   // resolves the master tree at render time. No per-instance overrides yet —
   // add instanceOverrides merge when real divergence is needed.
   function insertInstance(componentId: number, parentId: string | null = null) {
+    pushHistory()
     const parent = parentId ?? selectedId.value ?? tree.value.root.id
     const node: Node = {
       id: makeNode('component').id,
@@ -259,6 +333,7 @@ export function useBuilderStore() {
   function breakInstance(nodeId: string) {
     const found = findNode(tree.value.root, nodeId)
     if (!found || !found.node.componentId) return
+    pushHistory()
     const master = components.masterRoot(found.node.componentId)
     // ponytail: master may be null if deleted — still detach as empty node.
     if (!master) {
@@ -330,9 +405,15 @@ export function useBuilderStore() {
     patchNode,
     rename,
     addNode,
+    appendNode,
     removeNode,
     duplicateNode,
     moveSiblingNode,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    resetHistory,
     createComponentFromNode,
     insertInstance,
     breakInstance,

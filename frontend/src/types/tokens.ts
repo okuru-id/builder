@@ -20,7 +20,15 @@ export const DEFAULT_TOKENS: TokenConfig = {
 // A pattern like 'gap' matches 'gap-2', 'gap-4', etc.
 // A pattern like 'flex' matches 'flex' exactly.
 export function replaceClass(classes: string[], patterns: string[], add: string | null): string[] {
-  const out = classes.filter((c) => !patterns.some((p) => c === p || c.startsWith(p + '-')))
+  const out = classes.filter((c) => !patterns.some((p) => {
+    if (c === p) return true
+    // Arbitrary-value prefixes (e.g. 'text-[', 'bg-[', 'bg-[url(', 'shadow-[')
+    // end in a bracket and must match by raw startsWith: 'text-[#fff]'
+    // starts with 'text-[' but NOT 'text-[-', so the prefix-family branch
+    // below would miss it and leave stale color classes behind.
+    if (/[[(*]$/.test(p)) return c.startsWith(p)
+    return c.startsWith(p + '-')
+  }))
   if (add) out.push(add)
   return out
 }

@@ -163,7 +163,7 @@ function onDragEnd() {
       <template v-for="(_parentLast, idx) in ancestorLines" :key="idx">
         <span
           v-if="!ancestorsIsLast[idx + 1]"
-          class="pointer-events-none absolute border-l border-neutral-300"
+          class="pointer-events-none absolute border-l border-border"
           :style="{ left: `${guideX(idx)}px`, top: 0, height: '100%', zIndex: 1 }"
         />
       </template>
@@ -172,14 +172,14 @@ function onDragEnd() {
            pointing at this node's icon. -->
       <span
         v-if="depth > 0"
-        class="pointer-events-none absolute top-1/2 border-t border-neutral-300"
+        class="pointer-events-none absolute top-1/2 border-t border-border"
         :style="{ left: `${guideX(depth - 1)}px`, width: `${elbowWidth}px`, transform: 'translateY(-50%)', zIndex: 1 }"
       />
       <!-- Vertical guide segment for this row's depth. Last sibling stops at
            row center (elbow); others span full height to chain downward. -->
       <span
         v-if="depth > 0"
-        class="pointer-events-none absolute border-l border-neutral-300"
+        class="pointer-events-none absolute border-l border-border"
         :style="{ left: `${guideX(depth - 1)}px`, top: 0, height: isLast ? '50%' : '100%', zIndex: 1 }"
       />
 

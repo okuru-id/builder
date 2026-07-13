@@ -26,7 +26,7 @@ const tab = ref<'inspector' | 'agent'>('inspector')
       </div>
 
       <TabsContent value="inspector" class="mt-0 flex-1 overflow-hidden data-[state=inactive]:hidden">
-        <InspectorPanel bare />
+        <InspectorPanel />
       </TabsContent>
       <TabsContent value="agent" class="mt-0 flex-1 overflow-hidden data-[state=inactive]:hidden">
         <ChatPanel />

@@ -14,7 +14,6 @@ const node = computed(() => store.selectedNode.value)
 const BG_SIZE_CLASSES = ['bg-cover', 'bg-contain'] as const
 const BG_REPEAT_CLASSES = ['bg-repeat', 'bg-no-repeat', 'bg-repeat-x', 'bg-repeat-y'] as const
 const BG_POS_CLASSES = ['bg-center', 'bg-top', 'bg-bottom', 'bg-left', 'bg-right', 'bg-left-top', 'bg-right-top', 'bg-left-bottom', 'bg-right-bottom'] as const
-const ALL_BG_ASPECT_CLASSES = [...BG_SIZE_CLASSES, ...BG_REPEAT_CLASSES, ...BG_POS_CLASSES]
 
 // Color swatches grouped by family, ordered light→dark within each group.
 const BG_COLOR_GROUPS: { label: string; colors: string[] }[] = [
@@ -143,8 +142,8 @@ function currentBgHex() {
     <div class="flex items-center justify-between gap-2">
       <span class="text-[11px] text-muted-foreground">Position</span>
       <Select
-        :model-value="currentFromSet(node?.classes ?? [], BG_POS_CLASSES) ?? 'center'"
-        @update:model-value="(v) => cls([...BG_POS_CLASSES], v === 'center' ? null : String(v))"
+        :model-value="currentFromSet(node?.classes ?? [], BG_POS_CLASSES) ?? 'bg-center'"
+        @update:model-value="(v) => cls([...BG_POS_CLASSES], v === 'bg-center' ? null : String(v))"
       >
         <SelectTrigger class="h-7 w-28 px-2 text-xs"><SelectValue /></SelectTrigger>
         <SelectContent>
@@ -156,10 +155,10 @@ function currentBgHex() {
     <div class="space-y-1.5">
       <Label class="text-[11px] text-muted-foreground">Image URL</Label>
       <Input
-        :model-value="''"
+        :model-value="node?.classes.find((c) => c.startsWith('bg-[url(')) ?? ''"
         class="h-8 font-mono text-xs"
-        placeholder="url(…) or bg-image class"
-        @update:model-value="(v) => cls(ALL_BG_ASPECT_CLASSES, String(v) || null)"
+        placeholder="bg-[url('/img.jpg')]"
+        @update:model-value="(v) => cls(['bg-[url('], String(v) || null)"
       />
       <p class="text-[11px] text-muted-foreground">Size/position/repeat classes are set above.</p>
     </div>

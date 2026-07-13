@@ -147,6 +147,7 @@ function onWheel(e: WheelEvent) {
 // ─── Pan (Space+drag / Middle-mouse) ───────────────────────────────
 const spaceHeld = ref(false)
 const isPanning = ref(false)
+let wasPanning = false // set on mouseup, checked by click handler
 let panOriginX = 0, panOriginY = 0
 let panScrollL = 0, panScrollT = 0
 
@@ -182,16 +183,27 @@ function onMousemove(e: MouseEvent) {
 }
 
 function onMouseup() {
-  // small delay so click handler can read isPanning before reset
-  setTimeout(() => { isPanning.value = false }, 0)
+  if (isPanning.value) wasPanning = true
+  isPanning.value = false
+  spaceHeld.value && (spaceHeld.value = spaceHeld.value) // keep space state
+  setTimeout(() => { wasPanning = false }, 50)
 }
 
 function onKeydown(e: KeyboardEvent) {
-  if (e.code !== 'Space' || e.repeat) return
+  if (e.repeat) return
   const t = e.target as HTMLElement
   if (t.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName)) return
-  e.preventDefault()
-  spaceHeld.value = true
+
+  if (e.code === 'Space') {
+    e.preventDefault()
+    spaceHeld.value = true
+    return
+  }
+  // Keyboard shortcuts: F = fit, 0 = 100%
+  if (e.key === 'f' || e.key === 'F') { zoomFit(); return }
+  if (e.key === '0') { zoom.value = 1; return }
+  if (e.key === '=' || e.key === '+') { zoomIn(); return }
+  if (e.key === '-') { zoomOut(); return }
 }
 
 function onKeyup(e: KeyboardEvent) {
@@ -224,7 +236,7 @@ onUnmounted(() => {
 })
 
 function onBackgroundClick() {
-  if (isPanning.value) return
+  if (wasPanning) return
   store!.select(null)
 }
 </script>

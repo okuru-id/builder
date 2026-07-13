@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { inject, computed } from 'vue'
 import { BUILDER_KEY } from '../injection'
-import { replaceClass, currentClass, SIZES, SPACING } from '@/types/tokens'
+import { replaceClass, currentClass, currentArbitrary, SIZES, SPACING } from '@/types/tokens'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
@@ -16,10 +16,16 @@ function cls(patterns: string[], add: string | null) {
   store.patchNode(node.value.id, { classes: replaceClass(node.value.classes, patterns, add) })
 }
 
-function sizeOpt(prefix: string) {
-  // current size value: check for size-* (e.g. w-full, h-auto) or w-<number>/h-<number>
-  const val = node.value!.classes.find((c) => c.startsWith(prefix + '-'))
-  return val ? val.slice(prefix.length + 1) : ''
+// Named size for the Select (w-full, h-auto, w-32). Excludes arbitrary w-[…]
+// so the dropdown never shows raw bracket syntax.
+function namedOpt(prefix: string): string {
+  const found = node.value!.classes.find((c) => c.startsWith(prefix + '-') && !c.startsWith(prefix + '-['))
+  return found ? found.slice(prefix.length + 1) : ''
+}
+// Arbitrary custom value for the text input (w-[320px] → "320px", no brackets).
+// Fixes bracket leak that produced w-[[320px]] on retype.
+function customOpt(prefix: string): string {
+  return currentArbitrary(node.value!.classes, prefix) ?? ''
 }
 </script>
 
@@ -30,7 +36,7 @@ function sizeOpt(prefix: string) {
       <Label class="text-[11px] text-muted-foreground">Width (w-*)</Label>
       <div class="flex gap-2">
         <Select
-          :model-value="currentClass(node?.classes ?? [], 'w') ?? ''"
+          :model-value="namedOpt('w')"
           @update:model-value="(v) => cls(['w', 'min-w', 'max-w'], v ? `w-${String(v)}` : null)"
           class="flex-1"
         >
@@ -41,7 +47,7 @@ function sizeOpt(prefix: string) {
           </SelectContent>
         </Select>
         <Input
-          :model-value="sizeOpt('w')"
+          :model-value="customOpt('w')"
           class="h-8 w-20 font-mono text-xs"
           placeholder="custom"
           @update:model-value="(v) => cls(['w'], v ? `w-[${String(v)}]` : null)"
@@ -53,7 +59,7 @@ function sizeOpt(prefix: string) {
       <Label class="text-[11px] text-muted-foreground">Height (h-*)</Label>
       <div class="flex gap-2">
         <Select
-          :model-value="currentClass(node?.classes ?? [], 'h') ?? ''"
+          :model-value="namedOpt('h')"
           @update:model-value="(v) => cls(['h', 'min-h', 'max-h'], v ? `h-${String(v)}` : null)"
           class="flex-1"
         >
@@ -64,7 +70,7 @@ function sizeOpt(prefix: string) {
           </SelectContent>
         </Select>
         <Input
-          :model-value="sizeOpt('h')"
+          :model-value="customOpt('h')"
           class="h-8 w-20 font-mono text-xs"
           placeholder="custom"
           @update:model-value="(v) => cls(['h'], v ? `h-[${String(v)}]` : null)"

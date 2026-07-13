@@ -1,8 +1,13 @@
 <script setup lang="ts">
 // Right inspector: edits the selected node's props + classes. Delete/duplicate actions.
-// `bare` mode drops the <aside> wrapper so it can be embedded inside RightPanel tabs.
+// Always fills its parent (RightPanel tab). Context header + centered empty state.
 import { computed, inject, ref } from 'vue'
-import { IconCopy, IconTrash, IconArrowUp, IconArrowDown, IconUnlink, IconCode, IconSettings, IconTypography, IconPhoto, IconLink } from '@tabler/icons-vue'
+import {
+  IconCopy, IconTrash, IconArrowUp, IconArrowDown, IconUnlink, IconCode, IconSettings,
+  IconTypography, IconPhoto, IconLink,
+  IconSquare, IconSection, IconGridDots, IconH1, IconCircuitPushbutton, IconMinus,
+  IconStar, IconForms, IconInputSearch, IconComponents, IconPointer,
+} from '@tabler/icons-vue'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
@@ -36,9 +41,40 @@ import {
 
 const store = inject(BUILDER_KEY, null)!
 
-withDefaults(defineProps<{ bare?: boolean }>(), { bare: false })
-
 const node = computed(() => store.selectedNode.value)
+
+// ponytail: node-type icon/color map duplicated in TreeRow + NodeTreePanel.
+// Extract to shared node-meta module when a 4th consumer appears.
+const NODE_ICON: Record<string, any> = {
+  frame: IconSquare,
+  section: IconSection,
+  grid: IconGridDots,
+  text: IconTypography,
+  heading: IconH1,
+  image: IconPhoto,
+  button: IconCircuitPushbutton,
+  link: IconLink,
+  divider: IconMinus,
+  icon: IconStar,
+  form: IconForms,
+  input: IconInputSearch,
+  component: IconComponents,
+}
+const NODE_COLOR: Record<string, string> = {
+  frame: 'text-violet-500',
+  section: 'text-sky-500',
+  grid: 'text-cyan-500',
+  text: 'text-muted-foreground',
+  heading: 'text-amber-500',
+  image: 'text-emerald-500',
+  button: 'text-rose-500',
+  link: 'text-blue-500',
+  divider: 'text-neutral-400',
+  icon: 'text-amber-500',
+  form: 'text-emerald-500',
+  input: 'text-sky-500',
+  component: 'text-purple-500',
+}
 
 function setProp(key: string, value: unknown) {
   if (!node.value) return
@@ -101,14 +137,21 @@ function removeClass(idx: number) {
 </script>
 
 <template>
-  <component :is="bare ? 'div' : 'aside'" :class="bare ? 'flex h-full min-h-0 flex-col' : 'flex w-72 flex-col border-l border-border bg-background'">
-    <div v-if="!bare" class="border-b border-border px-4 py-3">
-      <h2 class="text-sm font-semibold">Inspector</h2>
-      <p v-if="node" class="mt-0.5 text-[11px] text-muted-foreground">{{ node.type }} · {{ node.name }}</p>
+  <div class="flex h-full min-h-0 flex-col">
+    <!-- Compact context header: stays visible while scrolling the sections. -->
+    <div v-if="node" class="flex shrink-0 items-center gap-1.5 border-b border-border bg-card px-3 py-2">
+      <component :is="NODE_ICON[node.type] ?? IconSquare" class="size-3.5 shrink-0" :class="NODE_COLOR[node.type] ?? 'text-muted-foreground'" />
+      <span class="truncate text-xs font-medium">{{ node.name || node.type }}</span>
+      <span class="ml-auto shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">{{ node.type }}</span>
     </div>
 
-    <div v-if="!node" class="p-4 text-sm text-muted-foreground">
-      Select a node on the canvas to edit its properties.
+    <!-- Centered empty state -->
+    <div v-if="!node" class="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center">
+      <IconPointer class="size-8 text-muted-foreground/40" />
+      <p class="text-sm font-medium text-muted-foreground">No selection</p>
+      <p class="max-w-[16rem] text-[11px] leading-relaxed text-muted-foreground/70">
+        Click an element on the canvas to edit its properties.
+      </p>
     </div>
 
     <div v-else class="flex-1 overflow-auto">
@@ -308,5 +351,5 @@ function removeClass(idx: number) {
         </div>
       </AlertDialogContent>
     </AlertDialog>
-  </component>
+  </div>
 </template>

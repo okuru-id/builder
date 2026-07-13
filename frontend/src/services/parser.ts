@@ -103,7 +103,7 @@ function walkNode(ast: TemplateChildNode | TextNode | ElementNode): Node {
           // ponytail: inline style not mapped to classes. Skip.
         } else if (name === 'id') {
           // Store id in props for round-trip fidelity
-          props.placeholder = `#${val}`
+          props.id = val
         } else {
           props[name] = val
         }

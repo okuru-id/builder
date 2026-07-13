@@ -22,7 +22,7 @@ import {
   MessageScrollerViewport,
 } from '@/components/ui/message-scroller'
 import { BUILDER_KEY } from '@/components/builder/injection'
-import { addChild, makeNode } from '@/components/builder/tree-utils'
+import { makeNode } from '@/components/builder/tree-utils'
 import type { Node } from '@/types/page-builder'
 
 const store = inject(BUILDER_KEY, null)!
@@ -121,12 +121,11 @@ function applyAction(msgId: string, part: MsgPart) {
   const key = partKey(msgId, action.raw)
   try {
     if (action.kind === 'add') {
-      const parentId = action.payload?.parentId === 'root'
-        ? store.tree.value.root.id
-        : action.payload?.parentId
+      const parentId = action.payload?.parentId && action.payload.parentId !== 'root'
+        ? action.payload.parentId
+        : store.tree.value.root.id
       const node = normalizeNode(action.payload?.node)
-      store.tree.value = { root: addChild(store.tree.value.root, parentId, node) }
-      store.select(node.id)
+      store.appendNode(node, parentId)
       toast.success('Node added')
     } else if (action.kind === 'classes') {
       store.patchNode(action.payload.nodeId, { classes: action.payload.set })

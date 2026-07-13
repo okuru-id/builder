@@ -58,6 +58,15 @@ function onKey(e: KeyboardEvent) {
     return
   }
 
+  // Undo / Redo — Ctrl+Z undo, Ctrl+Shift+Z or Ctrl+Y redo.
+  const lk = e.key.toLowerCase()
+  if ((e.metaKey || e.ctrlKey) && (lk === 'z' || lk === 'y')) {
+    e.preventDefault()
+    if (lk === 'y' || (lk === 'z' && e.shiftKey)) store.redo()
+    else store.undo()
+    return
+  }
+
   const id = store.selectedId.value
   if (!id || id === store.tree.value.root.id) return
 

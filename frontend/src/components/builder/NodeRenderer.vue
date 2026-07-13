@@ -182,7 +182,7 @@ function onDragEnd() {
 <template>
   <component
     :is="tag"
-    :ref="(el: unknown) => { if (editing) elRef = el as HTMLElement }"
+    ref="elRef"
     :class="[classList, {
       'opacity-40': dragging,
       'ring-2 ring-blue-500 ring-inset': dropInside,

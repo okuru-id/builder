@@ -16,12 +16,15 @@ import {
   IconLayoutSidebar,
   IconLayoutSidebarRight,
   IconRocket,
+  IconArrowBackUp,
+  IconArrowForwardUp,
 } from '@tabler/icons-vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { BUILDER_KEY } from '@/components/builder/injection'
 import type { Breakpoint } from '@/components/builder/useBuilderStore'
 import ExportDialog from './ExportDialog.vue'
+import HistoryDropdown from './HistoryDropdown.vue'
 
 const store = inject(BUILDER_KEY, null)!
 const router = useRouter()
@@ -61,7 +64,12 @@ const saveState = () => {
 
 function openPreview() {
   const id = store.page.value?.id
-  if (id) window.open(`/?preview=${id}`, '_blank')
+  if (!id) return
+  // In dev, backend runs on :3000; in production same origin serves both.
+  const base = window.location.port === '5174' || window.location.port === '5173'
+    ? `${window.location.protocol}//${window.location.hostname}:3000`
+    : ''
+  window.open(`${base}/?preview=${id}`, '_blank')
 }
 </script>
 
@@ -131,6 +139,26 @@ function openPreview() {
           <IconLayoutSidebarRight class="size-4" />
         </Button>
       </div>
+
+      <Button
+        variant="ghost"
+        size="icon"
+        :disabled="!store.canUndo.value"
+        title="Undo (Ctrl+Z)"
+        @click="store.undo()"
+      >
+        <IconArrowBackUp class="size-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        :disabled="!store.canRedo.value"
+        title="Redo (Ctrl+Shift+Z)"
+        @click="store.redo()"
+      >
+        <IconArrowForwardUp class="size-4" />
+      </Button>
+      <HistoryDropdown />
 
       <div class="mx-0.5 h-5 w-px shrink-0 bg-border" />
 
