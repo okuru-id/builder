@@ -32,15 +32,15 @@ function customOpt(prefix: string): string {
 <template>
   <InspectorSection title="Size" :icon="IconResize" :show="!!node" :default-open="false">
 
-    <div class="space-y-1.5">
-      <Label class="text-[11px] text-muted-foreground">Width (w-*)</Label>
+    <div class="space-y-1">
+      <Label class="text-[11px] font-medium text-foreground/80">Width (w-*)</Label>
       <div class="flex gap-2">
         <Select
           :model-value="namedOpt('w')"
           @update:model-value="(v) => cls(['w', 'min-w', 'max-w'], v ? `w-${String(v)}` : null)"
           class="flex-1"
         >
-          <SelectTrigger class="h-7 text-xs"><SelectValue placeholder="auto" /></SelectTrigger>
+          <SelectTrigger class="h-8 text-xs"><SelectValue placeholder="auto" /></SelectTrigger>
           <SelectContent>
             <SelectItem v-for="s in SIZES" :key="s" :value="s">{{ s }}</SelectItem>
             <SelectItem v-for="s in SPACING" :key="'w-'+s" :value="s">{{ s }}</SelectItem>
@@ -55,15 +55,15 @@ function customOpt(prefix: string): string {
       </div>
     </div>
 
-    <div class="space-y-1.5">
-      <Label class="text-[11px] text-muted-foreground">Height (h-*)</Label>
+    <div class="space-y-1">
+      <Label class="text-[11px] font-medium text-foreground/80">Height (h-*)</Label>
       <div class="flex gap-2">
         <Select
           :model-value="namedOpt('h')"
           @update:model-value="(v) => cls(['h', 'min-h', 'max-h'], v ? `h-${String(v)}` : null)"
           class="flex-1"
         >
-          <SelectTrigger class="h-7 text-xs"><SelectValue placeholder="auto" /></SelectTrigger>
+          <SelectTrigger class="h-8 text-xs"><SelectValue placeholder="auto" /></SelectTrigger>
           <SelectContent>
             <SelectItem v-for="s in SIZES" :key="s" :value="s">{{ s }}</SelectItem>
             <SelectItem v-for="s in SPACING" :key="'h-'+s" :value="s">{{ s }}</SelectItem>
@@ -78,8 +78,8 @@ function customOpt(prefix: string): string {
       </div>
     </div>
 
-    <div class="space-y-1.5">
-      <Label class="text-[11px] text-muted-foreground">Min/Max Width</Label>
+    <div class="space-y-1">
+      <Label class="text-[11px] font-medium text-foreground/80">Min/Max Width</Label>
       <div class="flex gap-2">
         <Input
           :model-value="currentClass(node?.classes ?? [], 'min-w') ?? ''"
@@ -96,8 +96,8 @@ function customOpt(prefix: string): string {
       </div>
     </div>
 
-    <div class="space-y-1.5">
-      <Label class="text-[11px] text-muted-foreground">Min/Max Height</Label>
+    <div class="space-y-1">
+      <Label class="text-[11px] font-medium text-foreground/80">Min/Max Height</Label>
       <div class="flex gap-2">
         <Input
           :model-value="currentClass(node?.classes ?? [], 'min-h') ?? ''"

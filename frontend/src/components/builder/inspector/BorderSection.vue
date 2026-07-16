@@ -7,7 +7,6 @@ import {
   currentFromSet,
   currentArbitrary,
   BORDER_WIDTHS,
-  BORDER_RADII,
 } from '@/types/tokens'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -20,12 +19,6 @@ const store = inject(BUILDER_KEY, null)!
 const node = computed(() => store.selectedNode.value)
 
 const WIDTH_CLASSES = BORDER_WIDTHS.map((w) => (w === '1' ? 'border' : `border-${w}`))
-const RADIUS_CLASSES = BORDER_RADII.map((r) => {
-  if (r === 'none') return 'rounded-none'
-  if (r === 'md') return 'rounded-md'
-  if (r === 'lg') return 'rounded-lg'
-  return `rounded-${r}`
-})
 const BORDER_COLOR_PRESETS = ['gray-300', 'gray-500', 'blue-500', 'red-500', 'green-500', 'amber-500', 'neutral-900', 'white', 'black']
 
 function cls(patterns: string[], add: string | null) {
@@ -44,9 +37,6 @@ function setBorderColor(e: Event) {
 function currentWidth() {
   return currentFromSet(node.value!.classes, WIDTH_CLASSES) ?? '1'
 }
-function currentRadius() {
-  return currentFromSet(node.value!.classes, RADIUS_CLASSES) ?? 'none'
-}
 function currentBorderClass() {
   const arb = currentArbitrary(node.value!.classes, 'border')
   if (arb) return `border-[${arb}]`
@@ -61,7 +51,7 @@ function currentBorderHex() {
   <InspectorSection title="Border" :icon="IconBorderAll" :show="!!node">
 
     <div class="flex items-center justify-between">
-      <Label class="text-[11px] text-muted-foreground">Show Border</Label>
+      <Label class="text-[11px] font-medium text-foreground/80">Show Border</Label>
       <Switch
         :model-value="hasClass(node?.classes ?? [], 'border')"
         @update:model-value="(v) => cls(['border', ...WIDTH_CLASSES], v ? 'border' : null)"
@@ -69,21 +59,21 @@ function currentBorderHex() {
     </div>
 
     <template v-if="hasClass(node?.classes ?? [], 'border')">
-      <div class="space-y-1.5">
-        <Label class="text-[11px] text-muted-foreground">Width</Label>
+      <div class="space-y-1">
+        <Label class="text-[11px] font-medium text-foreground/80">Width</Label>
         <Select
           :model-value="currentWidth()"
           @update:model-value="(v) => cls([...WIDTH_CLASSES], String(v) === '1' ? 'border' : `border-${String(v)}`)"
         >
-          <SelectTrigger class="h-7 text-xs"><SelectValue /></SelectTrigger>
+          <SelectTrigger class="h-8 text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem v-for="w in BORDER_WIDTHS" :key="w" :value="w">{{ w === '1' ? 'default' : w }}</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      <div class="space-y-1.5">
-        <Label class="text-[11px] text-muted-foreground">Border Color</Label>
+      <div class="space-y-1">
+        <Label class="text-[11px] font-medium text-foreground/80">Border Color</Label>
         <div class="flex items-center gap-2">
           <input
             type="color"
@@ -98,19 +88,6 @@ function currentBorderHex() {
             @update:model-value="(v) => cls(['border-[', ...BORDER_COLOR_PRESETS.map((c) => `border-${c}`)], String(v) || null)"
           />
         </div>
-      </div>
-
-      <div class="space-y-1.5">
-        <Label class="text-[11px] text-muted-foreground">Radius</Label>
-        <Select
-          :model-value="currentRadius()"
-          @update:model-value="(v) => cls([...RADIUS_CLASSES], v === 'none' ? null : (v === 'md' ? 'rounded-md' : `rounded-${String(v)}`))"
-        >
-          <SelectTrigger class="h-7 text-xs"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem v-for="r in BORDER_RADII" :key="r" :value="r">{{ r }}</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
     </template>
   </InspectorSection>

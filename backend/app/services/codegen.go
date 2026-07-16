@@ -2,11 +2,24 @@
 package services
 
 import (
+	_ "embed"
+	"encoding/json"
 	"fmt"
 	"html"
 	"sort"
 	"strings"
 )
+
+//go:embed icons.json
+var iconsJSON []byte
+
+// iconPaths holds the parsed Tabler icon map (name → list of [tag, attrs]).
+// Loaded once at init from icons.json, generated from frontend icon-map.ts.
+var iconPaths map[string][][]any
+
+func init() {
+	_ = json.Unmarshal(iconsJSON, &iconPaths)
+}
 
 // LandingCodegen converts a landing-page tree (map[string]any JSON shape) into
 // a standalone HTML document with Tailwind CDN. Deterministic: same tree → same bytes.
@@ -202,10 +215,36 @@ func (g *LandingCodegen) renderInputDepth(n nodeMap, depth int) string {
 
 func (g *LandingCodegen) renderIconDepth(n nodeMap, depth int) string {
 	indent := strings.Repeat("  ", depth)
-	// Fallback SVG circle when icon map is not embedded.
-	// ponytail: full tabler icon map (21KB) skipped. Upgrade when server-side icon
-	// rendering is needed — embed the map as a Go file or serve via API.
-	svg := `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4" fill="currentColor" /></svg>`
+	name, _ := n["props"].(map[string]any)["icon"].(string)
+	var svg string
+	if segs, ok := iconPaths[name]; ok && len(segs) > 0 {
+		var b strings.Builder
+		b.WriteString(`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">`)
+		for _, seg := range segs {
+			if len(seg) < 2 {
+				continue
+			}
+			tag, _ := seg[0].(string)
+			attrs, _ := seg[1].(map[string]any)
+			b.WriteString("<" + tag)
+			for k, v := range attrs {
+				if k == "key" {
+					continue
+				}
+				b.WriteString(fmt.Sprintf(` %s=%q`, k, fmt.Sprint(v)))
+			}
+			b.WriteString(" />")
+		}
+		b.WriteString("</svg>")
+		svg = b.String()
+	} else {
+		// Unknown/missing icon: render its name as text, or a placeholder dot.
+		if name != "" {
+			svg = html.EscapeString(name)
+		} else {
+			svg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4" fill="currentColor" /></svg>`
+		}
+	}
 	return fmt.Sprintf("%s<span%s>%s</span>\n", indent, g.attrStr(n), svg)
 }
 
@@ -241,7 +280,7 @@ func (g *LandingCodegen) document(title, body string) string {
 <title>%s</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Montserrat:wght@400;500;600;700&family=Open+Sans:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700&family=Lora:wght@400;500;600;700&family=Merriweather:wght@400;700&family=JetBrains+Mono:wght@400;500;700&family=Source+Sans+3:wght@400;500;600;700&family=Nunito:wght@400;500;600;700&family=Raleway:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 <style>
 /* Per-breakpoint visibility. !important wins over the node's own flex/grid/block
@@ -250,6 +289,22 @@ func (g *LandingCodegen) document(title, body string) string {
 @media (max-width:767px){[data-bp-hide~="m"]{display:none!important}}
 @media (min-width:768px) and (max-width:1023px){[data-bp-hide~="t"]{display:none!important}}
 @media (min-width:1024px){[data-bp-hide~="d"]{display:none!important}}
+/* Google Font utility classes (mirrors frontend/src/style.css). Tailwind
+   browser CDN only knows font-sans/serif/mono, so custom Google Fonts use
+   the gfont-* prefix. */
+.gfont-inter{font-family:'Inter',sans-serif}
+.gfont-poppins{font-family:'Poppins',sans-serif}
+.gfont-roboto{font-family:'Roboto',sans-serif}
+.gfont-montserrat{font-family:'Montserrat',sans-serif}
+.gfont-opensans{font-family:'Open Sans',sans-serif}
+.gfont-playfair{font-family:'Playfair Display',serif}
+.gfont-lora{font-family:'Lora',serif}
+.gfont-merriweather{font-family:'Merriweather',serif}
+.gfont-jetbrains{font-family:'JetBrains Mono',monospace}
+.gfont-sourcesans{font-family:'Source Sans 3',sans-serif}
+.gfont-nunito{font-family:'Nunito',sans-serif}
+.gfont-raleway{font-family:'Raleway',sans-serif}
+.gfont-jakarta{font-family:'Plus Jakarta Sans',sans-serif}
 </style>
 </head>
 <body>

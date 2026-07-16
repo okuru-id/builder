@@ -134,11 +134,11 @@ function startResize(which: 'tree' | 'components', event: MouseEvent) {
 </script>
 
 <template>
-  <aside ref="aside" class="flex h-full w-full flex-col border-r border-border bg-card">
+  <aside ref="aside" class="flex h-full w-full flex-col border-r border-foreground/15 bg-card">
     <!-- Header -->
-    <div ref="header" class="flex shrink-0 items-center justify-between border-b border-border px-3 py-2.5">
+    <div ref="header" class="flex shrink-0 items-center justify-between border-b border-foreground/15 px-3 py-2.5">
       <div class="flex items-center gap-1.5">
-        <IconLayersIntersect class="size-4 text-muted-foreground" />
+        <IconLayersIntersect class="size-4 text-foreground" />
         <h2 class="text-sm font-semibold">Layer</h2>
       </div>
       <div class="flex items-center gap-1">
@@ -149,7 +149,7 @@ function startResize(which: 'tree' | 'components', event: MouseEvent) {
         >
           <IconArrowsMinimize class="size-3.5" />
         </button>
-        <span class="rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+        <span class="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-foreground">
           {{ nodeCount }}
         </span>
       </div>
@@ -157,7 +157,7 @@ function startResize(which: 'tree' | 'components', event: MouseEvent) {
 
     <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
       <!-- Layer Tree -->
-      <div ref="treeWrap" class="shrink-0 border-b border-border/50">
+      <div ref="treeWrap" class="shrink-0 border-b border-foreground/15">
         <InspectorSection title="Layer Tree" :icon="IconSettings">
           <div class="relative overflow-auto py-0.5" :style="{ height: `${treeHeight}px` }">
             <TreeRow :node="root" />
@@ -173,7 +173,7 @@ function startResize(which: 'tree' | 'components', event: MouseEvent) {
       </div>
 
       <!-- Components -->
-      <div ref="compWrap" class="shrink-0 border-b border-border/50">
+      <div ref="compWrap" class="shrink-0 border-b border-foreground/15">
         <InspectorSection title="Components" :icon="IconComponents">
           <div class="relative overflow-auto border-t border-border -mx-3" :style="{ height: `${componentsHeight}px` }">
             <ComponentPalette />

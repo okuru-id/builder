@@ -78,8 +78,8 @@ function currentBgHex() {
 <template>
   <InspectorSection title="Background" :icon="IconColorSwatch" :show="!!node">
 
-    <div class="space-y-1.5">
-      <Label class="text-[11px] text-muted-foreground">Background Color</Label>
+    <div class="space-y-1">
+      <Label class="text-[11px] font-medium text-foreground/80">Background Color</Label>
       <div class="flex items-center gap-2">
         <input
           type="color"
@@ -112,12 +112,12 @@ function currentBgHex() {
     </div>
 
     <div class="flex items-center justify-between gap-2">
-      <span class="text-[11px] text-muted-foreground">Size</span>
+      <span class="text-[11px] font-medium text-foreground/80">Size</span>
       <Select
         :model-value="currentFromSet(node?.classes ?? [], BG_SIZE_CLASSES) ?? 'auto'"
         @update:model-value="(v) => cls([...BG_SIZE_CLASSES], v === 'auto' ? null : String(v))"
       >
-        <SelectTrigger class="h-7 w-28 px-2 text-xs"><SelectValue /></SelectTrigger>
+        <SelectTrigger class="h-8 w-28 px-2 text-xs"><SelectValue /></SelectTrigger>
         <SelectContent>
           <SelectItem value="auto">auto</SelectItem>
           <SelectItem v-for="s in BG_SIZE_CLASSES" :key="s" :value="s">{{ s.replace('bg-', '') }}</SelectItem>
@@ -126,12 +126,12 @@ function currentBgHex() {
     </div>
 
     <div class="flex items-center justify-between gap-2">
-      <span class="text-[11px] text-muted-foreground">Repeat</span>
+      <span class="text-[11px] font-medium text-foreground/80">Repeat</span>
       <Select
         :model-value="currentFromSet(node?.classes ?? [], BG_REPEAT_CLASSES) ?? 'repeat'"
         @update:model-value="(v) => cls([...BG_REPEAT_CLASSES], v === 'repeat' ? null : String(v))"
       >
-        <SelectTrigger class="h-7 w-28 px-2 text-xs"><SelectValue /></SelectTrigger>
+        <SelectTrigger class="h-8 w-28 px-2 text-xs"><SelectValue /></SelectTrigger>
         <SelectContent>
           <SelectItem value="repeat">repeat</SelectItem>
           <SelectItem v-for="r in BG_REPEAT_CLASSES" :key="r" :value="r">{{ r.replace('bg-', '') }}</SelectItem>
@@ -140,27 +140,27 @@ function currentBgHex() {
     </div>
 
     <div class="flex items-center justify-between gap-2">
-      <span class="text-[11px] text-muted-foreground">Position</span>
+      <span class="text-[11px] font-medium text-foreground/80">Position</span>
       <Select
         :model-value="currentFromSet(node?.classes ?? [], BG_POS_CLASSES) ?? 'bg-center'"
         @update:model-value="(v) => cls([...BG_POS_CLASSES], v === 'bg-center' ? null : String(v))"
       >
-        <SelectTrigger class="h-7 w-28 px-2 text-xs"><SelectValue /></SelectTrigger>
+        <SelectTrigger class="h-8 w-28 px-2 text-xs"><SelectValue /></SelectTrigger>
         <SelectContent>
           <SelectItem v-for="p in BG_POS_CLASSES" :key="p" :value="p">{{ p.replace('bg-', '') }}</SelectItem>
         </SelectContent>
       </Select>
     </div>
 
-    <div class="space-y-1.5">
-      <Label class="text-[11px] text-muted-foreground">Image URL</Label>
+    <div class="space-y-1">
+      <Label class="text-[11px] font-medium text-foreground/80">Image URL</Label>
       <Input
         :model-value="node?.classes.find((c) => c.startsWith('bg-[url(')) ?? ''"
         class="h-8 font-mono text-xs"
         placeholder="bg-[url('/img.jpg')]"
         @update:model-value="(v) => cls(['bg-[url('], String(v) || null)"
       />
-      <p class="text-[11px] text-muted-foreground">Size/position/repeat classes are set above.</p>
+      <p class="text-[11px] font-medium text-foreground/80">Size/position/repeat classes are set above.</p>
     </div>
   </InspectorSection>
 </template>

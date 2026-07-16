@@ -86,8 +86,10 @@ const classList = computed(() => {
   }
 
   // Selection ring + hover affordance, layered so we never overwrite real classes.
+  // Selection affordance: global CSS class draws a solid thin outline + guide
+  // points (4 sides + center). Defined in src/style.css (.builder-selected).
   return selected.value
-    ? [...emulated, 'outline-2', 'outline-blue-500', 'outline-dashed', '-outline-offset-2']
+    ? [...emulated, 'builder-selected']
     : [...emulated, 'hover:outline-1', 'hover:outline-blue-300', 'hover:-outline-offset-1']
 })
 

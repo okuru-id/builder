@@ -80,6 +80,27 @@ export const FONT_SIZES = ['xs', 'sm', 'base', 'lg', 'xl', '2xl', '3xl', '4xl', 
 
 export const FONT_WEIGHTS = ['thin', 'extralight', 'light', 'normal', 'medium', 'semibold', 'bold', 'extrabold', 'black'] as const
 
+export const FONT_FAMILIES = ['sans', 'serif', 'mono'] as const
+
+// Google Fonts loaded via <link> in index.html (admin preview) and codegen
+// head (published HTML). Mapped to .gfont-* CSS classes (see style.css +
+// codegen.go) — Tailwind browser CDN in publish only knows font-sans/serif/mono.
+export const GOOGLE_FONTS = [
+  { value: 'inter', label: 'Inter', family: "'Inter', sans-serif" },
+  { value: 'poppins', label: 'Poppins', family: "'Poppins', sans-serif" },
+  { value: 'roboto', label: 'Roboto', family: "'Roboto', sans-serif" },
+  { value: 'montserrat', label: 'Montserrat', family: "'Montserrat', sans-serif" },
+  { value: 'opensans', label: 'Open Sans', family: "'Open Sans', sans-serif" },
+  { value: 'playfair', label: 'Playfair Display', family: "'Playfair Display', serif" },
+  { value: 'lora', label: 'Lora', family: "'Lora', serif" },
+  { value: 'merriweather', label: 'Merriweather', family: "'Merriweather', serif" },
+  { value: 'jetbrains', label: 'JetBrains Mono', family: "'JetBrains Mono', monospace" },
+  { value: 'sourcesans', label: 'Source Sans 3', family: "'Source Sans 3', sans-serif" },
+  { value: 'nunito', label: 'Nunito', family: "'Nunito', sans-serif" },
+  { value: 'raleway', label: 'Raleway', family: "'Raleway', sans-serif" },
+  { value: 'jakarta', label: 'Plus Jakarta Sans', family: "'Plus Jakarta Sans', sans-serif" },
+] as const
+
 export const BORDER_RADII = ['none', 'sm', 'md', 'lg', 'xl', '2xl', '3xl', 'full'] as const
 
 export const BORDER_WIDTHS = ['0', '1', '2', '4', '8'] as const

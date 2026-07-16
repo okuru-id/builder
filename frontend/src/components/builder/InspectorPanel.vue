@@ -29,6 +29,7 @@ import TypographySection from './inspector/TypographySection.vue'
 import SpacingSection from './inspector/SpacingSection.vue'
 import BackgroundSection from './inspector/BackgroundSection.vue'
 import BorderSection from './inspector/BorderSection.vue'
+import AppearanceSection from './inspector/AppearanceSection.vue'
 import SizeSection from './inspector/SizeSection.vue'
 import InspectorSection from './inspector/InspectorSection.vue'
 import {
@@ -343,6 +344,7 @@ function removeClass(idx: number) {
         <SpacingSection />
         <BackgroundSection />
         <BorderSection />
+        <AppearanceSection />
         <SizeSection />
 
         <!-- Custom classes: arbitrary Tailwind class input -->

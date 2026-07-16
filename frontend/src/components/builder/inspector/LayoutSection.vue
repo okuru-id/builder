@@ -83,7 +83,7 @@ const vAlign = [
   <InspectorSection title="Layout" :icon="IconLayoutNavbar" :show="!!node">
     <!-- Flex on/off -->
     <div class="flex items-center justify-between">
-      <span class="text-[11px] text-muted-foreground">Flex</span>
+      <span class="text-[11px] font-medium text-foreground/80">Flex</span>
       <Switch
         :model-value="hasClass(node?.classes ?? [], 'flex')"
         @update:model-value="(v) => cls(['flex', ...DISPLAY_CLASSES], v ? 'flex' : null)"
@@ -96,7 +96,7 @@ const vAlign = [
         <button
           v-for="d in directions"
           :key="d.value"
-          class="flex h-7 items-center justify-center rounded-md border transition-colors"
+          class="flex h-8 items-center justify-center rounded-md border transition-colors"
           :class="currentDir() === d.value
             ? 'border-primary bg-primary/10 text-primary'
             : 'border-border text-muted-foreground hover:bg-muted'"
@@ -113,7 +113,7 @@ const vAlign = [
           <button
             v-for="h in hAlign"
             :key="`h-${h.value}`"
-            class="flex h-7 items-center justify-center rounded-md border transition-colors"
+            class="flex h-8 items-center justify-center rounded-md border transition-colors"
             :class="currentJustify() === h.value
               ? 'border-primary bg-primary/10 text-primary'
               : 'border-border text-muted-foreground hover:bg-muted'"
@@ -127,7 +127,7 @@ const vAlign = [
           <button
             v-for="v in vAlign"
             :key="`v-${v.value}`"
-            class="flex h-7 items-center justify-center rounded-md border transition-colors"
+            class="flex h-8 items-center justify-center rounded-md border transition-colors"
             :class="currentItems() === v.value
               ? 'border-primary bg-primary/10 text-primary'
               : 'border-border text-muted-foreground hover:bg-muted'"
@@ -141,19 +141,19 @@ const vAlign = [
 
       <!-- Gap + Wrap row -->
       <div class="flex items-center gap-2">
-        <span class="w-8 shrink-0 text-[11px] text-muted-foreground">Gap</span>
+        <span class="w-8 shrink-0 text-[11px] font-medium text-foreground/80">Gap</span>
         <Select
           :model-value="currentClass(node?.classes ?? [], 'gap') ?? '0'"
           class="flex-1"
           @update:model-value="(v) => cls(['gap'], v === '0' ? null : `gap-${String(v)}`)"
         >
-          <SelectTrigger class="h-7 px-2 text-xs"><SelectValue /></SelectTrigger>
+          <SelectTrigger class="h-8 px-2 text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem v-for="s in SPACING" :key="s" :value="s">{{ s }}</SelectItem>
           </SelectContent>
         </Select>
         <button
-          class="flex size-7 shrink-0 items-center justify-center rounded-md border transition-colors"
+          class="flex size-8 shrink-0 items-center justify-center rounded-md border transition-colors"
           :class="hasClass(node?.classes ?? [], 'flex-wrap')
             ? 'border-primary bg-primary/10 text-primary'
             : 'border-border text-muted-foreground hover:bg-muted'"

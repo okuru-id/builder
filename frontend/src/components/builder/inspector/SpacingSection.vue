@@ -48,12 +48,12 @@ const groups = [
         :key="item.prefix"
         class="flex items-center justify-between gap-2"
       >
-        <span class="text-[11px] text-muted-foreground">{{ item.label }}</span>
+        <span class="text-[11px] font-medium text-foreground/80">{{ item.label }}</span>
         <Select
           :model-value="spacingOpts(item.prefix).model"
           @update:model-value="spacingOpts(item.prefix).set"
         >
-          <SelectTrigger class="h-7 w-20 px-2 text-xs"><SelectValue /></SelectTrigger>
+          <SelectTrigger class="h-8 w-20 px-2 text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem v-for="s in SPACING" :key="s" :value="s">{{ s }}</SelectItem>
           </SelectContent>
