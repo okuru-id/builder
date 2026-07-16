@@ -54,10 +54,41 @@ const hiddenHere = computed(() => {
 const classList = computed(() => {
   const base = displayNode.value.classes
   if (props.readonly) return base
+
+  // Emulate Tailwind responsive variants as if the canvas width WERE the
+  // viewport. The builder renders the canvas scaled inside a wide window, so
+  // real media queries fire against the window, not the canvas. Mirror
+  // Tailwind defaults: sm≥640, md≥768, lg≥1024, xl≥1280, 2xl≥1536.
+  //   mobile  (<768)  → only base classes
+  //   tablet  (768–1023) → base + sm + md
+  //   desktop (≥1024) → everything
+  const bp = store?.breakpoint.value
+  const allowed = (p: string): boolean => {
+    if (bp === 'desktop') return true
+    if (bp === 'tablet') return p === 'sm' || p === 'md'
+    return false // mobile: strip every prefixed variant
+  }
+  const emulated = base.filter((c) => {
+    const m = /^(sm|md|lg|xl|2xl):/.exec(c)
+    return !m || allowed(m[1]!)
+  })
+
+  // flex's default direction is row. If a md:flex-row variant was stripped on
+  // mobile AND no base direction was set, force a stack so it doesn't read as
+  // horizontal. (grid without grid-cols already stacks by default.)
+  if (
+    bp === 'mobile' &&
+    emulated.includes('flex') &&
+    !emulated.some((c) => c === 'flex-row' || c === 'flex-col') &&
+    base.some((c) => /^(sm|md|lg|xl|2xl):flex-row$/.test(c))
+  ) {
+    emulated.push('flex-col')
+  }
+
   // Selection ring + hover affordance, layered so we never overwrite real classes.
   return selected.value
-    ? [...base, 'outline-2', 'outline-blue-500', 'outline-dashed', '-outline-offset-2']
-    : [...base, 'hover:outline-1', 'hover:outline-blue-300', 'hover:-outline-offset-1']
+    ? [...emulated, 'outline-2', 'outline-blue-500', 'outline-dashed', '-outline-offset-2']
+    : [...emulated, 'hover:outline-1', 'hover:outline-blue-300', 'hover:-outline-offset-1']
 })
 
 function tagFor(n: Node): string {
@@ -200,10 +231,31 @@ function askAgent() {
 function toggleHidden() {
   if (!props.readonly) store?.patchNode(props.node.id, { hidden: !props.node.hidden })
 }
+function duplicate() {
+  if (!props.readonly) store?.duplicateNode(props.node.id)
+}
+function remove() {
+  if (!props.readonly) store?.removeNode(props.node.id)
+}
+function move(_n: Node, dir: -1 | 1) {
+  if (!props.readonly) store?.moveSiblingNode(props.node.id, dir)
+}
+const isRoot = computed(
+  () => !!store && store.tree.value.root.id === props.node.id,
+)
 </script>
 
 <template>
-  <NodeContextMenu :node="props.node" :disabled="readonly" @ask-agent="askAgent" @toggle-hidden="toggleHidden">
+  <NodeContextMenu
+    :node="props.node"
+    :disabled="readonly"
+    :is-root="isRoot"
+    @ask-agent="askAgent"
+    @toggle-hidden="toggleHidden"
+    @duplicate="duplicate"
+    @remove="remove"
+    @move="move"
+  >
     <component
       :is="tag"
       ref="elRef"
