@@ -85,6 +85,10 @@ const classList = computed(() => {
     emulated.push('flex-col')
   }
 
+  // Root node must fill the canvas so its selection outline wraps the
+  // full page area, not just its inner content.
+  if (isRoot.value) emulated.push('w-full', 'min-h-full')
+
   // Selection ring + hover affordance, layered so we never overwrite real classes.
   // Selection affordance: global CSS class draws a solid thin outline + guide
   // points (4 sides + center). Defined in src/style.css (.builder-selected).
