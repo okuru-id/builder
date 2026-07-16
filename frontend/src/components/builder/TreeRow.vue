@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Recursive outline row with expand/collapse, type icons, and drag-and-drop.
-import { computed, inject, ref } from 'vue'
+import { computed, inject, ref, watch, type Ref } from 'vue'
 import {
   IconSquare,
   IconSection,
@@ -18,11 +18,10 @@ import {
   IconStar,
   IconForms,
   IconInputSearch,
-  IconEye,
-  IconEyeOff,
 } from '@tabler/icons-vue'
 import type { Node, NodeType } from '@/types/page-builder'
 import { BUILDER_KEY } from '@/components/builder/injection'
+import NodeContextMenu from '@/components/builder/NodeContextMenu.vue'
 
 defineOptions({ name: 'TreeRow' })
 const props = withDefaults(
@@ -43,7 +42,19 @@ const nextAncestorsIsLast = computed(() => [...props.ancestorsIsLast, props.isLa
 const ancestorLines = computed(() => props.ancestorsIsLast.slice(0, -1))
 
 const store = inject(BUILDER_KEY, null)!
-const expanded = ref(true)
+
+// Expanded state is derived from a shared collapsed-set (provided by the panel)
+// so it survives child unmount — expand is truly one-by-one after collapse-all.
+const collapsedSet = inject<Ref<Set<string>> | null>('builder-tree-collapsed', null)
+const expanded = computed(() => !(collapsedSet?.value ?? new Set<string>()).has(props.node.id))
+function toggleExpand(e: MouseEvent) {
+  e.stopPropagation()
+  if (!collapsedSet) return
+  const s = new Set(collapsedSet.value)
+  if (s.has(props.node.id)) s.delete(props.node.id)
+  else s.add(props.node.id)
+  collapsedSet.value = s
+}
 
 // Indent geometry. guideX(d) = x of the vertical guide for children of a
 // Indent geometry. guideX(d) = x of the vertical guide for children of a
@@ -55,6 +66,16 @@ const pad = (d: number) => d * INDENT + 8
 const guideX = (d: number) => d * INDENT + 16
 
 const selected = () => store.selectedId.value === props.node.id
+
+// Auto-scroll this row into view when it becomes the selected node
+// (e.g. after clicking a node on the canvas). block:nearest avoids jumping
+// unless the row is actually off-screen.
+const rowEl = ref<HTMLElement | null>(null)
+watch(() => store.selectedId.value, (id) => {
+  if (id === props.node.id && rowEl.value) {
+    rowEl.value.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }
+})
 
 const CONTAINER_TYPES = new Set<NodeType>(['frame', 'section', 'link', 'component'])
 // Resolve a component instance to its master root so the tree shows the
@@ -108,14 +129,12 @@ const NODE_COLORS: Record<NodeType, string> = {
   component: 'text-purple-500',
 }
 
-function toggleExpand(e: MouseEvent) {
-  e.stopPropagation()
-  expanded.value = !expanded.value
+function toggleHidden() {
+  store.patchNode(props.node.id, { hidden: !props.node.hidden })
 }
 
-function toggleHidden(e: MouseEvent) {
-  e.stopPropagation()
-  store.patchNode(props.node.id, { hidden: !props.node.hidden })
+function askAgent() {
+  store.askAgentAbout(props.node)
 }
 
 function onDragStart(e: DragEvent) {
@@ -141,7 +160,9 @@ function onDragEnd() {
 <template>
   <div>
     <!-- Row (Only the row itself is draggable and droppable) -->
+    <NodeContextMenu :node="node" @ask-agent="askAgent" @toggle-hidden="toggleHidden">
     <div
+      ref="rowEl"
       :draggable="depth > 0"
       class="group relative flex w-full items-center gap-0.5 py-[5px] pr-2 text-left text-xs transition-colors"
       :class="[
@@ -212,24 +233,13 @@ function onDragEnd() {
         {{ (resolved.children ?? []).length }}
       </span>
 
-      <!-- Visibility toggle: eye-off shown when hidden, eye on hover when visible -->
-      <button
-        class="flex size-4 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground"
-        :class="node.hidden ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'"
-        :title="node.hidden ? 'Show layer' : 'Hide layer'"
-        @click.stop="toggleHidden"
-        @mousedown.stop
-      >
-        <IconEyeOff v-if="node.hidden" class="size-3.5" />
-        <IconEye v-else class="size-3.5" />
-      </button>
-
       <!-- Drag handle (right side, visible on hover) -->
       <IconGripVertical
         v-if="depth > 0"
         class="size-3.5 shrink-0 cursor-grab text-neutral-300 opacity-0 transition-opacity group-hover:opacity-100"
       />
     </div>
+    </NodeContextMenu>
 
     <!-- Children (collapsible, not draggable from here directly) -->
     <div v-if="expanded && hasChildren()">

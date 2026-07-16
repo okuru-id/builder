@@ -8,6 +8,7 @@ import { CONTAINER_TYPES, TEXT_TYPES } from '@/types/page-builder'
 import type { Breakpoint } from '@/types/page-builder'
 import { BUILDER_KEY } from '@/components/builder/injection'
 import { ICONS } from '@/lib/icon-map'
+import NodeContextMenu from '@/components/builder/NodeContextMenu.vue'
 
 const props = withDefaults(
   defineProps<{ node: Node; depth?: number; readonly?: boolean; ancestorId?: string }>(),
@@ -191,13 +192,22 @@ function onDrop(e: DragEvent) {
 function onDragEnd() {
   store?.dragEnd()
 }
+
+// Context-menu actions (tree + canvas share NodeContextMenu).
+function askAgent() {
+  if (!props.readonly) store?.askAgentAbout(props.node)
+}
+function toggleHidden() {
+  if (!props.readonly) store?.patchNode(props.node.id, { hidden: !props.node.hidden })
+}
 </script>
 
 <template>
-  <component
-    :is="tag"
-    ref="elRef"
-    :style="props.node.hidden ? { display: 'none' } : undefined"
+  <NodeContextMenu :node="props.node" :disabled="readonly" @ask-agent="askAgent" @toggle-hidden="toggleHidden">
+    <component
+      :is="tag"
+      ref="elRef"
+      :style="props.node.hidden ? { display: 'none' } : undefined"
     :class="[classList, {
       'opacity-40 outline-dashed outline-2 outline-amber-400 -outline-offset-2': hiddenHere,
       'opacity-40': dragging,
@@ -259,4 +269,5 @@ function onDragEnd() {
       />
     </template>
   </component>
+  </NodeContextMenu>
 </template>
