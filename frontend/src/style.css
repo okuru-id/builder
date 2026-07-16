@@ -209,8 +209,11 @@
 .builder-selected-pos {
   position: relative;
 }
-/* Corner dots — 6px filled primary circles just outside each corner. */
-.builder-selected-pos::before {
+/* Corner dots — 6px filled primary circles just outside each corner.
+   On .builder-selected::before so ALL selected nodes get dots: positioned
+   nodes (absolute/fixed) anchor ::before natively; static nodes get
+   .builder-selected-pos (position:relative) to provide the context. */
+.builder-selected::before {
   content: "";
   position: absolute;
   inset: -4px;
@@ -221,9 +224,6 @@
     radial-gradient(circle at 100% 0, var(--color-ring, var(--color-blue-500)) 0 3px, transparent 3px),
     radial-gradient(circle at 100% 100%, var(--color-ring, var(--color-blue-500)) 0 3px, transparent 3px),
     radial-gradient(circle at 0 100%, var(--color-ring, var(--color-blue-500)) 0 3px, transparent 3px);
-}
-.builder-selected::before {
-  content: none;
 }
 .builder-selected::after {
   content: none;
