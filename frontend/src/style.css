@@ -197,35 +197,21 @@
 .gfont-raleway { font-family: 'Raleway', sans-serif; }
 .gfont-jakarta { font-family: 'Plus Jakarta Sans', sans-serif; }
 
-/* Builder canvas node selection (Figma-style): solid thin outline + 8
-   square handles at corners and edge midpoints. Solid blue (no white fill).
-   Handles are visual only (non-resizable).
-   position:relative is split into .builder-selected-pos so it is only added
-   for static-positioned nodes — forcing relative on an absolute/fixed node
-   breaks its layout (e.g. absolute hero background images). */
+/* Builder canvas node selection: clean 1.5px solid primary ring (theme-aware).
+   Handles removed — they were decorative only (non-resizable noise).
+   position:relative split into .builder-selected-pos so it's only added
+   for static-positioned nodes (forcing relative on absolute/fixed breaks
+   their layout, e.g. absolute hero background images). */
 .builder-selected {
-  outline: 2px solid var(--color-blue-500);
-  outline-offset: -2px;
+  outline: 1.5px solid var(--color-ring, var(--color-blue-500));
+  outline-offset: 1px;
+  border-radius: 2px;
 }
 .builder-selected-pos {
   position: relative;
 }
-/* Solid blue handles (9px) — 4 corners + 4 edge midpoints. */
 .builder-selected::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 50;
-  background:
-    linear-gradient(var(--color-blue-500), var(--color-blue-500)) left top / 9px 9px no-repeat,
-    linear-gradient(var(--color-blue-500), var(--color-blue-500)) center top / 9px 9px no-repeat,
-    linear-gradient(var(--color-blue-500), var(--color-blue-500)) right top / 9px 9px no-repeat,
-    linear-gradient(var(--color-blue-500), var(--color-blue-500)) right center / 9px 9px no-repeat,
-    linear-gradient(var(--color-blue-500), var(--color-blue-500)) right bottom / 9px 9px no-repeat,
-    linear-gradient(var(--color-blue-500), var(--color-blue-500)) center bottom / 9px 9px no-repeat,
-    linear-gradient(var(--color-blue-500), var(--color-blue-500)) left bottom / 9px 9px no-repeat,
-    linear-gradient(var(--color-blue-500), var(--color-blue-500)) left center / 9px 9px no-repeat;
+  content: none;
 }
 .builder-selected::after {
   content: none;
