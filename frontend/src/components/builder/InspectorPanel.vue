@@ -23,7 +23,6 @@ import {
 import { BUILDER_KEY } from '@/components/builder/injection'
 import type { Breakpoint } from '@/types/page-builder'
 import { findNode } from '@/components/builder/tree-utils'
-import { ICONS, ICON_LIST } from '@/lib/icon-map'
 import LayoutSection from './inspector/LayoutSection.vue'
 import TypographySection from './inspector/TypographySection.vue'
 import SpacingSection from './inspector/SpacingSection.vue'
@@ -31,6 +30,7 @@ import BackgroundSection from './inspector/BackgroundSection.vue'
 import BorderSection from './inspector/BorderSection.vue'
 import AppearanceSection from './inspector/AppearanceSection.vue'
 import SizeSection from './inspector/SizeSection.vue'
+import IconPickerSection from './inspector/IconSection.vue'
 import InspectorSection from './inspector/InspectorSection.vue'
 import {
   AlertDialog,
@@ -282,22 +282,7 @@ function removeClass(idx: number) {
       </template>
 
       <template v-if="node.type === 'icon'">
-        <InspectorSection title="Icon" :icon="IconPhoto">
-          <div class="grid grid-cols-6 gap-1">
-            <button
-              v-for="name in ICON_LIST"
-              :key="name"
-              class="flex h-8 w-8 items-center justify-center rounded-md border text-muted-foreground transition-colors"
-              :class="node.props.icon === name ? 'border-primary bg-primary/10 text-primary' : 'border-border hover:bg-muted'"
-              :title="name"
-              @click="setProp('icon', name)"
-            >
-              <svg v-if="ICONS[name]" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" class="size-4">
-                <path v-for="seg in ICONS[name]" :key="seg[1].key" :d="seg[1].d" />
-              </svg>
-            </button>
-          </div>
-        </InspectorSection>
+        <IconPickerSection />
       </template>
 
       <template v-if="node.type === 'input'">
