@@ -222,6 +222,9 @@ const dragging = computed(
 
 function onDragStart(e: DragEvent) {
   if (props.readonly || !store) return
+  // NodeRenderer is recursive. Without this, dragstart bubbles through every
+  // ancestor and the root overwrites draggingId, making canvas moves no-op.
+  e.stopPropagation()
   store.dragStart(props.node.id)
   if (e.dataTransfer) {
     e.dataTransfer.effectAllowed = 'move'
@@ -231,6 +234,8 @@ function onDragStart(e: DragEvent) {
 }
 function onDragOver(e: DragEvent) {
   if (props.readonly || !store) return
+  // Keep the deepest hovered node as drop target; ancestors must not overwrite it.
+  e.stopPropagation()
   store.dragOver(props.node.id, e, isContainer.value)
 }
 function onDragLeave() {
