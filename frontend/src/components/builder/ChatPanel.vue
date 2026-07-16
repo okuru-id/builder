@@ -451,7 +451,6 @@ watch(() => store.agentFocus.value, (node) => {
           <Button size="sm" variant="ghost" class="h-7 gap-1 px-2 text-[10px] text-muted-foreground" title="New session" :disabled="busy" @click="newSession">
             <IconPlus class="size-3.5" /> New
           </Button>
-          <span class="text-[10px] text-muted-foreground">AI Agent · LLM_API_KEY</span>
           <Button v-if="busy" size="sm" variant="secondary" class="h-7 px-2 text-xs" @click="stop">
             <IconPlayerStop class="size-3.5" /> Stop
           </Button>
