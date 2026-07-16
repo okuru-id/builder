@@ -189,15 +189,18 @@ function onBlur() {
   commitText()
 }
 
-const interactiveAttrs = computed(() =>
-  props.readonly
-    ? {}
-    : {
-        contenteditable: editing.value ? 'true' : 'false',
-        spellcheck: 'false',
-        suppressContentEditableWarning: 'true',
-      },
-)
+const interactiveAttrs = computed(() => {
+  if (props.readonly) return {}
+  // Only set contenteditable while actively editing. Omitting the attribute
+  // entirely when idle lets HTML5 draggable work (contenteditable="false" still
+  // trips text-selection drag in some browsers and blocks node dragging).
+  if (!editing.value) return { spellcheck: 'false' }
+  return {
+    contenteditable: 'true',
+    spellcheck: 'false',
+    suppressContentEditableWarning: 'true',
+  }
+})
 
 // --- drag-and-drop ---
 const isContainer = computed(() => CONTAINER_TYPES.has(props.node.type))
