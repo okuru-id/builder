@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Left outline panel: tree view + add-node palette.
-import { computed, inject, ref, watch, useTemplateRef } from 'vue'
+import { computed, inject, provide, ref, watch, useTemplateRef } from 'vue'
 import {
   IconSquare,
   IconSection,
@@ -10,6 +10,7 @@ import {
   IconCircuitPushbutton,
   IconLink,
   IconLayersIntersect,
+  IconArrowsMinimize,
   IconGridDots,
   IconMinus,
   IconStar,
@@ -63,6 +64,21 @@ const paletteLabels: Record<string, string> = {
 }
 
 const root = computed(() => store.tree.value.root)
+
+// ponytail: shared collapsed-set keyed by node id. Provided to TreeRow so
+// expand/collapse state survives child unmount on parent collapse. A local
+// ref in TreeRow would reset every time the row leaves the DOM.
+const collapsed = ref(new Set<string>())
+provide('builder-tree-collapsed', collapsed)
+function walkIds(node: { id: string; children: any[] }, acc: string[]) {
+  acc.push(node.id)
+  for (const c of node.children ?? []) walkIds(c, acc)
+}
+function collapseAll() {
+  const ids: string[] = []
+  walkIds(root.value, ids)
+  collapsed.value = new Set(ids)
+}
 
 // Count total nodes for header info.
 function countNodes(n: { children: any[] }): number {
@@ -125,9 +141,18 @@ function startResize(which: 'tree' | 'components', event: MouseEvent) {
         <IconLayersIntersect class="size-4 text-muted-foreground" />
         <h2 class="text-sm font-semibold">Layer</h2>
       </div>
-      <span class="rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-        {{ nodeCount }}
-      </span>
+      <div class="flex items-center gap-1">
+        <button
+          class="flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          title="Collapse all layers"
+          @click="collapseAll"
+        >
+          <IconArrowsMinimize class="size-3.5" />
+        </button>
+        <span class="rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+          {{ nodeCount }}
+        </span>
+      </div>
     </div>
 
     <div class="flex min-h-0 flex-1 flex-col overflow-hidden">

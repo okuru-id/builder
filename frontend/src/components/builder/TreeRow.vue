@@ -136,6 +136,15 @@ function toggleHidden() {
 function askAgent() {
   store.askAgentAbout(props.node)
 }
+function duplicate() {
+  store.duplicateNode(props.node.id)
+}
+function remove() {
+  store.removeNode(props.node.id)
+}
+function move(_n: Node, dir: -1 | 1) {
+  store.moveSiblingNode(props.node.id, dir)
+}
 
 function onDragStart(e: DragEvent) {
   store.dragStart(props.node.id)
@@ -160,7 +169,15 @@ function onDragEnd() {
 <template>
   <div>
     <!-- Row (Only the row itself is draggable and droppable) -->
-    <NodeContextMenu :node="node" @ask-agent="askAgent" @toggle-hidden="toggleHidden">
+    <NodeContextMenu
+      :node="node"
+      :is-root="depth === 0"
+      @ask-agent="askAgent"
+      @toggle-hidden="toggleHidden"
+      @duplicate="duplicate"
+      @remove="remove"
+      @move="move"
+    >
     <div
       ref="rowEl"
       :draggable="depth > 0"
