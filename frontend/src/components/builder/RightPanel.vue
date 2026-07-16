@@ -38,10 +38,10 @@ defineExpose({ focusAgent })
         </TabsList>
       </div>
 
-      <TabsContent value="inspector" class="mt-0 flex-1 overflow-hidden data-[state=inactive]:hidden">
+      <TabsContent value="inspector" force-mount class="mt-0 flex-1 overflow-hidden data-[state=inactive]:hidden">
         <InspectorPanel />
       </TabsContent>
-      <TabsContent value="agent" class="mt-0 flex-1 overflow-hidden data-[state=inactive]:hidden">
+      <TabsContent value="agent" force-mount class="mt-0 flex-1 overflow-hidden data-[state=inactive]:hidden">
         <ChatPanel />
       </TabsContent>
     </Tabs>
