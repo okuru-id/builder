@@ -345,6 +345,17 @@ watch(() => store.agentFocus.value, (node) => {
   input.value = `Focus on node "${node.name || node.type}" (ID: "${node.id}"). `
   store.clearAgentFocus()
 })
+
+// Drag a node from the Layer Tree onto the composer to reference it.
+// Reads the custom 'application/x-builder-node' payload set by TreeRow.
+function onDropNode(e: DragEvent) {
+  const id = e.dataTransfer?.getData('application/x-builder-node')
+  if (!id) return
+  e.preventDefault()
+  const found = findNode(store.tree.value.root, id)
+  if (!found) return
+  store.askAgentAbout(found.node)
+}
 </script>
 
 <template>
@@ -439,9 +450,11 @@ watch(() => store.agentFocus.value, (node) => {
         v-model="input"
         rows="2"
         class="mb-1.5 max-h-40 resize-none overflow-y-auto text-xs"
-        placeholder="Request changes to this page… (Enter to send)"
+        placeholder="Request changes to this page… (Enter to send, or drag a node from the tree)"
         :disabled="busy"
         @keydown="onKey"
+        @dragover.prevent
+        @drop="onDropNode"
       />
       <div class="flex items-center justify-between gap-2">
         <Button size="sm" variant="outline" class="h-7 gap-1 px-2 text-[10px]" :class="autoApply ? 'border-destructive text-destructive' : ''" @click="requestAutoApply">

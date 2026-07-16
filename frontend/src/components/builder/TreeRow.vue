@@ -151,6 +151,9 @@ function onDragStart(e: DragEvent) {
   if (e.dataTransfer) {
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.setData('text/plain', props.node.id)
+    // Custom type so the chat input can tell a tree-node drag apart from a
+    // plain text drag and accept it as a node reference.
+    e.dataTransfer.setData('application/x-builder-node', props.node.id)
   }
 }
 function onDragOver(e: DragEvent) {
