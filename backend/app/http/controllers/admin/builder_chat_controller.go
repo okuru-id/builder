@@ -20,9 +20,11 @@ import (
 // When LLM_API_KEY is empty the endpoint streams a single guidance message so
 // the UI still works end-to-end and tells the operator how to enable the LLM.
 //
-// ponytail: dedicated client with a 60s timeout so a stalled upstream cannot
-// leak goroutines/connections forever. Upgrade path: per-request timeout knob.
-var llmClient = &nethttp.Client{Timeout: 60 * time.Second}
+// ponytail: dedicated client with a 180s timeout so a stalled upstream cannot
+// leak goroutines/connections forever. Generous budget because some routed
+// models (e.g. glm-5.2) are reasoning models that can think for a long time
+// before emitting content. Upgrade path: per-request timeout knob.
+var llmClient = &nethttp.Client{Timeout: 180 * time.Second}
 
 type BuilderChatController struct{}
 
@@ -51,10 +53,12 @@ You act on the user's page, represented as a tree of nodes. Each node has:
 All styling uses Tailwind CSS utility classes only.
 
 The frontend sends a node catalog below. It is authoritative: only create node
-type values listed in Available node types; only use names listed in
-Available icon names for an icon node's props.icon. Nodes listed in
+type values listed in Available node types. Nodes listed in
 Container types may contain children; all other nodes must have no children.
-Use the current tree's real ids for changes; never invent ids.
+For icon nodes, use Tabler icon names in PascalCase (e.g. IconStar, IconHeart,
+IconArrowRight, IconMail, IconPhone) — the frontend resolves them against the
+full @tabler/icons-vue set. Use the current tree's real ids for changes; never
+invent ids.
 
 Capabilities:
 - Explain and critique the current design.
@@ -159,6 +163,12 @@ func (c *BuilderChatController) Chat(ctx ghttp.Context) ghttp.Response {
 			"model":    model,
 			"messages": msgs,
 			"stream":   true,
+			// Disable chain-of-thought reasoning when the upstream model supports
+			// it (e.g. GLM/Zhipu thinking models). The builder agent must emit
+			// structured action blocks, so silent reasoning that delays content
+			// past the client timeout reads as "(no response)". Harmless if the
+			// provider ignores the field.
+			"thinking": map[string]any{"type": "disabled"},
 		}
 		bodyBytes, _ := json.Marshal(body)
 
@@ -201,16 +211,26 @@ func (c *BuilderChatController) Chat(ctx ghttp.Context) ghttp.Response {
 			var chunk struct {
 				Choices []struct {
 					Delta struct {
-						Content string `json:"content"`
+						Content          string `json:"content"`
+						ReasoningContent string `json:"reasoning_content"`
 					} `json:"delta"`
 				} `json:"choices"`
 			}
 			if err := json.Unmarshal([]byte(data), &chunk); err != nil {
 				continue
 			}
-			if len(chunk.Choices) > 0 && chunk.Choices[0].Delta.Content != "" {
-				if err := writeEvent(w, chunk.Choices[0].Delta.Content); err != nil {
-					return err
+			if len(chunk.Choices) > 0 {
+				// Prefer visible content. Fall back to reasoning_content so the
+				// stream is never silent on models that only emit reasoning
+				// (defensive; thinking is disabled above).
+				piece := chunk.Choices[0].Delta.Content
+				if piece == "" {
+					piece = chunk.Choices[0].Delta.ReasoningContent
+				}
+				if piece != "" {
+					if err := writeEvent(w, piece); err != nil {
+						return err
+					}
 				}
 			}
 		}
