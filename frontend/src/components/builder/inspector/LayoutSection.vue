@@ -10,6 +10,7 @@ import {
   FLEX_DIRECTIONS,
   ALIGN_ITEMS,
   JUSTIFY_CONTENTS,
+  FLEX_WRAPS,
   SPACING,
 } from '@/types/tokens'
 import InspectorSection from './InspectorSection.vue'
@@ -19,14 +20,6 @@ import {
   IconArrowDown,
   IconArrowBackUp,
   IconArrowUp,
-  IconLayoutAlignLeft,
-  IconLayoutAlignCenter,
-  IconLayoutAlignRight,
-  IconLayoutAlignTop,
-  IconLayoutAlignMiddle,
-  IconLayoutAlignBottom,
-  IconTextWrap,
-  IconTextWrapDisabled,
 } from '@tabler/icons-vue'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
@@ -37,6 +30,7 @@ const node = computed(() => store.selectedNode.value)
 const DIR_CLASSES = FLEX_DIRECTIONS.map((d) => `flex-${d}`)
 const ITEMS_CLASSES = ALIGN_ITEMS.map((a) => `items-${a}`)
 const JUSTIFY_CLASSES = JUSTIFY_CONTENTS.map((j) => `justify-${j}`)
+const WRAP_CLASSES = FLEX_WRAPS.map((w) => `flex-${w}`)
 
 function cls(patterns: string[], add: string | null) {
   if (!node.value) return
@@ -49,33 +43,19 @@ function currentDir() {
 function currentItems() {
   return currentFromSet(node.value!.classes, ITEMS_CLASSES)?.slice('items-'.length) ?? 'stretch'
 }
-// isItemsActive: tombol aktif kalau class ada dan match, ATAU tombol=start
-// tapi tidak ada items-* class (default stretch-only UI).
-// ponytail: Figma treats default as stretch; start button never highlights
-// stretch fallback, so we keep it explicit.
 function currentJustify() {
   return currentFromSet(node.value!.classes, JUSTIFY_CLASSES)?.slice('justify-'.length) ?? 'start'
 }
+function currentWrap() {
+  return currentFromSet(node.value!.classes, WRAP_CLASSES)?.slice('flex-'.length) ?? 'nowrap'
+}
 
-// Figma-style direction toggle (4 icon buttons).
+// Direction: 4 icon buttons (row/col/row-reverse/col-reverse).
 const directions = [
-  { value: 'row', label: 'Horizontal', icon: IconArrowRight },
-  { value: 'col', label: 'Vertical', icon: IconArrowDown },
-  { value: 'row-reverse', label: 'Horizontal reversed', icon: IconArrowBackUp },
-  { value: 'col-reverse', label: 'Vertical reversed', icon: IconArrowUp },
-]
-
-// Figma-style: two independent alignment rows. Horizontal = justify-*,
-// Vertikal = items-*. Each row is a 3-icon toggle.
-const hAlign = [
-  { value: 'start', icon: IconLayoutAlignLeft, label: 'Left' },
-  { value: 'center', icon: IconLayoutAlignCenter, label: 'Center' },
-  { value: 'end', icon: IconLayoutAlignRight, label: 'Right' },
-]
-const vAlign = [
-  { value: 'start', icon: IconLayoutAlignTop, label: 'Top' },
-  { value: 'center', icon: IconLayoutAlignMiddle, label: 'Center' },
-  { value: 'end', icon: IconLayoutAlignBottom, label: 'Bottom' },
+  { value: 'row', label: 'Row', icon: IconArrowRight },
+  { value: 'col', label: 'Column', icon: IconArrowDown },
+  { value: 'row-reverse', label: 'Row reversed', icon: IconArrowBackUp },
+  { value: 'col-reverse', label: 'Column reversed', icon: IconArrowUp },
 ]
 </script>
 
@@ -107,61 +87,60 @@ const vAlign = [
         </button>
       </div>
 
-      <!-- Alignment: 2 independent rows (horizontal + vertical) -->
-      <div class="space-y-1">
-        <div class="grid grid-cols-3 gap-1">
-          <button
-            v-for="h in hAlign"
-            :key="`h-${h.value}`"
-            class="flex h-8 items-center justify-center rounded-md border transition-colors"
-            :class="currentJustify() === h.value
-              ? 'border-primary bg-primary/10 text-primary'
-              : 'border-border text-muted-foreground hover:bg-muted'"
-            :title="`Horizontal ${h.label} (justify-${h.value})`"
-            @click="cls(JUSTIFY_CLASSES, h.value === 'start' ? null : `justify-${h.value}`)"
-          >
-            <component :is="h.icon" class="size-4" />
-          </button>
-        </div>
-        <div class="grid grid-cols-3 gap-1">
-          <button
-            v-for="v in vAlign"
-            :key="`v-${v.value}`"
-            class="flex h-8 items-center justify-center rounded-md border transition-colors"
-            :class="currentItems() === v.value
-              ? 'border-primary bg-primary/10 text-primary'
-              : 'border-border text-muted-foreground hover:bg-muted'"
-            :title="`Vertical ${v.label} (items-${v.value})`"
-            @click="cls(ITEMS_CLASSES, `items-${v.value}`)"
-          >
-            <component :is="v.icon" class="size-4" />
-          </button>
-        </div>
+      <!-- Horizontal alignment (justify) — full scale -->
+      <div class="flex items-center justify-between gap-2">
+        <span class="text-[11px] font-medium text-foreground/80">Justify</span>
+        <Select
+          :model-value="currentJustify()"
+          @update:model-value="(v) => cls(JUSTIFY_CLASSES, v === 'start' ? null : `justify-${String(v)}`)"
+        >
+          <SelectTrigger class="h-8 w-28 px-2 text-xs capitalize"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem v-for="j in JUSTIFY_CONTENTS" :key="j" :value="j">{{ j }}</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
-      <!-- Gap + Wrap row -->
-      <div class="flex items-center gap-2">
-        <span class="w-8 shrink-0 text-[11px] font-medium text-foreground/80">Gap</span>
+      <!-- Vertical alignment (items) — full scale -->
+      <div class="flex items-center justify-between gap-2">
+        <span class="text-[11px] font-medium text-foreground/80">Align Items</span>
+        <Select
+          :model-value="currentItems()"
+          @update:model-value="(v) => cls(ITEMS_CLASSES, v === 'stretch' ? null : `items-${String(v)}`)"
+        >
+          <SelectTrigger class="h-8 w-28 px-2 text-xs capitalize"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem v-for="a in ALIGN_ITEMS" :key="a" :value="a">{{ a }}</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <!-- Wrap — 3-way -->
+      <div class="flex items-center justify-between gap-2">
+        <span class="text-[11px] font-medium text-foreground/80">Wrap</span>
+        <Select
+          :model-value="currentWrap()"
+          @update:model-value="(v) => cls(WRAP_CLASSES, v === 'nowrap' ? null : `flex-${String(v)}`)"
+        >
+          <SelectTrigger class="h-8 w-28 px-2 text-xs capitalize"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem v-for="w in FLEX_WRAPS" :key="w" :value="w">{{ w }}</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <!-- Gap -->
+      <div class="flex items-center justify-between gap-2">
+        <span class="text-[11px] font-medium text-foreground/80">Gap</span>
         <Select
           :model-value="currentClass(node?.classes ?? [], 'gap') ?? '0'"
-          class="flex-1"
           @update:model-value="(v) => cls(['gap'], v === '0' ? null : `gap-${String(v)}`)"
         >
-          <SelectTrigger class="h-8 px-2 text-xs"><SelectValue /></SelectTrigger>
+          <SelectTrigger class="h-8 w-28 px-2 text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem v-for="s in SPACING" :key="s" :value="s">{{ s }}</SelectItem>
           </SelectContent>
         </Select>
-        <button
-          class="flex size-8 shrink-0 items-center justify-center rounded-md border transition-colors"
-          :class="hasClass(node?.classes ?? [], 'flex-wrap')
-            ? 'border-primary bg-primary/10 text-primary'
-            : 'border-border text-muted-foreground hover:bg-muted'"
-          :title="hasClass(node?.classes ?? [], 'flex-wrap') ? 'Wrap on' : 'Wrap off'"
-          @click="cls(['flex-wrap', 'flex-nowrap', 'flex-wrap-reverse'], hasClass(node?.classes ?? [], 'flex-wrap') ? null : 'flex-wrap')"
-        >
-          <component :is="hasClass(node?.classes ?? [], 'flex-wrap') ? IconTextWrap : IconTextWrapDisabled" class="size-4" />
-        </button>
       </div>
     </template>
   </InspectorSection>
