@@ -137,7 +137,10 @@ export function useBuilderStore() {
     redoStack.value.push(cloneTree(tree.value.root))
     const prev = undoStack.value.pop()!
     tree.value = { root: prev }
-    selectedId.value = null
+    // Preserve selection if the node still exists in the restored tree;
+    // only clear when the selected node was removed by this step.
+    const keep = selectedId.value && findNode(prev, selectedId.value)
+    selectedId.value = keep ? selectedId.value : null
     lastSnapshotAt = 0 // start a fresh edit group after navigation
     notifyChange()
   }
@@ -146,7 +149,8 @@ export function useBuilderStore() {
     undoStack.value.push(cloneTree(tree.value.root))
     const next = redoStack.value.pop()!
     tree.value = { root: next }
-    selectedId.value = null
+    const keep = selectedId.value && findNode(next, selectedId.value)
+    selectedId.value = keep ? selectedId.value : null
     lastSnapshotAt = 0
     notifyChange()
   }
