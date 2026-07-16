@@ -3,7 +3,7 @@
 // OpenAI-compatible backend proxy (/admin/api/builder/chat). Uses shadcn-vue
 // Message + MessageScroller. The agent may emit fenced ```action:*``` blocks;
 // those render as "Apply" buttons that mutate the tree directly.
-import { inject, nextTick, ref } from 'vue'
+import { computed, inject, nextTick, onMounted, ref, watch } from 'vue'
 import { IconSend, IconRobot, IconUser, IconLoader2, IconCheck, IconSparkles, IconPlayerStop } from '@tabler/icons-vue'
 import { toast } from 'vue-sonner'
 import { Button } from '@/components/ui/button'
@@ -60,6 +60,39 @@ const uid = () => `m_${Date.now()}_${++seq}`
 
 // Active AbortController for the in-flight stream, if any.
 let abortCtl: AbortController | null = null
+
+// Persist conversation per-page in localStorage so it survives refresh.
+// ponytail: client-side only; cross-device sync is YAGNI for a builder assistant.
+const storageKey = computed(() => `builder_chat_${store.page.value?.id ?? 'draft'}`)
+
+function loadChat() {
+  try {
+    const raw = localStorage.getItem(storageKey.value)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed) && parsed.length) {
+        messages.value = parsed
+        return
+      }
+    }
+  } catch {
+    // corrupt entry — ignore, keep intro
+  }
+  // No saved chat: reset to intro.
+  messages.value = [{
+    id: 'intro',
+    role: 'assistant',
+    content: "Hi! I'm the AI Agent. Ask for layout/color/structure changes and I'll propose actions you can apply with one click.",
+  }]
+}
+
+function saveChat() {
+  try {
+    localStorage.setItem(storageKey.value, JSON.stringify(messages.value))
+  } catch {
+    // quota / private mode — ignore, chat just won't persist
+  }
+}
 
 // Track applied state per action block by its raw signature within a message.
 const appliedFlags = ref<Record<string, boolean>>({})
@@ -235,6 +268,7 @@ async function send() {
   } finally {
     abortCtl = null
     busy.value = false
+    saveChat()
     await nextTick()
   }
 }
@@ -250,6 +284,10 @@ function onKey(e: KeyboardEvent) {
 function stop() {
   abortCtl?.abort()
 }
+
+onMounted(loadChat)
+// Reload chat when the builder switches to a different page.
+watch(() => store.page.value?.id, () => loadChat())
 </script>
 
 <template>
