@@ -18,16 +18,20 @@ import {
   IconRocket,
   IconArrowBackUp,
   IconArrowForwardUp,
+  IconMoon,
+  IconSun,
 } from '@tabler/icons-vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { BUILDER_KEY } from '@/components/builder/injection'
+import { useTheme } from '@/lib/theme'
 import type { Breakpoint } from '@/components/builder/useBuilderStore'
 import ExportDialog from './ExportDialog.vue'
 import HistoryDropdown from './HistoryDropdown.vue'
 
 const store = inject(BUILDER_KEY, null)!
 const router = useRouter()
+const { theme, toggle: toggleTheme } = useTheme()
 
 defineProps<{ showLeft: boolean; showRight: boolean }>()
 defineEmits<{ 'toggle-left': []; 'toggle-right': [] }>()
@@ -101,6 +105,27 @@ function openPreview() {
         <span class="text-xs text-muted-foreground">v{{ store.page.value?.version ?? 0 }}</span>
         <span v-if="store.dirty.value" class="text-xs text-amber-600">●</span>
       </div>
+
+      <div class="mx-0.5 h-5 w-px shrink-0 bg-border" />
+
+      <Button
+        variant="ghost"
+        size="icon"
+        :disabled="!store.canUndo.value"
+        title="Undo (Ctrl+Z)"
+        @click="store.undo()"
+      >
+        <IconArrowBackUp class="size-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        :disabled="!store.canRedo.value"
+        title="Redo (Ctrl+Shift+Z)"
+        @click="store.redo()"
+      >
+        <IconArrowForwardUp class="size-4" />
+      </Button>
     </div>
 
     <!-- Center: breakpoint (perfectly centered) -->
@@ -140,28 +165,18 @@ function openPreview() {
         </Button>
       </div>
 
-      <Button
-        variant="ghost"
-        size="icon"
-        :disabled="!store.canUndo.value"
-        title="Undo (Ctrl+Z)"
-        @click="store.undo()"
-      >
-        <IconArrowBackUp class="size-4" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        :disabled="!store.canRedo.value"
-        title="Redo (Ctrl+Shift+Z)"
-        @click="store.redo()"
-      >
-        <IconArrowForwardUp class="size-4" />
-      </Button>
       <HistoryDropdown />
 
       <div class="mx-0.5 h-5 w-px shrink-0 bg-border" />
 
+      <Button
+        variant="ghost"
+        size="icon"
+        :title="theme === 'dark' ? 'Light mode' : 'Dark mode'"
+        @click="toggleTheme()"
+      >
+        <component :is="theme === 'dark' ? IconSun : IconMoon" class="size-4" />
+      </Button>
       <Button
         variant="ghost"
         size="icon"
