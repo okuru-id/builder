@@ -313,7 +313,7 @@ const nodeStyle = computed(() => ({
     </template>
     <template v-else-if="displayNode.type === 'icon'">
       <span v-if="displayNode.props.icon && ICONS[displayNode.props.icon]" class="inline-flex items-center justify-center">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
           <template v-for="seg in ICONS[displayNode.props.icon]" :key="seg[1].key">
             <path :d="seg[1].d" />
           </template>

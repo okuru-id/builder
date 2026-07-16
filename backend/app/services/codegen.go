@@ -219,7 +219,7 @@ func (g *LandingCodegen) renderIconDepth(n nodeMap, depth int) string {
 	var svg string
 	if segs, ok := iconPaths[name]; ok && len(segs) > 0 {
 		var b strings.Builder
-		b.WriteString(`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">`)
+		b.WriteString(`<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">`)
 		for _, seg := range segs {
 			if len(seg) < 2 {
 				continue
