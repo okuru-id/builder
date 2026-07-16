@@ -197,33 +197,19 @@
 .gfont-raleway { font-family: 'Raleway', sans-serif; }
 .gfont-jakarta { font-family: 'Plus Jakarta Sans', sans-serif; }
 
-/* Builder canvas node selection: corner dots (Figma-lite).
-   4 filled primary circles at the corners via radial-gradients on ::before.
+/* Builder canvas node selection: dashed primary outline.
    position:relative split into .builder-selected-pos so it's only added
    for static-positioned nodes (forcing relative on absolute/fixed breaks
    their layout, e.g. absolute hero background images). */
 .builder-selected {
-  outline: 1px solid color-mix(in oklab, var(--color-ring, var(--color-blue-500)) 50%, transparent);
+  outline: 1.5px dashed var(--color-ring, var(--color-blue-500));
   outline-offset: 1px;
 }
 .builder-selected-pos {
   position: relative;
 }
-/* Corner dots — 6px filled primary circles just outside each corner.
-   On .builder-selected::before so ALL selected nodes get dots: positioned
-   nodes (absolute/fixed) anchor ::before natively; static nodes get
-   .builder-selected-pos (position:relative) to provide the context. */
 .builder-selected::before {
-  content: "";
-  position: absolute;
-  inset: -4px;
-  pointer-events: none;
-  z-index: 50;
-  background:
-    radial-gradient(circle at 0 0,   var(--color-ring, var(--color-blue-500)) 0 3px, transparent 3px),
-    radial-gradient(circle at 100% 0, var(--color-ring, var(--color-blue-500)) 0 3px, transparent 3px),
-    radial-gradient(circle at 100% 100%, var(--color-ring, var(--color-blue-500)) 0 3px, transparent 3px),
-    radial-gradient(circle at 0 100%, var(--color-ring, var(--color-blue-500)) 0 3px, transparent 3px);
+  content: none;
 }
 .builder-selected::after {
   content: none;
