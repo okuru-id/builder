@@ -28,6 +28,8 @@ import InspectorSection from './inspector/InspectorSection.vue'
 const store = inject(BUILDER_KEY, null)!
 const asideRef = useTemplateRef<HTMLElement>('aside')
 const headerRef = useTemplateRef<HTMLElement>('header')
+const treeWrapRef = useTemplateRef<HTMLElement>('treeWrap')
+const compWrapRef = useTemplateRef<HTMLElement>('compWrap')
 
 const paletteIcons: Record<NodeType, any> = {
   frame: IconSquare,
@@ -84,27 +86,25 @@ function startResize(which: 'tree' | 'components', event: MouseEvent) {
   event.preventDefault()
   const panel = asideRef.value
   const hdr = headerRef.value
-  if (!panel || !hdr) return
-  const panelHeight = panel.clientHeight
-  const hdrHeight = hdr.offsetHeight
+  const treeWrap = treeWrapRef.value
+  const compWrap = compWrapRef.value
+  if (!panel || !hdr || !treeWrap || !compWrap) return
   const startY = event.clientY
   const start = which === 'tree' ? treeHeight.value : componentsHeight.value
-  const sectionOverhead = 60
-  const addNodeOverhead = 60
+
+  // The OTHER resizable section, measured live so collapsed InspectorSection
+  // (chevron-collapsed to header-only) frees space the resizer can reclaim.
+  // Add Node is flex-1 and absorbs whatever is left — never measure it (circular);
+  // only reserve its minimum header so it stays visible.
+  const otherSectionActual = which === 'tree' ? compWrap.offsetHeight : treeWrap.offsetHeight
+  const OWN_OVERHEAD = 44
+  const ADD_NODE_MIN = 32
+  const MIN_CONTENT = 120
+  const maxNext = panel.clientHeight - hdr.offsetHeight - OWN_OVERHEAD - otherSectionActual - ADD_NODE_MIN
 
   const onMove = (e: MouseEvent) => {
     const delta = e.clientY - startY
-    let next = start + delta
-    next = Math.max(180, next)
-
-    // compute total occupied height if this resize goes through, then clamp
-    const otherH = (which === 'tree' ? componentsHeight.value : treeHeight.value) + sectionOverhead
-    const total = hdrHeight + (next + sectionOverhead) + otherH + addNodeOverhead
-    const overflow = total - panelHeight
-    if (overflow > 0) {
-      next = Math.max(180, next - overflow)
-    }
-
+    const next = Math.max(MIN_CONTENT, Math.min(start + delta, maxNext))
     if (which === 'tree') treeHeight.value = next
     else componentsHeight.value = next
   }
@@ -132,7 +132,7 @@ function startResize(which: 'tree' | 'components', event: MouseEvent) {
 
     <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
       <!-- Layer Tree -->
-      <div class="shrink-0 border-b border-border/50">
+      <div ref="treeWrap" class="shrink-0 border-b border-border/50">
         <InspectorSection title="Layer Tree" :icon="IconSettings">
           <div class="relative overflow-auto py-0.5" :style="{ height: `${treeHeight}px` }">
             <TreeRow :node="root" />
@@ -148,7 +148,7 @@ function startResize(which: 'tree' | 'components', event: MouseEvent) {
       </div>
 
       <!-- Components -->
-      <div class="shrink-0 border-b border-border/50">
+      <div ref="compWrap" class="shrink-0 border-b border-border/50">
         <InspectorSection title="Components" :icon="IconComponents">
           <div class="relative overflow-auto border-t border-border -mx-3" :style="{ height: `${componentsHeight}px` }">
             <ComponentPalette />
