@@ -4,7 +4,7 @@
 // Message + MessageScroller. The agent may emit fenced ```action:*``` blocks;
 // those render as "Apply" buttons that mutate the tree directly.
 import { inject, nextTick, ref } from 'vue'
-import { IconSend, IconRobot, IconUser, IconLoader2, IconCheck, IconSparkles } from '@tabler/icons-vue'
+import { IconSend, IconRobot, IconUser, IconLoader2, IconCheck, IconSparkles, IconPlayerStop } from '@tabler/icons-vue'
 import { toast } from 'vue-sonner'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -22,7 +22,8 @@ import {
   MessageScrollerViewport,
 } from '@/components/ui/message-scroller'
 import { BUILDER_KEY } from '@/components/builder/injection'
-import { makeNode } from '@/components/builder/tree-utils'
+import { makeNode, findNode } from '@/components/builder/tree-utils'
+import { cn } from '@/lib/utils'
 import type { Node } from '@/types/page-builder'
 
 const store = inject(BUILDER_KEY, null)!
@@ -34,7 +35,7 @@ interface ChatMsg {
 }
 
 interface ActionPart {
-  kind: 'add' | 'classes' | 'text'
+  kind: 'add' | 'classes' | 'text' | 'delete' | 'move'
   payload: any
   raw: string
 }
@@ -57,6 +58,9 @@ const busy = ref(false)
 let seq = 0
 const uid = () => `m_${Date.now()}_${++seq}`
 
+// Active AbortController for the in-flight stream, if any.
+let abortCtl: AbortController | null = null
+
 // Track applied state per action block by its raw signature within a message.
 const appliedFlags = ref<Record<string, boolean>>({})
 
@@ -64,7 +68,7 @@ const appliedFlags = ref<Record<string, boolean>>({})
 function partsOf(m: ChatMsg): MsgPart[] {
   if (m.role !== 'assistant') return [{ type: 'text', text: m.content }]
   const out: MsgPart[] = []
-  const re = /```action:(add|classes|text)\n([\s\S]*?)```/g
+  const re = /```action:(add|classes|text|delete|move)\n([\s\S]*?)```/g
   let last = 0
   let match: RegExpExecArray | null
   while ((match = re.exec(m.content)) !== null) {
@@ -128,11 +132,26 @@ function applyAction(msgId: string, part: MsgPart) {
       store.appendNode(node, parentId)
       toast.success('Node added')
     } else if (action.kind === 'classes') {
-      store.patchNode(action.payload.nodeId, { classes: action.payload.set })
+      // Merge via twMerge: agent classes override conflicting prefixes,
+      // unrelated classes (color/spacing/...) are preserved. Fixes data loss.
+      const cur = findNode(store.tree.value.root, action.payload.nodeId)?.node.classes ?? []
+      const merged = cn(cur, ...(Array.isArray(action.payload.set) ? action.payload.set : []))
+        .split(/\s+/)
+        .filter(Boolean)
+      store.patchNode(action.payload.nodeId, { classes: merged })
       toast.success('Classes updated')
     } else if (action.kind === 'text') {
       store.patchNode(action.payload.nodeId, { props: { text: action.payload.text } })
       toast.success('Text updated')
+    } else if (action.kind === 'delete') {
+      store.removeNode(action.payload.nodeId)
+      toast.success('Node deleted')
+    } else if (action.kind === 'move') {
+      const parentId = action.payload?.parentId && action.payload.parentId !== 'root'
+        ? action.payload.parentId
+        : null
+      store.moveNode(action.payload.nodeId, parentId, Number(action.payload?.index ?? -1))
+      toast.success('Node moved')
     }
     appliedFlags.value[key] = true
   } catch (e: any) {
@@ -157,6 +176,7 @@ async function send() {
     .filter((m) => m.id !== assistantMsg.id && m.id !== 'intro')
     .map((m) => ({ role: m.role, content: m.content }))
 
+  abortCtl = new AbortController()
   try {
     const token = localStorage.getItem('access_token')
     const res = await fetch('/admin/api/builder/chat', {
@@ -171,6 +191,7 @@ async function send() {
         tree: store.tree.value,
         pageName: store.page.value?.name ?? '',
       }),
+      signal: abortCtl.signal,
     })
     if (!res.ok || !res.body) {
       throw new Error(`HTTP ${res.status}`)
@@ -204,9 +225,15 @@ async function send() {
       assistantMsg.content = '(no response)'
     }
   } catch (e: any) {
-    assistantMsg.content = `Failed: ${e?.message || 'network error'}`
-    toast.error('Agent failed')
+    if (e?.name === 'AbortError') {
+      // Keep partially streamed content; only mark empty as cancelled.
+      if (!assistantMsg.content) assistantMsg.content = '(cancelled)'
+    } else {
+      assistantMsg.content = `Failed: ${e?.message || 'network error'}`
+      toast.error('Agent failed')
+    }
   } finally {
+    abortCtl = null
     busy.value = false
     await nextTick()
   }
@@ -217,6 +244,11 @@ function onKey(e: KeyboardEvent) {
     e.preventDefault()
     send()
   }
+}
+
+// Cancel the in-flight stream. Keep whatever has streamed so far.
+function stop() {
+  abortCtl?.abort()
 }
 </script>
 
@@ -246,7 +278,15 @@ function onKey(e: KeyboardEvent) {
                       {{ m.role === 'user' ? 'You' : 'AI Agent' }}
                     </MessageHeader>
 
-                    <!-- Text parts -->
+                    <!-- Typing indicator: only while waiting for first token -->
+                    <div
+                      v-if="m.role === 'assistant' && busy && !m.content && m.id === messages[messages.length - 1].id"
+                      class="inline-flex items-center gap-1 rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground"
+                    >
+                      <IconLoader2 class="size-3 animate-spin" /> typing…
+                    </div>
+
+                    <!-- Text + action parts -->
                     <div
                       v-for="(part, i) in partsOf(m)"
                       :key="i"
@@ -259,12 +299,6 @@ function onKey(e: KeyboardEvent) {
                           : 'bg-muted text-foreground'"
                       >
                         {{ part.text }}
-                      </div>
-                      <div
-                        v-else-if="m.role === 'assistant' && busy && m.id === messages[messages.length - 1].id && !m.content && i === 0"
-                        class="inline-flex items-center gap-1 rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground"
-                      >
-                        <IconLoader2 class="size-3 animate-spin" /> typing…
                       </div>
 
                       <!-- Action block: Apply button -->
@@ -314,6 +348,9 @@ function onKey(e: KeyboardEvent) {
         <span class="text-[10px] text-muted-foreground">AI Agent · LLM_API_KEY</span>
         <Button size="sm" class="h-7 px-2 text-xs" :disabled="!input.trim() || busy" @click="send">
           <IconSend class="size-3.5" /> Send
+        </Button>
+        <Button v-if="busy" size="sm" variant="secondary" class="h-7 px-2 text-xs" @click="stop">
+          <IconPlayerStop class="size-3.5" /> Stop
         </Button>
       </div>
     </div>

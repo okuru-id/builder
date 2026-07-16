@@ -8,6 +8,7 @@ import (
 	"io"
 	nethttp "net/http"
 	"strings"
+	"time"
 
 	ghttp "github.com/goravel/framework/contracts/http"
 
@@ -18,6 +19,11 @@ import (
 // builder assistant. Config via env: LLM_BASE_URL, LLM_API_KEY, LLM_MODEL.
 // When LLM_API_KEY is empty the endpoint streams a single guidance message so
 // the UI still works end-to-end and tells the operator how to enable the LLM.
+//
+// ponytail: dedicated client with a 60s timeout so a stalled upstream cannot
+// leak goroutines/connections forever. Upgrade path: per-request timeout knob.
+var llmClient = &nethttp.Client{Timeout: 60 * time.Second}
+
 type BuilderChatController struct{}
 
 func NewBuilderChatController() *BuilderChatController {
@@ -64,6 +70,16 @@ Capabilities:
   Rewrite text:
   ` + fence + `action:text
   { "nodeId": "<id>", "text": "New copy" }
+  ` + fence + `
+
+  Delete a node (root cannot be deleted):
+  ` + fence + `action:delete
+  { "nodeId": "<id>" }
+  ` + fence + `
+
+  Move/reorder a node under a new parent (use "root" for top level; index -1 = append):
+  ` + fence + `action:move
+  { "nodeId": "<id>", "parentId": "root", "index": -1 }
   ` + fence + `
 
 Rules:
@@ -131,7 +147,7 @@ func (c *BuilderChatController) Chat(ctx ghttp.Context) ghttp.Response {
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Authorization", "Bearer "+apiKey)
 
-		resp, err := nethttp.DefaultClient.Do(req)
+		resp, err := llmClient.Do(req)
 		if err != nil {
 			_ = writeEvent(w, "Gagal menghubungi LLM: "+err.Error())
 			_, _ = w.WriteString("data: [DONE]\n\n")

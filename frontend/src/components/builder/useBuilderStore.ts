@@ -217,6 +217,15 @@ export function useBuilderStore() {
     notifyChange()
   }
 
+  // Move a node to a new parent (root by default) at a given index (-1 = append).
+  // Reuses reparentTree from the drag-drop path.
+  function moveNode(id: string, parentId: string | null = null, index: number = -1) {
+    const target = parentId && parentId !== 'root' ? parentId : tree.value.root.id
+    pushHistory()
+    tree.value = { root: reparentTree(tree.value.root, id, target, index) }
+    notifyChange()
+  }
+
   function duplicateNode(id: string) {
     const found = findNode(tree.value.root, id)
     if (!found || !found.parent) return
@@ -409,6 +418,7 @@ export function useBuilderStore() {
     addNode,
     appendNode,
     removeNode,
+    moveNode,
     duplicateNode,
     moveSiblingNode,
     undo,
