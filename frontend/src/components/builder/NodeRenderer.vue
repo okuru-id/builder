@@ -205,6 +205,14 @@ const dropInside = computed(() => {
   const t = store?.dropTarget.value
   return !!t && t.pos === 'inside' && t.parentId === props.node.id
 })
+const dropBefore = computed(() => {
+  const t = store?.dropTarget.value
+  return !!t && t.pos === 'before' && store?.draggingId.value !== props.node.id
+})
+const dropAfter = computed(() => {
+  const t = store?.dropTarget.value
+  return !!t && t.pos === 'after' && store?.draggingId.value !== props.node.id
+})
 const dragging = computed(
   () => !props.readonly && store?.draggingId.value === props.node.id,
 )
@@ -288,6 +296,8 @@ const nodeStyle = computed(() => ({
       'opacity-40 outline-dashed outline-2 outline-amber-400 -outline-offset-2': hiddenHere,
       'opacity-40': dragging,
       'ring-2 ring-blue-500 ring-inset': dropInside,
+      'drop-line-before': dropBefore,
+      'drop-line-after': dropAfter,
     }]"
     :draggable="!readonly && !editing"
     v-bind="{ ...attrsFor(displayNode), ...interactiveAttrs }"
