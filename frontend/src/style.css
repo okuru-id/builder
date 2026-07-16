@@ -199,11 +199,16 @@
 
 /* Builder canvas node selection (Figma-style): solid thin outline + 8
    square handles at corners and edge midpoints. Solid blue (no white fill).
-   Handles are visual only (non-resizable). */
+   Handles are visual only (non-resizable).
+   position:relative is split into .builder-selected-pos so it is only added
+   for static-positioned nodes — forcing relative on an absolute/fixed node
+   breaks its layout (e.g. absolute hero background images). */
 .builder-selected {
-  position: relative;
   outline: 2px solid var(--color-blue-500);
   outline-offset: -2px;
+}
+.builder-selected-pos {
+  position: relative;
 }
 /* Solid blue handles (9px) — 4 corners + 4 edge midpoints. */
 .builder-selected::before {

@@ -93,9 +93,14 @@ const classList = computed(() => {
   // Selection ring + hover affordance, layered so we never overwrite real classes.
   // Selection affordance: global CSS class draws a solid thin outline + guide
   // points (4 sides + center). Defined in src/style.css (.builder-selected).
-  return selected.value
-    ? [...emulated, 'builder-selected']
-    : [...emulated, 'hover:outline-1', 'hover:outline-blue-300', 'hover:-outline-offset-1']
+  // Don't force position:relative on already-positioned nodes (absolute/fixed
+  // hero images etc.) — it breaks their layout. Handles (::before inset:0)
+  // still map to the node's own box because it's already a positioning ctx.
+  if (selected.value) {
+    const pos = emulated.some((c) => /^(absolute|fixed|relative|sticky)$/.test(c))
+    return pos ? [...emulated, 'builder-selected'] : [...emulated, 'builder-selected', 'builder-selected-pos']
+  }
+  return [...emulated, 'hover:outline-1', 'hover:outline-blue-300', 'hover:-outline-offset-1']
 })
 
 function tagFor(n: Node): string {
