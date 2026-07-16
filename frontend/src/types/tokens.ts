@@ -118,3 +118,4 @@ export const JUSTIFY_CONTENTS = ['start', 'center', 'end', 'between', 'around', 
 export const FLEX_WRAPS = ['wrap', 'nowrap', 'wrap-reverse'] as const
 
 export const SIZES = ['auto', 'full', 'screen', 'min', 'max', 'fit'] as const
+

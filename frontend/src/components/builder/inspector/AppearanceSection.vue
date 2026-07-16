@@ -21,7 +21,10 @@ const store = inject(BUILDER_KEY, null)!
 const node = computed(() => store.selectedNode.value)
 
 // ── Class helpers ────────────────────────────────────────────────
-const OPACITY_PRESETS = ['0', '5', '10', '20', '25', '30', '40', '50', '60', '70', '75', '80', '90', '95', '100'].map((s) => `opacity-${s}`)
+// Renderable opacity: arbitrary opacity-[..] emits in builder (safelist
+// covers 0.00-1.00) AND publish (Tailwind browser CDN).
+const OPACITY_STEPS = ['0', '5', '10', '20', '25', '30', '40', '50', '60', '70', '75', '80', '90', '95', '100']
+const OPACITY_PRESETS = OPACITY_STEPS.map((s) => `opacity-${s}`)
 // Global radius classes (shorthand for all 4 corners) — stripped when a
 // per-side value is set so they cannot conflict with per-side overrides.
 const GLOBAL_RADIUS = BORDER_RADII.map((r) => {
