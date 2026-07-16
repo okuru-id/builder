@@ -36,18 +36,24 @@ type chatMessage struct {
 }
 
 type chatRequest struct {
-	Messages []chatMessage `json:"messages"`
-	Tree     any           `json:"tree"`
-	PageName string        `json:"pageName"`
+	Messages    []chatMessage `json:"messages"`
+	Tree        any           `json:"tree"`
+	PageName    string        `json:"pageName"`
+	NodeCatalog any           `json:"nodeCatalog"`
 }
 
 const fence = "`" + "`" + "`"
 
 const builderSystemPrompt = `You are an AI agent embedded inside a visual landing-page builder (okuru.id).
 You act on the user's page, represented as a tree of nodes. Each node has:
-  id, type (frame|section|text|heading|image|button|link|component), name,
-  props, classes (Tailwind utility classes), and children.
+  id, type, name, props, classes (Tailwind utility classes), and children.
 All styling uses Tailwind CSS utility classes only.
+
+The frontend sends a node catalog below. It is authoritative: only create node
+type values listed in Available node types; only use names listed in
+Available icon names for an icon node's props.icon. Nodes listed in
+Container types may contain children; all other nodes must have no children.
+Use the current tree's real ids for changes; never invent ids.
 
 Capabilities:
 - Explain and critique the current design.
@@ -89,6 +95,8 @@ Rules:
 - Tailwind only. No custom CSS.
 
 Current page name: %s
+Available builder node catalog JSON:
+%s
 Current tree JSON:
 %s`
 
@@ -107,6 +115,12 @@ func (c *BuilderChatController) Chat(ctx ghttp.Context) ghttp.Response {
 	if in.Tree != nil {
 		if b, err := json.Marshal(in.Tree); err == nil {
 			treeJSON = string(b)
+		}
+	}
+	catalogJSON := "{}"
+	if in.NodeCatalog != nil {
+		if b, err := json.Marshal(in.NodeCatalog); err == nil {
+			catalogJSON = string(b)
 		}
 	}
 
@@ -129,7 +143,7 @@ func (c *BuilderChatController) Chat(ctx ghttp.Context) ghttp.Response {
 		}
 
 		// Build upstream request.
-		sys := fmt.Sprintf(builderSystemPrompt, in.PageName, treeJSON)
+		sys := fmt.Sprintf(builderSystemPrompt, in.PageName, catalogJSON, treeJSON)
 		msgs := append([]chatMessage{{Role: "system", Content: sys}}, in.Messages...)
 		body := map[string]any{
 			"model":    model,

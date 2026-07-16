@@ -24,7 +24,9 @@ import {
 import { BUILDER_KEY } from '@/components/builder/injection'
 import { makeNode, findNode } from '@/components/builder/tree-utils'
 import { cn } from '@/lib/utils'
+import { CONTAINER_TYPES, PALETTE_TYPES } from '@/types/page-builder'
 import type { Node } from '@/types/page-builder'
+import { ICON_LIST } from '@/lib/icon-map'
 
 const store = inject(BUILDER_KEY, null)!
 
@@ -223,6 +225,11 @@ async function send() {
         messages: history,
         tree: store.tree.value,
         pageName: store.page.value?.name ?? '',
+        nodeCatalog: {
+          types: PALETTE_TYPES,
+          containers: [...CONTAINER_TYPES],
+          icons: ICON_LIST,
+        },
       }),
       signal: abortCtl.signal,
     })
