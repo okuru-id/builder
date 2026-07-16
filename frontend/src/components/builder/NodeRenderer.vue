@@ -8,6 +8,7 @@ import { CONTAINER_TYPES, TEXT_TYPES } from '@/types/page-builder'
 import type { Breakpoint } from '@/types/page-builder'
 import { BUILDER_KEY } from '@/components/builder/injection'
 import { ICONS } from '@/lib/icon-map'
+import { resolveArbitraryStyles } from '@/lib/resolve-arbitrary'
 import NodeContextMenu from '@/components/builder/NodeContextMenu.vue'
 
 const props = withDefaults(
@@ -249,6 +250,18 @@ function move(_n: Node, dir: -1 | 1) {
 const isRoot = computed(
   () => !!store && store.tree.value.root.id === props.node.id,
 )
+
+// Inline-style bridge for arbitrary Tailwind bracket classes (colors, sizes,
+// gradients) so the builder canvas matches the published page. See
+// src/lib/resolve-arbitrary.ts. Only applied in the canvas (not readonly
+// export) since published HTML uses the Tailwind browser CDN natively.
+const arbitraryStyle = computed(() =>
+  props.readonly ? {} : resolveArbitraryStyles(displayNode.value.classes ?? []),
+)
+const nodeStyle = computed(() => ({
+  ...arbitraryStyle.value,
+  ...(props.node.hidden ? { display: 'none' as const } : {}),
+}))
 </script>
 
 <template>
@@ -265,7 +278,7 @@ const isRoot = computed(
     <component
       :is="tag"
       ref="elRef"
-      :style="props.node.hidden ? { display: 'none' } : undefined"
+      :style="nodeStyle"
     :class="[classList, {
       'opacity-40 outline-dashed outline-2 outline-amber-400 -outline-offset-2': hiddenHere,
       'opacity-40': dragging,
