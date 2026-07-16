@@ -58,7 +58,7 @@ const messages = ref<ChatMsg[]>([
 const input = ref('')
 const focusedNode = ref<Node | null>(null)
 const busy = ref(false)
-const autoApply = ref(false)
+const autoApply = ref(true)
 const showAutoApplyConfirm = ref(false)
 let seq = 0
 const uid = () => `m_${Date.now()}_${++seq}`
