@@ -20,8 +20,9 @@ const store = inject(BUILDER_KEY, null)!
 const node = computed(() => store.selectedNode.value)
 
 const showTypography = computed<boolean>(() =>
-  !!node.value && ['text', 'heading', 'button', 'link'].includes(node.value.type),
+  !!node.value && ['text', 'heading', 'button', 'link', 'icon'].includes(node.value.type),
 )
+const isIcon = computed(() => node.value?.type === 'icon')
 
 // Candidate class sets — avoids text-* prefix collision (size vs color vs align).
 const SIZE_CLASSES = FONT_SIZES.map((s) => `text-${s}`)
@@ -71,7 +72,7 @@ function currentHex(): string {
     <!-- Inline rows: label left | control right -->
     <div class="space-y-2">
 
-      <div class="flex items-center justify-between gap-2">
+      <div v-if="!isIcon" class="flex items-center justify-between gap-2">
         <span class="text-[11px] font-medium text-foreground/80">Font</span>
         <Select
           :model-value="currentFamily()"
@@ -100,7 +101,7 @@ function currentHex(): string {
         </Select>
       </div>
 
-      <div class="flex items-center justify-between gap-2">
+      <div v-if="!isIcon" class="flex items-center justify-between gap-2">
         <span class="text-[11px] font-medium text-foreground/80">Weight</span>
         <Select
           :model-value="currentWeight()"
@@ -113,7 +114,7 @@ function currentHex(): string {
         </Select>
       </div>
 
-      <div class="flex items-center justify-between gap-2">
+      <div v-if="!isIcon" class="flex items-center justify-between gap-2">
         <span class="text-[11px] font-medium text-foreground/80">Align</span>
         <Select
           :model-value="currentAlign()"
@@ -126,7 +127,7 @@ function currentHex(): string {
         </Select>
       </div>
 
-      <div class="flex items-center justify-between gap-2">
+      <div v-if="!isIcon" class="flex items-center justify-between gap-2">
         <span class="text-[11px] font-medium text-foreground/80">Transform</span>
         <Select
           :model-value="currentTransform()"
