@@ -4,9 +4,10 @@
 // Message + MessageScroller. The agent may emit fenced ```action:*``` blocks;
 // those render as "Apply" buttons that mutate the tree directly.
 import { computed, inject, nextTick, onMounted, ref, watch } from 'vue'
-import { IconSend, IconRobot, IconUser, IconLoader2, IconCheck, IconSparkles, IconPlayerStop } from '@tabler/icons-vue'
+import { IconSend, IconRobot, IconUser, IconLoader2, IconCheck, IconSparkles, IconPlayerStop, IconBolt } from '@tabler/icons-vue'
 import { toast } from 'vue-sonner'
 import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Textarea } from '@/components/ui/textarea'
 import {
   Message,
@@ -57,6 +58,8 @@ const messages = ref<ChatMsg[]>([
 ])
 const input = ref('')
 const busy = ref(false)
+const autoApply = ref(false)
+const showAutoApplyConfirm = ref(false)
 let seq = 0
 const uid = () => `m_${Date.now()}_${++seq}`
 
@@ -157,6 +160,10 @@ function normalizeNode(spec: any): Node {
 
 function applyAction(msgId: string, part: MsgPart) {
   const action = part.action!
+  if (!action.payload) {
+    toast.error('Invalid agent action')
+    return
+  }
   const key = partKey(msgId, action.raw)
   try {
     if (action.kind === 'add') {
@@ -263,6 +270,8 @@ async function send() {
     }
     if (!assistantMsg.content) {
       assistantMsg.content = '(no response)'
+    } else if (autoApply.value) {
+      applyAll(assistantMsg)
     }
   } catch (e: any) {
     if (e?.name === 'AbortError') {
@@ -278,6 +287,27 @@ async function send() {
     saveChat()
     await nextTick()
   }
+}
+
+function applyAll(msg: ChatMsg) {
+  for (const part of partsOf(msg)) {
+    if (part.type === 'action' && part.action && !appliedFlags.value[partKey(msg.id, part.action.raw)]) {
+      applyAction(msg.id, part)
+    }
+  }
+}
+
+function requestAutoApply() {
+  if (autoApply.value) {
+    autoApply.value = false
+    return
+  }
+  showAutoApplyConfirm.value = true
+}
+
+function confirmAutoApply() {
+  autoApply.value = true
+  showAutoApplyConfirm.value = false
 }
 
 function onKey(e: KeyboardEvent) {
@@ -381,6 +411,10 @@ watch(() => store.page.value?.id, () => loadChat())
 
     <!-- Composer -->
     <div class="border-t border-border p-2">
+      <div v-if="autoApply" class="mb-2 flex items-center justify-between gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-2 py-1.5 text-[11px] text-destructive">
+        <span class="flex items-center gap-1"><IconBolt class="size-3.5" /> Auto-apply aktif — termasuk delete.</span>
+        <Button size="sm" variant="destructive" class="h-6 px-2 text-[10px]" @click="autoApply = false">Stop</Button>
+      </div>
       <Textarea
         v-model="input"
         rows="2"
@@ -389,15 +423,25 @@ watch(() => store.page.value?.id, () => loadChat())
         :disabled="busy"
         @keydown="onKey"
       />
-      <div class="flex items-center justify-between">
-        <span class="text-[10px] text-muted-foreground">AI Agent · LLM_API_KEY</span>
-        <Button size="sm" class="h-7 px-2 text-xs" :disabled="!input.trim() || busy" @click="send">
-          <IconSend class="size-3.5" /> Send
+      <div class="flex items-center justify-between gap-2">
+        <Button size="sm" variant="outline" class="h-7 gap-1 px-2 text-[10px]" :class="autoApply ? 'border-destructive text-destructive' : ''" @click="requestAutoApply">
+          <IconBolt class="size-3" /> Auto-apply {{ autoApply ? 'on' : 'off' }}
         </Button>
-        <Button v-if="busy" size="sm" variant="secondary" class="h-7 px-2 text-xs" @click="stop">
-          <IconPlayerStop class="size-3.5" /> Stop
-        </Button>
+        <div class="flex items-center gap-1">
+          <span class="text-[10px] text-muted-foreground">AI Agent · LLM_API_KEY</span>
+          <Button v-if="busy" size="sm" variant="secondary" class="h-7 px-2 text-xs" @click="stop">
+            <IconPlayerStop class="size-3.5" /> Stop
+          </Button>
+          <Button size="sm" class="h-7 px-2 text-xs" :disabled="!input.trim() || busy" @click="send">
+            <IconSend class="size-3.5" /> Send
+          </Button>
+        </div>
       </div>
     </div>
+    <ConfirmDialog :open="showAutoApplyConfirm" @update:open="showAutoApplyConfirm = $event" @confirm="confirmAutoApply">
+      <template #title>Enable auto-apply?</template>
+      <template #description>All future agent actions in this session apply automatically, including delete and move. Undo remains available.</template>
+      <template #confirm>Enable auto-apply</template>
+    </ConfirmDialog>
   </div>
 </template>
