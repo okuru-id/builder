@@ -4,7 +4,7 @@
 // Message + MessageScroller. The agent may emit fenced ```action:*``` blocks;
 // those render as "Apply" buttons that mutate the tree directly.
 import { computed, inject, nextTick, onMounted, ref, watch } from 'vue'
-import { IconSend, IconRobot, IconUser, IconLoader2, IconCheck, IconSparkles, IconPlayerStop, IconBolt } from '@tabler/icons-vue'
+import { IconSend, IconRobot, IconUser, IconLoader2, IconCheck, IconSparkles, IconPlayerStop, IconBolt, IconPlus } from '@tabler/icons-vue'
 import { toast } from 'vue-sonner'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
@@ -97,6 +97,17 @@ function saveChat() {
   } catch {
     // quota / private mode — ignore, chat just won't persist
   }
+}
+
+// Start a fresh conversation: drop history + persist empty state.
+function newSession() {
+  if (busy.value) stop()
+  messages.value = [{
+    id: 'intro',
+    role: 'assistant',
+    content: "Hi! I'm the AI Agent. Ask for layout/color/structure changes and I'll propose actions you can apply with one click.",
+  }]
+  saveChat()
 }
 
 // Track applied state per action block by its raw signature within a message.
@@ -437,6 +448,9 @@ watch(() => store.agentFocus.value, (node) => {
           <IconBolt class="size-3" /> Auto-apply {{ autoApply ? 'on' : 'off' }}
         </Button>
         <div class="flex items-center gap-1">
+          <Button size="sm" variant="ghost" class="h-7 gap-1 px-2 text-[10px] text-muted-foreground" title="New session" :disabled="busy" @click="newSession">
+            <IconPlus class="size-3.5" /> New
+          </Button>
           <span class="text-[10px] text-muted-foreground">AI Agent · LLM_API_KEY</span>
           <Button v-if="busy" size="sm" variant="secondary" class="h-7 px-2 text-xs" @click="stop">
             <IconPlayerStop class="size-3.5" /> Stop
