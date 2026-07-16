@@ -13,7 +13,7 @@ const store = inject(BUILDER_KEY, null)!
 const node = computed(() => store.selectedNode.value)
 
 const query = ref('')
-const limit = ref(300) // visible cap; bump on "show more"
+const limit = ref(60) // visible cap; bump on "show more"
 
 const allMatches = computed<string[]>(() => {
   const q = query.value.trim().toLowerCase().replace(/^icon/, '')
