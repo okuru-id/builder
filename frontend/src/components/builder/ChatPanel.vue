@@ -438,7 +438,7 @@ watch(() => store.agentFocus.value, (node) => {
       <Textarea
         v-model="input"
         rows="2"
-        class="mb-1.5 resize-none text-xs"
+        class="mb-1.5 max-h-40 resize-none overflow-y-auto text-xs"
         placeholder="Request changes to this page… (Enter to send)"
         :disabled="busy"
         @keydown="onKey"
