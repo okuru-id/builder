@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 
 const router = useRouter()
 
@@ -16,8 +17,10 @@ const loading = ref(false)
 
 const email = ref('')
 const password = ref('')
+const rememberMe = ref(false)
 const code = ref('')
 const tempToken = ref('')
+const tempRememberMe = ref(false)
 const totpSecret = ref('')
 const totpQrUrl = ref('')
 
@@ -40,9 +43,11 @@ async function submitLogin() {
     const { data } = await api.post('/auth/login', {
       email: email.value,
       password: password.value,
+      remember_me: rememberMe.value,
     })
     if (data.requires_totp) {
       tempToken.value = data.temp_token
+      tempRememberMe.value = rememberMe.value
       step.value = 'totp'
     } else if (data.totp_setup_required) {
       storeToken(data.access_token)
@@ -130,6 +135,10 @@ async function submitTotpSetup() {
           <div class="flex flex-col gap-2">
             <Label for="password">Password</Label>
             <Input id="password" v-model="password" type="password" />
+          </div>
+          <div class="flex items-center gap-2">
+            <Checkbox id="remember" :checked="rememberMe" @update:checked="rememberMe = $event" />
+            <Label for="remember" class="text-sm font-normal">Remember me</Label>
           </div>
           <Button type="submit" :disabled="loading" class="w-full">
             {{ loading ? 'Signing in…' : 'Sign in' }}

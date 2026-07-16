@@ -1,4 +1,4 @@
-.PHONY: dev-frontend dev-backend dev build-local docker-up docker-down docker-logs deploy migrate seed backup build-frontend
+.PHONY: dev-frontend dev-backend dev build docker-build docker-up docker-down docker-logs deploy migrate seed backup build-frontend
 
 # === LOCAL DEV ===
 dev-frontend:
@@ -11,35 +11,36 @@ dev-backend:
 dev:
 	@make dev-backend & make dev-frontend & wait
 
-build-frontend:
+# Build frontend and copy output into backend/public/ so the Go server serves it.
+build build-frontend:
 	cd frontend && bun run build && cp -r dist/* ../backend/public/
 
 # === DOCKER ===
-build-local:
-	docker compose -f deploy/docker-compose.yml build
+docker-build:
+	docker compose -f docker-compose.yml build
 
 docker-up:
-	docker compose -f deploy/docker-compose.yml up -d
+	docker compose -f docker-compose.yml up -d
 
 docker-down:
-	docker compose -f deploy/docker-compose.yml down
+	docker compose -f docker-compose.yml down
 
 docker-logs:
-	docker compose -f deploy/docker-compose.yml logs -f
+	docker compose -f docker-compose.yml logs -f
 
 # === DATABASE ===
 migrate:
-	docker compose -f deploy/docker-compose.yml exec app ./artisan migrate
+	docker compose -f docker-compose.yml exec app ./artisan migrate
 
 seed:
-	docker compose -f deploy/docker-compose.yml exec app ./artisan db:seed
+	docker compose -f docker-compose.yml exec app ./artisan db:seed
 
 # === DEPLOY ===
 deploy:
-	docker compose -f deploy/docker-compose.yml pull
-	docker compose -f deploy/docker-compose.yml up -d --remove-orphans
-	docker compose -f deploy/docker-compose.yml exec -T app ./artisan migrate --force
+	docker compose -f docker-compose.yml pull
+	docker compose -f docker-compose.yml up -d --remove-orphans
+	docker compose -f docker-compose.yml exec -T app ./artisan migrate --force
 
 # === BACKUP ===
 backup:
-	docker compose -f deploy/docker-compose.yml exec app /opt/okuru/scripts/backup.sh
+	docker compose -f docker-compose.yml exec app /opt/okuru/scripts/backup.sh

@@ -1,3 +1,5 @@
+export type Breakpoint = 'desktop' | 'tablet' | 'mobile'
+
 // Tree JSON node types — single source of truth shared by canvas, panels, codegen.
 
 export type NodeType =
@@ -42,6 +44,10 @@ export interface Node {
   componentId?: number
   instanceOverrides?: Partial<Node>
   hidden?: boolean
+  /** Hide the node on the given breakpoints. Maps 1:1 to Tailwind responsive
+   *  utilities in published HTML: mobile→`hidden md:block`, tablet→`md:hidden lg:block`,
+   *  desktop→`lg:hidden`. */
+  hiddenOn?: Breakpoint[]
 }
 
 export interface TreeShape {

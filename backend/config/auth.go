@@ -31,8 +31,14 @@ func init() {
 		"user": map[string]any{
 			"driver":      "jwt",
 			"provider":    "user",
-			"ttl":         15,
-			"refresh_ttl": 20160,
+			"ttl":         1440,
+			"refresh_ttl": 1440,
+		},
+		"user-remember": map[string]any{
+			"driver":      "jwt",
+			"provider":    "user",
+			"ttl":         43200,
+			"refresh_ttl": 43200,
 		},
 		},
 

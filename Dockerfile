@@ -2,6 +2,10 @@
 
 # ---- Stage 1: build frontend (landing + admin, single Vite project) ----
 FROM oven/bun:1-alpine AS frontend-builder
+# vue-tsc patches Node's fs.readFileSync to resolve .vue files; Bun's runtime
+# doesn't support that hook, so it needs a real node to run under.
+# ponytail: revisit once oven-sh/bun#4754 ships a bun-native vue-tsc.
+RUN apk add --no-cache nodejs
 WORKDIR /build
 COPY frontend/package.json frontend/bun.lock ./
 RUN bun install --frozen-lockfile
@@ -32,7 +36,7 @@ COPY --from=backend-builder /out/okuru ./okuru
 COPY backend/config/        ./config/
 COPY backend/resources/     ./resources/
 COPY backend/database/      ./database/
-COPY backend/public/        ./public/
+COPY --from=backend-builder /build/public/ ./public/
 COPY backend/storage/       ./storage/
 COPY scripts/               ./scripts/
 

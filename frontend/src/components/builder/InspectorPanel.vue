@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { BUILDER_KEY } from '@/components/builder/injection'
+import type { Breakpoint } from '@/types/page-builder'
 import { findNode } from '@/components/builder/tree-utils'
 import { ICONS, ICON_LIST } from '@/lib/icon-map'
 import LayoutSection from './inspector/LayoutSection.vue'
@@ -83,6 +84,24 @@ function setProp(key: string, value: unknown) {
 function setName(value: string | number) {
   if (!node.value) return
   store.patchNode(node.value.id, { name: String(value) })
+}
+
+// Per-breakpoint visibility. Toggling M/T/D adds/removes the breakpoint in
+// node.hiddenOn, which codegen maps to Tailwind responsive utilities.
+const BP_OPTIONS: { key: Breakpoint; label: string }[] = [
+  { key: 'mobile', label: 'M' },
+  { key: 'tablet', label: 'T' },
+  { key: 'desktop', label: 'D' },
+]
+function bpHidden(bp: Breakpoint): boolean {
+  return !!node.value?.hiddenOn?.includes(bp)
+}
+function toggleBp(bp: Breakpoint) {
+  if (!node.value) return
+  const cur = new Set(node.value.hiddenOn ?? [])
+  if (cur.has(bp)) cur.delete(bp)
+  else cur.add(bp)
+  store.patchNode(node.value.id, { hiddenOn: [...cur] })
 }
 
 const showDeleteConfirm = ref(false)
@@ -194,6 +213,24 @@ function removeClass(idx: number) {
           <Button variant="outline" size="sm" class="h-7 px-2 text-xs" @click="store.breakInstance(node.id)">
             <IconUnlink class="size-3.5" /> Detach
           </Button>
+        </div>
+
+        <!-- Per-breakpoint visibility: hide the node on Mobile / Tablet / Desktop.
+             Maps to Tailwind hidden md:block / md:hidden lg:block / lg:hidden. -->
+        <div v-if="node.id !== 'root'" class="flex items-center justify-between">
+          <span class="text-[11px] text-muted-foreground">Hide on</span>
+          <div class="flex gap-1">
+            <button
+              v-for="bp in BP_OPTIONS"
+              :key="bp.key"
+              class="h-6 w-7 rounded border text-[11px] font-medium transition-colors"
+              :class="bpHidden(bp.key)
+                ? 'border-primary bg-primary/10 text-primary'
+                : 'border-border text-muted-foreground hover:bg-muted'"
+              :title="`Hide on ${bp.key}`"
+              @click="toggleBp(bp.key)"
+            >{{ bp.label }}</button>
+          </div>
         </div>
       </InspectorSection>
 

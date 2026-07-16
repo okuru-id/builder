@@ -18,7 +18,7 @@ frontend/node_modules/
 frontend/dist/
 
 # Docker
-deploy/.env
+infra/.env
 
 # OS
 .DS_Store

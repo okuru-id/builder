@@ -1,10 +1,12 @@
 package controllers
 
 import (
+	"errors"
 	"strconv"
 	"strings"
 
 	"github.com/goravel/framework/contracts/http"
+	goravelErr "github.com/goravel/framework/errors"
 
 	"okuru/app/facades"
 	"okuru/app/models"
@@ -23,8 +25,9 @@ func NewAuthController() *AuthController {
 }
 
 type loginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email      string `json:"email"`
+	Password   string `json:"password"`
+	RememberMe bool   `json:"remember_me"`
 }
 
 func (c *AuthController) Login(ctx http.Context) http.Response {
@@ -55,7 +58,13 @@ func (c *AuthController) Login(ctx http.Context) http.Response {
 	}
 
 	if services.TotpEnabled() && user.TotpSecret != nil && user.TotpVerified {
-		tempToken, err := facades.Auth(ctx).LoginUsingID(user.ID)
+		var tempToken string
+		var err error
+		if input.RememberMe {
+			tempToken, err = facades.Auth(ctx).Guard("user-remember").LoginUsingID(user.ID)
+		} else {
+			tempToken, err = facades.Auth(ctx).LoginUsingID(user.ID)
+		}
 		if err != nil {
 			return ctx.Response().Json(http.StatusInternalServerError, http.Json{
 				"error": "failed to issue token",
@@ -67,7 +76,13 @@ func (c *AuthController) Login(ctx http.Context) http.Response {
 		})
 	}
 
-	token, err := facades.Auth(ctx).LoginUsingID(user.ID)
+	var token string
+	var err error
+	if input.RememberMe {
+		token, err = facades.Auth(ctx).Guard("user-remember").LoginUsingID(user.ID)
+	} else {
+		token, err = facades.Auth(ctx).LoginUsingID(user.ID)
+	}
 	if err != nil {
 		return ctx.Response().Json(http.StatusInternalServerError, http.Json{
 			"error": "failed to issue token",
@@ -137,7 +152,12 @@ func (c *AuthController) VerifyTotp(ctx http.Context) http.Response {
 		})
 	}
 
-	accessToken, err := facades.Auth(ctx).LoginUsingID(user.ID)
+	guardName := "user"
+	if payload.Guard != "" {
+		guardName = payload.Guard
+	}
+
+	accessToken, err := facades.Auth(ctx).Guard(guardName).LoginUsingID(user.ID)
 	if err != nil {
 		return ctx.Response().Json(http.StatusInternalServerError, http.Json{
 			"error": "failed to issue token",
@@ -274,6 +294,53 @@ func (c *AuthController) VerifyTotpSetup(ctx http.Context) http.Response {
 	return ctx.Response().Json(http.StatusOK, http.Json{
 		"verified":     true,
 		"access_token": accessToken,
+		"token_type":   "bearer",
+	})
+}
+
+func (c *AuthController) Refresh(ctx http.Context) http.Response {
+	authHeader := ctx.Request().Header("Authorization", "")
+	token := strings.TrimPrefix(authHeader, "Bearer ")
+	if token == authHeader || token == "" {
+		return ctx.Response().Json(http.StatusUnauthorized, http.Json{
+			"error": "no token",
+		})
+	}
+
+	payload, err := facades.Auth(ctx).Parse(token)
+	if err != nil && !errors.Is(err, goravelErr.AuthTokenExpired) {
+		return ctx.Response().Json(http.StatusUnauthorized, http.Json{
+			"error": "invalid token",
+		})
+	}
+
+	guardName := "user"
+	if payload != nil && payload.Guard != "" {
+		guardName = payload.Guard
+	}
+
+	// Re-parse with correct guard so Refresh() can find auth context
+	_, err = facades.Auth(ctx).Guard(guardName).Parse(token)
+	if err != nil && !errors.Is(err, goravelErr.AuthTokenExpired) {
+		return ctx.Response().Json(http.StatusUnauthorized, http.Json{
+			"error": "invalid token",
+		})
+	}
+
+	newToken, err := facades.Auth(ctx).Guard(guardName).Refresh()
+	if err != nil {
+		if errors.Is(err, goravelErr.AuthRefreshTimeExceeded) {
+			return ctx.Response().Json(http.StatusUnauthorized, http.Json{
+				"error": "refresh expired",
+			})
+		}
+		return ctx.Response().Json(http.StatusUnauthorized, http.Json{
+			"error": "refresh failed",
+		})
+	}
+
+	return ctx.Response().Json(http.StatusOK, http.Json{
+		"access_token": newToken,
 		"token_type":   "bearer",
 	})
 }

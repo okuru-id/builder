@@ -25,7 +25,7 @@ bun run dev        # dev server (landing at /, admin at /admin/), proxies /admin
 
 ### Docker
 ```bash
-make build-local    # build deploy/Dockerfile
+make docker-build    # build Docker image
 make docker-up      # run the local compose stack
 ```
 
@@ -71,11 +71,11 @@ make docker-up      # run the local compose stack
   `backend/bootstrap/seeders.go`, providers in `backend/bootstrap/providers.go`.
 
 ## Deployment
-- Image: `deploy/Dockerfile` (3-stage: admin build -> Go build -> alpine runtime).
+- Image: `Dockerfile` (3-stage: admin build -> Go build -> alpine runtime).
 - Runtime serves the single `okuru` binary; `./artisan` wrapper calls
   `./okuru artisan` (no Go toolchain needed at runtime).
 - CI: `.gitlab-ci.yml` -> lint, build/push image, deploy to VPS via SSH.
-- TLS termination and virtual hosts handled by Caddy (`deploy/Caddyfile`).
+- TLS termination and virtual hosts handled by Caddy (`infra/Caddyfile`).
 
 ## Things to Avoid
 - Do not add CGO dependencies.

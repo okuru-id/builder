@@ -5,6 +5,7 @@
 import { computed, inject, nextTick, ref } from 'vue'
 import type { Node } from '@/types/page-builder'
 import { CONTAINER_TYPES, TEXT_TYPES } from '@/types/page-builder'
+import type { Breakpoint } from '@/types/page-builder'
 import { BUILDER_KEY } from '@/components/builder/injection'
 import { ICONS } from '@/lib/icon-map'
 
@@ -36,6 +37,19 @@ const displayNode = computed<Node>(() => {
 })
 const isInstance = computed(() => props.node.type === 'component' && !!props.node.componentId)
 const inInstance = computed(() => !!instanceOwner.value)
+// Per-breakpoint visibility: node hidden on the current canvas breakpoint is
+// rendered faint + dashed so it stays selectable/editable. Checks both the
+// node itself (covers component-instance overrides) and its display node
+// (master). ponytail: JS-driven (not a Tailwind class) so it reacts live and
+// never leaks into published output (codegen emits md:hidden / lg:hidden).
+const hiddenHere = computed(() => {
+  if (props.readonly) return false
+  const bp = store?.breakpoint.value as Breakpoint | undefined
+  if (!bp) return false
+  const inst = props.node.hiddenOn
+  const disp = displayNode.value.hiddenOn
+  return !!(inst?.includes(bp) || disp?.includes(bp))
+})
 const classList = computed(() => {
   const base = displayNode.value.classes
   if (props.readonly) return base
@@ -183,11 +197,12 @@ function onDragEnd() {
   <component
     :is="tag"
     ref="elRef"
+    :style="props.node.hidden ? { display: 'none' } : undefined"
     :class="[classList, {
+      'opacity-40 outline-dashed outline-2 outline-amber-400 -outline-offset-2': hiddenHere,
       'opacity-40': dragging,
       'ring-2 ring-blue-500 ring-inset': dropInside,
     }]"
-    :style="props.node.hidden ? { display: 'none' } : undefined"
     :draggable="!readonly && !editing"
     v-bind="{ ...attrsFor(displayNode), ...interactiveAttrs }"
     @click="onClick"

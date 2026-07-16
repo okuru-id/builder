@@ -81,6 +81,11 @@ func resolveNode(n map[string]any, masters map[uint]map[string]any) map[string]a
 			clone := deepCloneMap(master)
 			if c, ok := clone.(map[string]any); ok {
 				c["id"] = n["id"]
+				// Preserve instance-level visibility overrides so hiding a component
+				// instance in the builder also hides it in published HTML.
+				if ho, ok := n["hiddenOn"]; ok {
+					c["hiddenOn"] = ho
+				}
 				resolveChildren(c, masters)
 				return c
 			}

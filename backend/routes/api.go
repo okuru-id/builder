@@ -29,6 +29,7 @@ func Api() {
 	facades.Route().Prefix("admin/api").Group(func(router route.Router) {
 		router.Post("/auth/login", authController.Login)
 		router.Post("/auth/totp", authController.VerifyTotp)
+		router.Post("/auth/refresh", authController.Refresh)
 
 		router.Middleware(middleware.JwtAuth()).Group(func(r route.Router) {
 			r.Post("/auth/totp/setup", authController.SetupTotp)

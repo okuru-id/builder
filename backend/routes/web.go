@@ -22,7 +22,7 @@ func Web() {
 				return ctx.Response().String(http.StatusNotFound, "Halaman tidak ditemukan")
 			}
 			// Render the working tree (not published) so the preview shows current edits.
-			html := renderPreviewHTML(page)
+			html := renderPreviewHTML(page, ctx.Request().Host())
 			return ctx.Response().Header("Content-Type", "text/html; charset=utf-8").String(http.StatusOK, html)
 		}
 
@@ -30,12 +30,12 @@ func Web() {
 		// Falls back to a placeholder when nothing is published yet.
 		var page models.LandingPage
 		if err := facades.Orm().Query().Where("status = ?", "published").Order("updated_at desc").First(&page); err != nil || page.ID == 0 {
-			return ctx.Response().String(http.StatusOK, defaultStorefrontHTML())
+			return ctx.Response().Header("Content-Type", "text/html; charset=utf-8").String(http.StatusOK, defaultStorefrontHTML(ctx.Request().Host()))
 		}
 		if page.PublishedHTML != "" {
 			return ctx.Response().Header("Content-Type", "text/html; charset=utf-8").String(http.StatusOK, page.PublishedHTML)
 		}
-		return ctx.Response().String(http.StatusOK, defaultStorefrontHTML())
+		return ctx.Response().Header("Content-Type", "text/html; charset=utf-8").String(http.StatusOK, defaultStorefrontHTML(ctx.Request().Host()))
 	})
 
 	// Admin SPA: serve the shell for /admin and any /admin/* client route.
@@ -71,10 +71,10 @@ func Web() {
 
 // renderPreviewHTML converts a page's working tree into a full HTML document
 // using the codegen pipeline. Used for ?preview= mode.
-func renderPreviewHTML(page models.LandingPage) string {
+func renderPreviewHTML(page models.LandingPage, host string) string {
 	var m map[string]any
 	if err := json.Unmarshal(page.Tree, &m); err != nil {
-		return defaultStorefrontHTML()
+		return defaultStorefrontHTML(host)
 	}
 	resolved := services.ResolveComponentInstances(m)
 	return services.NewLandingCodegen().Generate(resolved, page.Name+" (preview)")
@@ -83,18 +83,23 @@ func renderPreviewHTML(page models.LandingPage) string {
 // defaultStorefrontHTML is the placeholder shown when no landing page is published.
 // ponytail: static string, no template engine. Replace with a real template only
 // when the storefront needs server-side data injection (Phase 7+).
-func defaultStorefrontHTML() string {
+func defaultStorefrontHTML(host string) string {
+	// Strip port for display: "okuru.id:443" -> "okuru.id".
+	name := host
+	if i := strings.LastIndex(host, ":"); i != -1 {
+		name = host[:i]
+	}
 	return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>okuru.id</title>
+<title>` + name + `</title>
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="min-h-screen flex items-center justify-center bg-neutral-50 text-neutral-500">
   <div class="text-center">
-    <h1 class="text-2xl font-semibold text-neutral-900">okuru.id</h1>
+    <h1 class="text-2xl font-semibold text-neutral-900">` + name + `</h1>
     <p class="mt-2">Landing page belum dipublikasi.</p>
   </div>
 </body>

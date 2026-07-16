@@ -22,7 +22,7 @@ JSON API consumed by the Vue admin SPA.
 .
 ├── frontend/    # Vue 3 SPA: landing (at /) + admin (at /admin/)
 ├── backend/      # Goravel app: API, storefront, static admin host
-├── deploy/       # Dockerfile, compose files, Caddyfile
+├── infra/        # Caddyfile, .env.example
 ├── docs/         # Plans and design notes
 └── scripts/      # Operational scripts (DB backup, etc.)
 ```
@@ -55,7 +55,7 @@ cd backend
 
 ```bash
 make dev          # run backend (air) + admin concurrently
-make build-local  # build the production Docker image
+make docker-build  # build the production Docker image
 make docker-up    # start the full stack via compose
 make migrate      # run migrations inside the container
 make backup       # take a gzipped SQLite backup inside the container
@@ -66,14 +66,14 @@ make backup       # take a gzipped SQLite backup inside the container
 Local stack (builds the image from source):
 
 ```bash
-make build-local && make docker-up
+make docker-build && make docker-up
 # API/admin: http://localhost:8080
 # Storefront: http://localhost:8080/shop
 # Health:     http://localhost:8080/health
 ```
 
 Production stack pulls the GitLab registry image and fronts it with Caddy
-(TLS for `api.okuru.id`, `shop.okuru.id`). See `deploy/docker-compose.prod.yml`.
+(TLS for `api.okuru.id`, `shop.okuru.id`). See `docker-compose.prod.yml`.
 
 ## Project Conventions
 

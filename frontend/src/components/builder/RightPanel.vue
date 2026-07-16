@@ -17,7 +17,7 @@ const tab = ref<'inspector' | 'agent'>('inspector')
       <div class="flex justify-center border-b border-border py-1">
         <TabsList class="h-9">
           <TabsTrigger value="inspector" class="gap-1.5 py-1 text-xs">
-            <IconAdjustmentsHorizontal class="size-3.5" /> Inspector
+            <IconAdjustmentsHorizontal class="size-3.5" /> Properties
           </TabsTrigger>
           <TabsTrigger value="agent" class="gap-1.5 py-1 text-xs">
             <IconRobotFace class="size-3.5" /> Agent

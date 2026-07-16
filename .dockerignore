@@ -1,0 +1,15 @@
+# Frontend deps: let Docker install fresh (host node_modules may be wrong platform/state)
+**/node_modules
+frontend/dist
+
+# Backend build artifacts
+backend/okuru
+backend/.env
+backend/storage/logs/**
+backend/storage/framework/cache/data/**
+
+# VCS / misc
+.git
+.gitignore
+.dockerignore
+*.md

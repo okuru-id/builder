@@ -43,8 +43,17 @@ const MAX_ZOOM = 3.0
 const ZOOM_STEP = 0.05
 
 // Workspace (stage) size: canvas scaled + constant padding on each side.
-const stageW = computed(() => dims.value.w * zoom.value + WORKSPACE_PAD * 2)
-const stageH = computed(() => dims.value.h * zoom.value + WORKSPACE_PAD * 2)
+// Uses real measured canvas size so content taller than the nominal breakpoint
+// height still gets full scrollable workspace around it.
+const canvasEl = ref<HTMLElement | null>(null)
+const realW = ref(0)
+const realH = ref(0)
+let resizeObs: ResizeObserver | null = null
+
+const effW = computed(() => Math.max(dims.value.w, realW.value))
+const effH = computed(() => Math.max(dims.value.h, realH.value))
+const stageW = computed(() => effW.value * zoom.value + WORKSPACE_PAD * 2)
+const stageH = computed(() => effH.value * zoom.value + WORKSPACE_PAD * 2)
 
 // Canvas element: native resolution, transform-scaled, positioned at
 // (WORKSPACE_PAD, WORKSPACE_PAD) inside the stage (constant, not zoomed).
@@ -113,15 +122,15 @@ function zoomOut() { zoomAround(zoom.value - ZOOM_STEP) }
 function zoomFit() {
   const el = scrollEl.value
   if (!el) return
-  const next = clampZoom((el.clientWidth - 80) / dims.value.w)
+  const next = clampZoom((el.clientWidth - 80) / effW.value)
   zoom.value = next
   // After fit, center the canvas in the viewport.
   nextTick(() => {
     if (!el) return
-    // Canvas top-left is at WORKSPACE_PAD in stage; its visual size = dim*zoom.
+    // Canvas top-left is at WORKSPACE_PAD in stage; its visual size = effDim*zoom.
     // Center: scroll so canvas center aligns with viewport center.
-    const canvasCenterX = WORKSPACE_PAD + (dims.value.w * zoom.value) / 2
-    const canvasCenterY = WORKSPACE_PAD + (dims.value.h * zoom.value) / 2
+    const canvasCenterX = WORKSPACE_PAD + (effW.value * zoom.value) / 2
+    const canvasCenterY = WORKSPACE_PAD + (effH.value * zoom.value) / 2
     el.scrollLeft = canvasCenterX - el.clientWidth  / 2
     el.scrollTop  = canvasCenterY - el.clientHeight / 2
   })
@@ -223,6 +232,19 @@ onMounted(() => {
   window.addEventListener('mouseup',   onMouseup)
   window.addEventListener('keydown',   onKeydown)
   window.addEventListener('keyup',     onKeyup)
+
+  // Track real canvas size so the stage grows with content overflow.
+  if (canvasEl.value) {
+    realW.value = canvasEl.value.offsetWidth
+    realH.value = canvasEl.value.offsetHeight
+    resizeObs = new ResizeObserver((entries) => {
+      const r = entries[0]?.contentRect
+      if (!r) return
+      realW.value = r.width
+      realH.value = r.height
+    })
+    resizeObs.observe(canvasEl.value)
+  }
 })
 
 onUnmounted(() => {
@@ -233,6 +255,8 @@ onUnmounted(() => {
   window.removeEventListener('mouseup',   onMouseup)
   window.removeEventListener('keydown',   onKeydown)
   window.removeEventListener('keyup',     onKeyup)
+  resizeObs?.disconnect()
+  resizeObs = null
 })
 
 function onBackgroundClick() {
@@ -268,6 +292,7 @@ function onBackgroundClick() {
       >
         <!-- Canvas at native resolution, CSS-scaled via transform -->
         <div
+          ref="canvasEl"
           :style="canvasStyle"
           class="bg-white shadow-2xl ring-1 ring-black/10"
           @click.self="onBackgroundClick"

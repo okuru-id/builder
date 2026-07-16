@@ -4,7 +4,9 @@ import { computed, ref, shallowRef } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
 import { toast } from 'vue-sonner'
 import api from '@/lib/api'
-import type { Node, NodeType, Page, TreeShape } from '@/types/page-builder'
+import type { Breakpoint, Node, NodeType, Page, TreeShape } from '@/types/page-builder'
+
+export type { Breakpoint }
 import {
   addChild,
   cloneTree,
@@ -20,7 +22,7 @@ import {
 } from '@/components/builder/tree-utils'
 import { useComponents } from '@/composables/useComponents'
 
-export type Breakpoint = 'desktop' | 'tablet' | 'mobile'
+// Breakpoint now lives in @/types/page-builder (shared with Node.hiddenOn).
 
 const BP_WIDTH: Record<Breakpoint, number | null> = {
   desktop: 1920, // 1080p laptop

@@ -211,12 +211,16 @@ func (g *LandingCodegen) renderIconDepth(n nodeMap, depth int) string {
 
 // ── attribute builder ───────────────────────────────────────────
 
-// attrStr builds the attribute string. class always first, then named attrs in
-// the order given (deterministic). Only non-empty values are emitted.
+// attrStr builds the attribute string. class always first, then the
+// data-bp-hide visibility hook (if any), then named attrs in the order given
+// (deterministic). Only non-empty values are emitted.
 func (g *LandingCodegen) attrStr(n nodeMap, extra ...string) string {
 	var b strings.Builder
 	if cls := n.classStr(); cls != "" {
 		fmt.Fprintf(&b, ` class=%q`, cls)
+	}
+	if bp := n.hiddenOn(); bp != "" {
+		fmt.Fprintf(&b, ` data-bp-hide=%q`, bp)
 	}
 	for _, name := range extra {
 		if v := n.propStr(name); v != "" {
@@ -239,6 +243,14 @@ func (g *LandingCodegen) document(title, body string) string {
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<style>
+/* Per-breakpoint visibility. !important wins over the node's own flex/grid/block
+   utilities (classic Tailwind source-order conflict). Breakpoints match the
+   builder: mobile <768, tablet 768..1023, desktop ≥1024. */
+@media (max-width:767px){[data-bp-hide~="m"]{display:none!important}}
+@media (min-width:768px) and (max-width:1023px){[data-bp-hide~="t"]{display:none!important}}
+@media (min-width:1024px){[data-bp-hide~="d"]{display:none!important}}
+</style>
 </head>
 <body>
 %s</body>
@@ -263,6 +275,31 @@ func (n nodeMap) typeStr() string {
 func (n nodeMap) hidden() bool {
 	b, _ := n["hidden"].(bool)
 	return b
+}
+
+// hiddenOn returns the breakpoints a node should be hidden on as a single
+// whitespace-separated token string (e.g. "m", "t", "m t"). Emitted as the
+// `data-bp-hide` attribute and matched by a scoped <style> block with
+// !important media queries. This is bulletproof against the node's own
+// display utilities (flex/grid/block) — the classic Tailwind source-order
+// footgun where `flex` overrides `hidden`.
+func (n nodeMap) hiddenOn() string {
+	raw, ok := n["hiddenOn"]
+	if !ok {
+		return ""
+	}
+	var parts []string
+	for _, bp := range toStringSlice(raw) {
+		switch bp {
+		case "mobile":
+			parts = append(parts, "m")
+		case "tablet":
+			parts = append(parts, "t")
+		case "desktop":
+			parts = append(parts, "d")
+		}
+	}
+	return strings.Join(parts, " ")
 }
 
 func (n nodeMap) propStr(key string) string {
@@ -316,12 +353,7 @@ func (n nodeMap) classStr() string {
 	if n == nil {
 		return ""
 	}
-	raw, ok := n["classes"]
-	if !ok {
-		return ""
-	}
-	parts := toStringSlice(raw)
-	return strings.Join(dedup(parts), " ")
+	return strings.Join(dedup(toStringSlice(n["classes"])), " ")
 }
 
 func (n nodeMap) children() []any {
