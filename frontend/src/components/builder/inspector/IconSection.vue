@@ -58,20 +58,22 @@ function setIcon(name: string) {
     <!-- Footer: count + show more/less -->
     <div class="flex items-center justify-between text-[10px] text-muted-foreground">
       <span>{{ filtered.length }} / {{ allMatches.length }} icons</span>
-      <button
-        v-if="allMatches.length > limit"
-        class="font-medium text-primary hover:underline"
-        @click="limit += 60"
-      >
-        Show more…
-      </button>
-      <button
-        v-else-if="limit > 60"
-        class="font-medium text-primary hover:underline"
-        @click="limit = 60"
-      >
-        Show less
-      </button>
+      <div class="flex gap-2">
+        <button
+          v-if="limit > 60"
+          class="font-medium text-primary hover:underline"
+          @click="limit = 60"
+        >
+          Show less
+        </button>
+        <button
+          v-if="allMatches.length > limit"
+          class="font-medium text-primary hover:underline"
+          @click="limit += 60"
+        >
+          Show more…
+        </button>
+      </div>
     </div>
   </InspectorSection>
 </template>
