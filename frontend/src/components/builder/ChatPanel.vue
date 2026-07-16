@@ -57,6 +57,7 @@ const messages = ref<ChatMsg[]>([
   },
 ])
 const input = ref('')
+const focusedNode = ref<Node | null>(null)
 const busy = ref(false)
 const autoApply = ref(false)
 const showAutoApplyConfirm = ref(false)
@@ -205,6 +206,8 @@ async function send() {
   const text = input.value.trim()
   if (!text || busy.value) return
   input.value = ''
+  const focusForRequest = focusedNode.value
+  focusedNode.value = null
 
   const userMsg: ChatMsg = { id: uid(), role: 'user', content: text }
   const assistantMsg: ChatMsg = { id: uid(), role: 'assistant', content: '' }
@@ -232,6 +235,7 @@ async function send() {
         messages: history,
         tree: store.tree.value,
         pageName: store.page.value?.name ?? '',
+        focusNode: focusForRequest,
         nodeCatalog: {
           types: PALETTE_TYPES,
           containers: [...CONTAINER_TYPES],
@@ -325,6 +329,13 @@ function stop() {
 onMounted(loadChat)
 // Reload chat when the builder switches to a different page.
 watch(() => store.page.value?.id, () => loadChat())
+// Consume a one-shot focus request from the Layer Tree.
+watch(() => store.agentFocus.value, (node) => {
+  if (!node) return
+  focusedNode.value = node
+  input.value = `Focus on node "${node.name || node.type}" (ID: "${node.id}"). `
+  store.clearAgentFocus()
+})
 </script>
 
 <template>

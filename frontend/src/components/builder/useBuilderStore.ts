@@ -34,6 +34,8 @@ export function useBuilderStore() {
   const page = shallowRef<Page | null>(null)
   const tree = ref<TreeShape>({ root: emptyRoot() })
   const selectedId = ref<string | null>(null)
+  // One-shot request from Layer Tree to open the agent focused on this node.
+  const agentFocus = ref<Node | null>(null)
   const loading = ref(true)
   const saving = ref(false)
   const dirty = ref(false)
@@ -158,6 +160,14 @@ export function useBuilderStore() {
 
   function select(id: string | null) {
     selectedId.value = id
+  }
+
+  function askAgentAbout(node: Node) {
+    agentFocus.value = node
+  }
+
+  function clearAgentFocus() {
+    agentFocus.value = null
   }
 
   function patchNode(id: string, patch: Partial<Node>) {
@@ -401,6 +411,7 @@ export function useBuilderStore() {
     tree,
     selectedId,
     selectedNode,
+    agentFocus,
     loading,
     saving,
     dirty,
@@ -413,6 +424,8 @@ export function useBuilderStore() {
     load,
     save: saveNow,
     select,
+    askAgentAbout,
+    clearAgentFocus,
     patchNode,
     rename,
     addNode,

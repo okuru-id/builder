@@ -39,6 +39,7 @@ type chatRequest struct {
 	Messages    []chatMessage `json:"messages"`
 	Tree        any           `json:"tree"`
 	PageName    string        `json:"pageName"`
+	FocusNode   any           `json:"focusNode"`
 	NodeCatalog any           `json:"nodeCatalog"`
 }
 
@@ -97,6 +98,9 @@ Rules:
 Current page name: %s
 Available builder node catalog JSON:
 %s
+Focused node JSON (null means no focused node):
+%s
+If a focused node exists, target it or its descendants unless the user explicitly asks for a broader change.
 Current tree JSON:
 %s`
 
@@ -123,6 +127,12 @@ func (c *BuilderChatController) Chat(ctx ghttp.Context) ghttp.Response {
 			catalogJSON = string(b)
 		}
 	}
+	focusJSON := "null"
+	if in.FocusNode != nil {
+		if b, err := json.Marshal(in.FocusNode); err == nil {
+			focusJSON = string(b)
+		}
+	}
 
 	// SSE event writer. Each event: "data: <json>\n\n". End with "data: [DONE]\n\n".
 	writeEvent := func(w ghttp.StreamWriter, content string) error {
@@ -143,7 +153,7 @@ func (c *BuilderChatController) Chat(ctx ghttp.Context) ghttp.Response {
 		}
 
 		// Build upstream request.
-		sys := fmt.Sprintf(builderSystemPrompt, in.PageName, catalogJSON, treeJSON)
+		sys := fmt.Sprintf(builderSystemPrompt, in.PageName, catalogJSON, focusJSON, treeJSON)
 		msgs := append([]chatMessage{{Role: "system", Content: sys}}, in.Messages...)
 		body := map[string]any{
 			"model":    model,

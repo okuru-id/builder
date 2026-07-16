@@ -1,14 +1,27 @@
 <script setup lang="ts">
 // Right panel container: tabs between Inspector (style/props) and AI Agent.
-import { ref } from 'vue'
+import { inject, ref, watch } from 'vue'
 import { IconAdjustmentsHorizontal, IconRobotFace } from '@tabler/icons-vue'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import InspectorPanel from './InspectorPanel.vue'
 import ChatPanel from './ChatPanel.vue'
+import { BUILDER_KEY } from '@/components/builder/injection'
 
 // ponytail: default to inspector. Tab state lives here (not in store) — cheap,
 // local, and avoids touching the builder contract for a UI-only concern.
 const tab = ref<'inspector' | 'agent'>('inspector')
+const store = inject(BUILDER_KEY, null)!
+
+// Layer Tree sends a one-shot focus request; switch tabs without extra wiring.
+watch(() => store.agentFocus.value, (node) => {
+  if (node) tab.value = 'agent'
+})
+
+function focusAgent() {
+  tab.value = 'agent'
+}
+
+defineExpose({ focusAgent })
 </script>
 
 <template>
