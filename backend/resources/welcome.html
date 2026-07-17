@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Welcome</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, system-ui, sans-serif;
+      color: #333;
+      background: #fafafa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+
+    .wrap {
+      max-width: 420px;
+      text-align: center;
+    }
+
+    .code {
+      font-size: 5rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: #111;
+      line-height: 1;
+    }
+
+    .msg {
+      margin-top: .75rem;
+      font-size: 1.1rem;
+      color: #666;
+    }
+
+    .divider {
+      width: 40px;
+      height: 2px;
+      background: #d0d0d0;
+      margin: 1.5rem auto;
+      border: none;
+    }
+
+    .hint {
+      font-size: .875rem;
+      color: #999;
+      line-height: 1.6;
+    }
+
+    .hint a {
+      color: #555;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .hint a:hover {
+      color: #111;
+    }
+
+    /* --- Light animations --- */
+    .wrap > * {
+      opacity: 0;
+      animation: fadeUp .6s ease forwards;
+    }
+    .wrap > .code    { animation-delay: .05s; }
+    .wrap > .msg     { animation-delay: .2s; }
+    .wrap > .divider { animation-delay: .35s; }
+    .wrap > .hint    { animation-delay: .5s; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .code {
+      transition: letter-spacing .4s ease, color .4s ease;
+    }
+    .code:hover {
+      letter-spacing: -0.05em;
+      color: #3B82F6;
+    }
+
+    .divider {
+      transform: scaleX(0);
+      animation: growDivider .8s ease forwards;
+      animation-delay: .35s;
+      transform-origin: center;
+    }
+    @keyframes growDivider {
+      to { transform: scaleX(1); }
+    }
+
+    .msg {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+    }
+    .msg::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 0 0 rgba(34, 197, 94, .5);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(34, 197, 94, .5); }
+      70%  { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .wrap > *, .divider { animation: none; opacity: 1; transform: none; }
+      .code { transition: none; }
+      .msg::before { animation: none; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="code">WELCOME</div>
+    <p class="msg">Server Online</p>
+    <hr class="divider">
+    <p class="hint">This server is running.</p>
+  </div>
+
+  <!-- AI Chat Widget Embed -->
+  <script src="http://localhost:8000/embed/chat-embed.js"></script>
+  <script>
+    const chatWidget = new ChatEmbed({
+      apiKey: "rag-lDSA4d7lghICIZ0s4brOfIQf9qciDvRn",
+      baseUrl: "http://localhost:8000",
+      agent: "kit/care",
+      mode: "floating",
+      theme: "dark",
+      title: "Chat Assistant",
+      position: "bottom-right",
+      buttonSize: 56,
+      buttonColor: "#3B82F6",
+      buttonOffset: 20,
+      popupWidth: "380px",
+      popupHeight: "600px",
+      startOpen: false,
+      placeholder: "Type a message...",
+    });
+    chatWidget.init();
+  </script>
+</body>
+
+</html>

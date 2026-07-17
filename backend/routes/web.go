@@ -11,6 +11,7 @@ import (
 	"okuru/app/facades"
 	"okuru/app/models"
 	"okuru/app/services"
+	"okuru/resources"
 )
 
 func Web() {
@@ -103,6 +104,15 @@ func resolveStorefront(ctx http.Context, path string) (string, int) {
 		}
 	}
 
+	// 2b. Unknown host: a domain pointed here in DNS but not bound to any
+	// page. Serve a welcome page instead of leaking the okuru.id marketing
+	// landing. Primary app domains (okuru.id, www, subdomains, localhost)
+	// fall through to the normal home/default flow.
+	// ponytail: extend via APP_HOSTS env (comma-separated) when adding subs.
+	if host != "" && !isPrimaryHost(host) {
+		return welcomePageHTML(host), http.StatusOK
+	}
+
 	// 3. Home.
 	if path == "" {
 		var page models.LandingPage
@@ -135,6 +145,39 @@ func normalizeHost(h string) string {
 		h = h[:i]
 	}
 	return strings.Trim(h, ".")
+}
+
+// isPrimaryHost reports whether host belongs to the app itself (marketing,
+// api, shop, builder) or is a parked/unknown domain. Override the list via
+// the APP_HOSTS env var (comma-separated) without touching code.
+// ponytail: env over config file — fewer moving parts, redeploy = update.
+var primaryHosts = []string{
+	"okuru.id", "www.okuru.id", "shop.okuru.id", "api.okuru.id",
+	"builder.okuru.id", "localhost", "127.0.0.1",
+}
+
+func isPrimaryHost(host string) bool {
+	if extra := os.Getenv("APP_HOSTS"); extra != "" {
+		for _, h := range strings.Split(extra, ",") {
+			if strings.TrimSpace(strings.ToLower(h)) == host {
+				return true
+			}
+		}
+	}
+	for _, h := range primaryHosts {
+		if h == host {
+			return true
+		}
+	}
+	return false
+}
+
+// welcomePageHTML is the placeholder shown when a domain resolves to this
+// server but no published page is bound to it yet. Sourced from
+// resources/welcome.html via go:embed — edit the file directly.
+// ponytail: embed over runtime read — no IO, no missing-file path to handle.
+func welcomePageHTML(_ string) string {
+	return resources.WelcomePage
 }
 
 // renderPreviewHTML converts a page's working tree into a full HTML document
