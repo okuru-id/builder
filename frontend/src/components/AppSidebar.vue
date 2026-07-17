@@ -63,7 +63,8 @@ const data = {
             <a href="#">
               <img src="/images/logo.png" alt="okuru.id" class="aspect-square size-20 rounded-lg object-contain" />
               <div class="grid flex-1 text-left text-sm leading-tight">
-                <span class="truncate font-semibold text-lg">okuru.id</span>
+                <span class="truncate font-semibold text-lg">Builder</span>
+                <span class="truncate text-xs">okuru.id</span>
               </div>
             </a>
           </SidebarMenuButton>
