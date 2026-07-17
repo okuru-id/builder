@@ -312,7 +312,7 @@ a{color:inherit;text-decoration:none}
 .hero-mockup{position:relative;width:100%;max-width:1000px}
 
 .mockup-stack{position:relative;width:100%;padding-bottom:78%}
-.mockup-overlap{position:absolute;border-radius:12px;transition:all .5s cubic-bezier(.22,1,.36,1)}
+.mockup-overlap{position:absolute;border-radius:12px;pointer-events:none;transition:all .5s cubic-bezier(.22,1,.36,1)}
 .mockup-overlap .mockup-frame{box-shadow:var(--shadow-lg)}
 .mockup-overlap.back{
   z-index:1;width:88%;left:6%;top:0;
