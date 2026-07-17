@@ -24,21 +24,27 @@ func Web() {
 	facades.Route().Get("/admin/", func(ctx http.Context) http.Response {
 		return ctx.Response().File("./public/admin.html")
 	})
-	// SPA fallback + storefront path dispatch:
-	//   - /admin/*           → admin shell (client router)
-	//   - any other segment   → resolve as a published page by path
-	facades.Route().Fallback(func(ctx http.Context) http.Response {
-		path := strings.TrimPrefix(ctx.Request().Path(), "/")
-		if strings.HasPrefix(path, "admin") {
-			return ctx.Response().File("./public/admin.html")
-		}
-		html, status := resolveStorefront(ctx, path)
-		return ctx.Response().Header("Content-Type", "text/html; charset=utf-8").String(status, html)
-	})
-
 	facades.Route().Static("assets", "./public/assets")
 	facades.Route().Static("images", "./public/images")
 	facades.Route().Static("public", "./public")
+
+	facades.Route().Fallback(func(ctx http.Context) http.Response {
+		path := strings.TrimPrefix(ctx.Request().Path(), "/")
+
+		if strings.HasPrefix(path, "assets/") || strings.HasPrefix(path, "images/") || strings.HasPrefix(path, "public/") {
+			if _, err := os.Stat("./public/" + path); err == nil {
+				return ctx.Response().File("./public/" + path)
+			}
+			return ctx.Response().String(http.StatusNotFound, "Not Found")
+		}
+
+		if strings.HasPrefix(path, "admin") {
+			return ctx.Response().File("./public/admin.html")
+		}
+
+		html, status := resolveStorefront(ctx, path)
+		return ctx.Response().Header("Content-Type", "text/html; charset=utf-8").String(status, html)
+	})
 
 	userController := controllers.NewUserController()
 	facades.Route().Get("/users", userController.Index)

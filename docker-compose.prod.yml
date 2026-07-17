@@ -24,7 +24,7 @@ services:
           memory: 256M
 
   app:
-    image: ${IMAGE:-registry.gitlab.com/kurob1993/okuru}:latest
+    image: registry.gitlab.com/kurob1993/builder:latest
     container_name: okuru-app
     restart: unless-stopped
     env_file:
