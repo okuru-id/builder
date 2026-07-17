@@ -64,7 +64,6 @@ const data = {
               <img src="/images/logo.png" alt="okuru.id" class="aspect-square size-20 rounded-lg object-contain" />
               <div class="grid flex-1 text-left text-sm leading-tight">
                 <span class="truncate font-semibold">okuru.id</span>
-                <span class="truncate text-xs">Admin Panel</span>
               </div>
             </a>
           </SidebarMenuButton>
