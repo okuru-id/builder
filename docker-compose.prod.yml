@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:17-alpine
     container_name: okuru-db
     restart: unless-stopped
     env_file:
@@ -53,24 +53,6 @@ services:
       retries: 3
       start_period: 10s
 
-  caddy:
-    image: caddy:2-alpine
-    container_name: okuru-caddy
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./infra/Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy-data:/data
-      - caddy-config:/config
-    deploy:
-      resources:
-        limits:
-          memory: 64M
-
 volumes:
   postgres-data:
   storage-data:
-  caddy-data:
-  caddy-config:
