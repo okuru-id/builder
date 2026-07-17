@@ -38,6 +38,13 @@ func Web() {
 			return ctx.Response().String(http.StatusNotFound, "Not Found")
 		}
 
+		// Root-level files (favicon, icons, etc.)
+		if !strings.Contains(path, "/") {
+			if _, err := os.Stat("./public/" + path); err == nil {
+				return ctx.Response().File("./public/" + path)
+			}
+		}
+
 		if strings.HasPrefix(path, "admin") {
 			return ctx.Response().File("./public/admin.html")
 		}
