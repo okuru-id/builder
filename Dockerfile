@@ -20,7 +20,8 @@ COPY backend/go.mod backend/go.sum ./
 RUN go mod download
 COPY backend/ ./
 # Embed unified frontend dist (landing at /, admin at /admin/) so Go serves both
-COPY --from=frontend-builder /build/dist/* ./public/
+RUN mkdir -p public
+COPY --from=frontend-builder /build/dist/ ./public/
 # ncruces/go-sqlite3 is pure Go (WASM) -> no CGO needed
 RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/okuru .
 
