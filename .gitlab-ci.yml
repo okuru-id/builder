@@ -1,7 +1,6 @@
 stages:
   - lint
   - build
-  - deploy
 
 variables:
   DOCKER_DRIVER: overlay2
@@ -32,42 +31,3 @@ build:image:
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
     - if: $CI_COMMIT_BRANCH == "develop"
-
-.deploy_template: &deploy_template
-  image: alpine:3.20
-  before_script:
-    - apk add --no-cache openssh-client
-    - eval "$(ssh-agent -s)"
-    - echo "$VPS_SSH_KEY" | tr -d '\r' | ssh-add -
-    - mkdir -p ~/.ssh && chmod 700 ~/.ssh
-    - echo "$VPS_SSH_FINGERPRINT" >> ~/.ssh/known_hosts
-  script:
-    - |
-      ssh "$VPS_USER@$VPS_HOST" << 'EOF'
-        set -e
-        cd /opt/okuru
-        docker compose -f docker-compose.prod.yml pull app
-        docker compose -f docker-compose.prod.yml up -d --remove-orphans app
-        docker compose -f docker-compose.prod.yml exec -T app ./artisan migrate --force
-        docker image prune -f
-      EOF
-
-deploy:staging:
-  <<: *deploy_template
-  stage: deploy
-  environment:
-    name: staging
-    url: https://staging.okuru.id
-  rules:
-    - if: $CI_COMMIT_BRANCH == "develop"
-      when: on_success
-
-deploy:production:
-  <<: *deploy_template
-  stage: deploy
-  environment:
-    name: production
-    url: https://api.okuru.id
-  rules:
-    - if: $CI_COMMIT_BRANCH == "main"
-      when: manual
