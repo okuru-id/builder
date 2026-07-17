@@ -60,7 +60,7 @@ const data = {
       <SidebarMenu>
         <SidebarMenuItem>
           <SidebarMenuButton size="lg" as-child>
-            <a href="#">
+            <a href="#" style="gap:0.25rem">
               <img src="/images/logo.png" alt="okuru.id" class="aspect-square size-20 rounded-lg object-contain" />
               <div class="grid flex-1 text-left text-sm leading-tight">
                 <span class="truncate font-semibold text-lg">Builder</span>
