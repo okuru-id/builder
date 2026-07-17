@@ -2,8 +2,6 @@ import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
-import http from 'http'
-
 // Multi-page: `/` = landing, `/admin/` = admin SPA.
 // ponytail: single dev server (5173), single build output. Backend target
 // via VITE_BACKEND_HOST / VITE_BACKEND_PORT (see .env.example); defaults 3000.
@@ -44,26 +42,6 @@ export default defineConfig(({ mode }) => {
               req.url = '/admin.html'
             }
             next()
-          })
-        },
-      },
-      {
-        // ponytail: proxy root '/' to backend so dev matches prod routing
-        // (landing_mode custom/empty-fallback logic lives in web.go, not here).
-        name: 'proxy-root-to-backend',
-        configureServer(server) {
-          server.middlewares.use((req, res, next) => {
-            const parsed = new URL(req.url ?? '/', `http://${req.headers.host}`)
-            if (parsed.pathname !== '/') return next()
-            const proxyReq = http.request(
-              { host: backendHost, port: backendPort, path: req.url, method: req.method, headers: req.headers },
-              (proxyRes) => {
-                res.writeHead(proxyRes.statusCode ?? 200, proxyRes.headers)
-                proxyRes.pipe(res)
-              },
-            )
-            proxyReq.on('error', () => next())
-            req.pipe(proxyReq)
           })
         },
       },
