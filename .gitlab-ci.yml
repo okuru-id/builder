@@ -10,7 +10,7 @@ variables:
 
 lint:go:
   stage: lint
-  image: golangci/golangci-lint:v1.61-alpine
+  image: golangci/golangci-lint:v1.64-alpine
   script:
     - cd backend && golangci-lint run --timeout 5m ./...
   rules:
