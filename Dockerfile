@@ -37,7 +37,6 @@ COPY backend/config/        ./config/
 COPY backend/resources/     ./resources/
 COPY backend/database/      ./database/
 COPY --from=backend-builder /build/public/ ./public/
-COPY backend/storage/       ./storage/
 COPY scripts/               ./scripts/
 
 # Artisan wrapper: avoids needing the Go toolchain at runtime.
