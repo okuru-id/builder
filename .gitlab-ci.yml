@@ -17,6 +17,15 @@ lint:go:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH
 
+lint:frontend:
+  stage: lint
+  image: oven/bun:1-alpine
+  script:
+    - cd frontend && bun install --frozen-lockfile && bun run lint
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH
+
 build:image:
   stage: build
   image: docker:24
