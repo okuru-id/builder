@@ -25,6 +25,7 @@ export interface NodeProps {
   level?: number
   placeholder?: string
   icon?: string
+  iconVariant?: 'outline' | 'filled'
   label?: string
   inputType?: string
   required?: boolean

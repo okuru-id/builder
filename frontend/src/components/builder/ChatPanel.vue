@@ -407,7 +407,7 @@ function onDropNode(e: DragEvent) {
                         {{ part.text }}
                       </div>
 
-                      <!-- Action block: Apply button -->
+                      <!-- Action block: Apply button (hidden when auto-apply on — already applied automatically) -->
                       <div
                         v-else-if="part.type === 'action' && part.action"
                         class="mt-1 flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-2.5 py-1.5"
@@ -416,18 +416,25 @@ function onDropNode(e: DragEvent) {
                         <span class="flex-1 text-[11px] text-muted-foreground">
                           Action: <span class="font-mono">{{ part.action.kind }}</span>
                         </span>
-                        <Button
-                          size="sm"
-                          class="h-6 gap-1 px-2 text-[11px]"
-                          :variant="appliedFlags[partKey(m.id, part.action.raw)] ? 'secondary' : 'default'"
-                          :disabled="appliedFlags[partKey(m.id, part.action.raw)]"
-                          @click="applyAction(m.id, part)"
-                        >
-                          <template v-if="appliedFlags[partKey(m.id, part.action.raw)]">
+                        <template v-if="!autoApply">
+                          <Button
+                            size="sm"
+                            class="h-6 gap-1 px-2 text-[11px]"
+                            :variant="appliedFlags[partKey(m.id, part.action.raw)] ? 'secondary' : 'default'"
+                            :disabled="appliedFlags[partKey(m.id, part.action.raw)]"
+                            @click="applyAction(m.id, part)"
+                          >
+                            <template v-if="appliedFlags[partKey(m.id, part.action.raw)]">
+                              <IconCheck class="size-3" /> Applied
+                            </template>
+                            <template v-else>Apply</template>
+                          </Button>
+                        </template>
+                        <template v-else>
+                          <span class="flex items-center gap-1 text-[11px] font-medium text-primary">
                             <IconCheck class="size-3" /> Applied
-                          </template>
-                          <template v-else>Apply</template>
-                        </Button>
+                          </span>
+                        </template>
                       </div>
                     </div>
                   </MessageContent>

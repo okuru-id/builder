@@ -56,7 +56,7 @@ export function defaultProps(type: NodeType): NodeProps {
     case 'heading':
       return { text: 'Judul', level: 2 }
     case 'icon':
-      return { icon: 'IconStar' }
+      return { icon: 'IconStar', iconVariant: 'outline' }
     case 'button':
       return { text: 'Button' }
     case 'link':

@@ -65,9 +65,9 @@ const INDENT = 20
 const pad = (d: number) => d * INDENT + 8
 const guideX = (d: number) => d * INDENT + 16
 
-const selected = () => store.selectedId.value === props.node.id
+const selected = () => store.selectedIds.value.includes(props.node.id)
 
-// Auto-scroll this row into view when it becomes the selected node
+// Auto-scroll this row into view when it becomes the primary (first) selection
 // (e.g. after clicking a node on the canvas). block:nearest avoids jumping
 // unless the row is actually off-screen.
 const rowEl = ref<HTMLElement | null>(null)
@@ -76,6 +76,12 @@ watch(() => store.selectedId.value, (id) => {
     rowEl.value.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
   }
 })
+
+function onRowClick(e: MouseEvent) {
+  // Ctrl/Cmd = additive toggle; plain click = replace selection.
+  if (e.metaKey || e.ctrlKey) store.toggleSelect(props.node.id)
+  else store.select(props.node.id)
+}
 
 const CONTAINER_TYPES = new Set<NodeType>(['frame', 'section', 'link', 'component'])
 // Resolve a component instance to its master root so the tree shows the
@@ -194,7 +200,7 @@ function onDragEnd() {
         dropInside() ? 'ring-2 ring-blue-400 ring-inset rounded-sm' : '',
       ]"
       :style="{ paddingLeft: `${pad(depth)}px` }"
-      @click.stop="store.select(node.id)"
+      @click.stop="onRowClick($event)"
       @dragstart="onDragStart"
       @dragover="onDragOver"
       @drop="onDrop"

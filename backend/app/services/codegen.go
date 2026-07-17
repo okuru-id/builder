@@ -215,11 +215,29 @@ func (g *LandingCodegen) renderInputDepth(n nodeMap, depth int) string {
 
 func (g *LandingCodegen) renderIconDepth(n nodeMap, depth int) string {
 	indent := strings.Repeat("  ", depth)
-	name, _ := n["props"].(map[string]any)["icon"].(string)
+	props, _ := n["props"].(map[string]any)
+	name, _ := props["icon"].(string)
+	variant, _ := props["iconVariant"].(string)
+	if variant != "outline" && variant != "filled" {
+		variant = "outline"
+	}
+	lookupKey := name
+	if variant == "filled" {
+		lookupKey = name + "Filled"
+	}
+	fillAttr, strokeAttr := "none", "currentColor"
+	if variant == "filled" {
+		fillAttr, strokeAttr = "currentColor", "none"
+	}
 	var svg string
-	if segs, ok := iconPaths[name]; ok && len(segs) > 0 {
+	segs, ok := iconPaths[lookupKey]
+	if !ok || len(segs) == 0 {
+		// Fallback to outline variant if filled missing.
+		segs, ok = iconPaths[name]
+	}
+	if ok && len(segs) > 0 {
 		var b strings.Builder
-		b.WriteString(`<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">`)
+		b.WriteString(`<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" stroke-width="2" stroke="` + strokeAttr + `" fill="` + fillAttr + `" stroke-linecap="round" stroke-linejoin="round">`)
 		for _, seg := range segs {
 			if len(seg) < 2 {
 				continue

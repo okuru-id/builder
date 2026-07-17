@@ -87,15 +87,19 @@ function renderSelfClosing(tag: string, n: Node, depth: number, ...attrs: string
 
 function renderIcon(n: Node, depth: number): string {
   const iconName = n.props?.icon
+  const variant = n.props?.iconVariant === 'filled' ? 'filled' : 'outline'
+  const lookupKey = variant === 'filled' ? `${iconName}Filled` : iconName
+  const segs = (iconName && lookupKey && ICONS[lookupKey]) || (iconName && ICONS[iconName])
+  const fillAttr = variant === 'filled' ? 'currentColor' : 'none'
+  const strokeAttr = variant === 'filled' ? 'none' : 'currentColor'
   let svgContent = ''
-  if (iconName && ICONS[iconName]) {
-    const paths = ICONS[iconName]
-    svgContent = paths.map((p: [string, Record<string,string>]) => `<path d="${p[1].d}" />`).join('')
+  if (segs && segs.length > 0) {
+    svgContent = segs.map((p: [string, Record<string,string>]) => `<path d="${p[1].d}" />`).join('')
   } else {
     svgContent = `<circle cx="12" cy="12" r="4" fill="currentColor" />`
   }
   const ind = indent(depth)
-  return `${ind}<span${attrStr(n)}><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">${svgContent}</svg></span>\n`
+  return `${ind}<span${attrStr(n)}><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="${strokeAttr}" fill="${fillAttr}" stroke-linecap="round" stroke-linejoin="round">${svgContent}</svg></span>\n`
 }
 
 function renderInput(n: Node, depth: number): string {

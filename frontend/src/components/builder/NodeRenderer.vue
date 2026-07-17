@@ -26,7 +26,7 @@ const instanceOwner = computed(() => props.ancestorId || (isInstance.value ? pro
 const tag = computed<string>(() => tagFor(displayNode.value))
 const isTextLike = computed(() => TEXT_TYPES.has(displayNode.value.type))
 const selected = computed(
-  () => !props.readonly && store?.selectedId.value === props.node.id,
+  () => !props.readonly && !!store?.selectedIds.value.includes(props.node.id),
 )
 // Resolve a component instance to its master root for display. Selection/drag
 // still bind to the instance node (props.node.id). Children rendered readonly.
@@ -100,7 +100,7 @@ const classList = computed(() => {
     const pos = emulated.some((c) => /^(absolute|fixed|relative|sticky)$/.test(c))
     return pos ? [...emulated, 'builder-selected'] : [...emulated, 'builder-selected', 'builder-selected-pos']
   }
-  return [...emulated, 'hover:outline-1', 'hover:outline-blue-300', 'hover:-outline-offset-1']
+  return [...emulated, 'hover:outline-2', 'hover:outline-indigo-400', 'hover:-outline-offset-1']
 })
 
 function tagFor(n: Node): string {
@@ -108,7 +108,7 @@ function tagFor(n: Node): string {
     case 'text':
       return 'span'
     case 'heading': {
-      const lvl = Number(n.props.level)
+      const lvl = Number(n.props?.level)
       if (lvl >= 1 && lvl <= 6) return `h${lvl}`
       return 'h2'
     }
@@ -151,7 +151,10 @@ function onClick(e: MouseEvent) {
   e.stopPropagation()
   // Click inside an instance selects the instance itself.
   const targetId = inInstance.value ? instanceOwner.value : props.node.id
-  store?.select(targetId || props.node.id)
+  const id = targetId || props.node.id
+  // Ctrl/Cmd+click toggles multi-select; plain click replaces.
+  if (e.metaKey || e.ctrlKey) store?.toggleSelect(id)
+  else store?.select(id)
 }
 
 async function onDblClick(e: MouseEvent) {
@@ -330,9 +333,9 @@ const nodeStyle = computed(() => ({
       {{ displayNode.props.text }}
     </template>
     <template v-else-if="displayNode.type === 'icon'">
-      <span v-if="displayNode.props.icon && ICONS[displayNode.props.icon]" class="inline-flex items-center justify-center">
-        <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-          <template v-for="seg in ICONS[displayNode.props.icon]" :key="seg[1].key">
+      <span v-if="displayNode.props.icon" class="inline-flex items-center justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" stroke-width="2" :stroke="displayNode.props.iconVariant === 'filled' ? 'none' : 'currentColor'" :fill="displayNode.props.iconVariant === 'filled' ? 'currentColor' : 'none'" stroke-linecap="round" stroke-linejoin="round">
+          <template v-for="seg in ICONS[displayNode.props.iconVariant === 'filled' ? displayNode.props.icon + 'Filled' : displayNode.props.icon] || ICONS[displayNode.props.icon] || []" :key="seg[1].key">
             <path :d="seg[1].d" />
           </template>
         </svg>

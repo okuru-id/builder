@@ -33,7 +33,14 @@ const BP_WIDTH: Record<Breakpoint, number | null> = {
 export function useBuilderStore() {
   const page = shallowRef<Page | null>(null)
   const tree = ref<TreeShape>({ root: emptyRoot() })
-  const selectedId = ref<string | null>(null)
+  // Multi-select: selectedIds holds all selected node ids; selectedId (below)
+  // is a writable computed shim over the first entry so existing single-select
+  // callers keep working unchanged.
+  const selectedIds = ref<string[]>([])
+  const selectedId = computed<string | null>({
+    get: () => selectedIds.value[0] ?? null,
+    set: (v) => { selectedIds.value = v ? [v] : [] },
+  })
   // One-shot request from Layer Tree to open the agent focused on this node.
   const agentFocus = ref<Node | null>(null)
   const loading = ref(true)
@@ -67,7 +74,7 @@ export function useBuilderStore() {
       ])
       page.value = res.data.data
       tree.value = res.data.data.tree ?? { root: emptyRoot() }
-      selectedId.value = null
+      selectedIds.value = []
       dirty.value = false
       resetHistory()
     } catch (e) {
@@ -141,6 +148,7 @@ export function useBuilderStore() {
     // only clear when the selected node was removed by this step.
     const keep = selectedId.value && findNode(prev, selectedId.value)
     selectedId.value = keep ? selectedId.value : null
+    pruneSelection(prev)
     lastSnapshotAt = 0 // start a fresh edit group after navigation
     notifyChange()
   }
@@ -151,6 +159,7 @@ export function useBuilderStore() {
     tree.value = { root: next }
     const keep = selectedId.value && findNode(next, selectedId.value)
     selectedId.value = keep ? selectedId.value : null
+    pruneSelection(next)
     lastSnapshotAt = 0
     notifyChange()
   }
@@ -163,7 +172,36 @@ export function useBuilderStore() {
   // --- mutations ---
 
   function select(id: string | null) {
-    selectedId.value = id
+    selectedIds.value = id ? [id] : []
+  }
+
+  // Ctrl/Cmd+click: toggle a node in/out of the current selection.
+  function toggleSelect(id: string) {
+    const arr = selectedIds.value
+    if (arr.includes(id)) selectedIds.value = arr.filter((x) => x !== id)
+    else selectedIds.value = [...arr, id]
+  }
+
+  function clearSelection() {
+    selectedIds.value = []
+  }
+
+  // Select every non-root node in the tree (Ctrl+A).
+  function selectAll() {
+    const ids: string[] = []
+    const root = tree.value.root.id
+    function walk(n: Node) {
+      if (n.id !== root) ids.push(n.id)
+      for (const c of n.children) walk(c)
+    }
+    walk(tree.value.root)
+    selectedIds.value = ids
+  }
+
+  // Drop selected ids that no longer exist in the tree (post-mutation cleanup).
+  function pruneSelection(root?: Node) {
+    const r = root ?? tree.value.root
+    selectedIds.value = selectedIds.value.filter((id) => findNode(r, id))
   }
 
   function askAgentAbout(node: Node) {
@@ -227,7 +265,19 @@ export function useBuilderStore() {
     }
     pushHistory()
     tree.value = { root: deleteNode(tree.value.root, id) }
-    if (selectedId.value === id) selectedId.value = null
+    selectedIds.value = selectedIds.value.filter((x) => x !== id)
+    notifyChange()
+  }
+
+  // Bulk delete: remove every selected non-root node in one history step.
+  function removeSelected() {
+    const ids = selectedIds.value.filter((id) => id !== tree.value.root.id)
+    if (!ids.length) return
+    pushHistory()
+    let root = tree.value.root
+    for (const id of ids) root = deleteNode(root, id)
+    tree.value = { root }
+    selectedIds.value = []
     notifyChange()
   }
 
@@ -308,6 +358,26 @@ export function useBuilderStore() {
     notifyChange()
     draggingId.value = null
     dropTarget.value = null
+  }
+
+  // Bulk duplicate: copy each selected node next to its original; select the copies.
+  function duplicateSelected() {
+    const ids = selectedIds.value.filter((id) => id !== tree.value.root.id)
+    if (!ids.length) return
+    pushHistory()
+    let root = tree.value.root
+    const newIds: string[] = []
+    for (const id of ids) {
+      const found = findNode(root, id)
+      if (!found || !found.parent) continue
+      const copy = cloneTree(found.node)
+      reId(copy)
+      root = insertChild(root, found.parent.id, copy, found.index + 1)
+      newIds.push(copy.id)
+    }
+    tree.value = { root }
+    selectedIds.value = newIds
+    notifyChange()
   }
 
   // Drop zone at the end of a container's children: append dragged node as last child.
@@ -413,6 +483,7 @@ export function useBuilderStore() {
     // state
     page,
     tree,
+    selectedIds,
     selectedId,
     selectedNode,
     agentFocus,
@@ -428,6 +499,11 @@ export function useBuilderStore() {
     load,
     save: saveNow,
     select,
+    toggleSelect,
+    clearSelection,
+    selectAll,
+    removeSelected,
+    duplicateSelected,
     askAgentAbout,
     clearAgentFocus,
     patchNode,

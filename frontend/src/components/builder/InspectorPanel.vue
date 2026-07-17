@@ -44,6 +44,8 @@ import {
 const store = inject(BUILDER_KEY, null)!
 
 const node = computed(() => store.selectedNode.value)
+const multiCount = computed(() => store.selectedIds.value.length)
+const showMultiDelete = ref(false)
 
 // ponytail: node-type icon/color map duplicated in TreeRow + NodeTreePanel.
 // Extract to shared node-meta module when a 4th consumer appears.
@@ -158,15 +160,37 @@ function removeClass(idx: number) {
 
 <template>
   <div class="flex h-full min-h-0 flex-col">
-    <!-- Compact context header: stays visible while scrolling the sections. -->
-    <div v-if="node" class="flex shrink-0 items-center gap-1.5 border-b border-border bg-card px-3 py-2">
+    <!-- Compact context header: stays visible while scrolling the sections. Hidden in multi-select mode. -->
+    <div v-if="node && multiCount <= 1" class="flex shrink-0 items-center gap-1.5 border-b border-border bg-card px-3 py-2">
       <component :is="NODE_ICON[node.type] ?? IconSquare" class="size-3.5 shrink-0" :class="NODE_COLOR[node.type] ?? 'text-muted-foreground'" />
       <span class="truncate text-xs font-medium">{{ node.name || node.type }}</span>
       <span class="ml-auto shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">{{ node.type }}</span>
     </div>
 
+    <!-- Multi-select banner: bulk actions, hides per-node editing. -->
+    <div v-if="multiCount > 1" class="flex flex-1 flex-col gap-3 p-4">
+      <div class="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2.5">
+        <component :is="IconPointer" class="size-4 shrink-0 text-primary" />
+        <div class="flex-1 text-xs">
+          <div class="font-medium text-foreground">{{ multiCount }} nodes selected</div>
+          <div class="text-[11px] text-muted-foreground">Select one node to edit its properties.</div>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <Button size="sm" variant="outline" class="h-8" @click="store.duplicateSelected()">
+          <IconCopy class="size-3.5" /> Duplicate all
+        </Button>
+        <Button size="sm" variant="outline" class="h-8 text-red-600 hover:bg-red-500/10" @click="showMultiDelete = true">
+          <IconTrash class="size-3.5" /> Delete all
+        </Button>
+        <Button size="sm" variant="ghost" class="h-8 text-muted-foreground" @click="store.clearSelection()">
+          Clear
+        </Button>
+      </div>
+    </div>
+
     <!-- Centered empty state -->
-    <div v-if="!node" class="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center">
+    <div v-else-if="!node" class="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center">
       <IconPointer class="size-8 text-muted-foreground/40" />
       <p class="text-sm font-medium text-muted-foreground">No selection</p>
       <p class="max-w-[16rem] text-[11px] leading-relaxed text-muted-foreground/70">
@@ -174,7 +198,7 @@ function removeClass(idx: number) {
       </p>
     </div>
 
-    <div v-else class="flex-1 overflow-auto">
+    <div v-else-if="node" class="flex-1 overflow-auto">
       <!-- Umum: identity + actions, same shell as style sections -->
       <InspectorSection title="General" :icon="IconSettings">
         <div v-if="node.id !== 'root'" class="flex items-center justify-between">
@@ -360,6 +384,21 @@ function removeClass(idx: number) {
         Edit the master component to change instances. Click Detach above to make an independent copy.
       </div>
     </div>
+
+    <AlertDialog v-model:open="showMultiDelete">
+      <AlertDialogContent>
+        <AlertDialogTitle>Delete {{ multiCount }} elements</AlertDialogTitle>
+        <AlertDialogDescription>
+          Delete all selected nodes? This cannot be undone.
+        </AlertDialogDescription>
+        <div class="flex justify-end gap-2">
+          <AlertDialogCancel :class="cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'text-xs')">Cancel</AlertDialogCancel>
+          <AlertDialogAction :class="cn(buttonVariants({ variant: 'destructive', size: 'sm' }), 'text-xs')" @click="() => { store.removeSelected(); showMultiDelete = false }">
+            Delete
+          </AlertDialogAction>
+        </div>
+      </AlertDialogContent>
+    </AlertDialog>
 
     <AlertDialog v-model:open="showDeleteConfirm">
       <AlertDialogContent>

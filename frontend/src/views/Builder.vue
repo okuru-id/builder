@@ -67,16 +67,37 @@ function onKey(e: KeyboardEvent) {
     return
   }
 
-  const id = store.selectedId.value
-  if (!id || id === store.tree.value.root.id) return
+  // Esc — clear selection.
+  if (e.key === 'Escape') {
+    if (store.selectedIds.value.length) {
+      e.preventDefault()
+      store.clearSelection()
+    }
+    return
+  }
+
+  // Ctrl/Cmd+A — select all non-root nodes.
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'a') {
+    e.preventDefault()
+    store.selectAll()
+    return
+  }
+
+  const ids = store.selectedIds.value
+  const multi = ids.length > 1
+  const id = ids[0]
 
   if (e.key === 'Delete' || e.key === 'Backspace') {
+    if (!ids.length) return
     e.preventDefault()
-    store.removeNode(id)
+    if (multi) store.removeSelected()
+    else if (id && id !== store.tree.value.root.id) store.removeNode(id)
   } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'd') {
+    if (!ids.length) return
     e.preventDefault()
-    store.duplicateNode(id)
-  } else if ((e.metaKey || e.ctrlKey) && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+    if (multi) store.duplicateSelected()
+    else if (id) store.duplicateNode(id)
+  } else if (!multi && id && id !== store.tree.value.root.id && (e.metaKey || e.ctrlKey) && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
     e.preventDefault()
     store.moveSiblingNode(id, e.key === 'ArrowUp' ? -1 : 1)
   }
