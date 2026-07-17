@@ -21,8 +21,9 @@ function attrStr(n: Node, extra: string[] = []): string {
   const parts: string[] = []
   const cls = classStr(n)
   if (cls) parts.push(` class="${cls}"`)
+  const props = n.props ?? {}
   for (const name of extra) {
-    const v = n.props[name]
+    const v = props[name]
     if (v) parts.push(` ${name}="${htmlEscape(String(v))}"`)
   }
   return parts.join('')
@@ -72,11 +73,11 @@ function renderContainer(tag: string, n: Node, depth: number): string {
 
 function renderLeaf(tag: string, n: Node, depth: number): string {
   const ind = indent(depth)
-  return `${ind}<${tag}${attrStr(n)}>${htmlEscape(n.props.text ?? '')}</${tag}>\n`
+  return `${ind}<${tag}${attrStr(n)}>${htmlEscape(n.props?.text ?? '')}</${tag}>\n`
 }
 
 function renderHeading(n: Node, depth: number): string {
-  const lvl = Math.max(1, Math.min(6, Number(n.props.level) || 2))
+  const lvl = Math.max(1, Math.min(6, Number(n.props?.level) || 2))
   return renderLeaf(`h${lvl}`, n, depth)
 }
 
@@ -85,7 +86,7 @@ function renderSelfClosing(tag: string, n: Node, depth: number, ...attrs: string
 }
 
 function renderIcon(n: Node, depth: number): string {
-  const iconName = n.props.icon
+  const iconName = n.props?.icon
   let svgContent = ''
   if (iconName && ICONS[iconName]) {
     const paths = ICONS[iconName]
@@ -99,10 +100,11 @@ function renderIcon(n: Node, depth: number): string {
 
 function renderInput(n: Node, depth: number): string {
   const ind = indent(depth)
-  const label = n.props.label ? `${ind}<label class="text-sm font-medium">${htmlEscape(n.props.label)}</label>\n` : ''
-  const inputType = n.props.inputType ?? 'text'
-  const placeholder = n.props.placeholder ? ` placeholder="${htmlEscape(n.props.placeholder)}"` : ''
-  const required = n.props.required ? ' required' : ''
+  const p = n.props ?? {}
+  const label = p.label ? `${ind}<label class="text-sm font-medium">${htmlEscape(p.label)}</label>\n` : ''
+  const inputType = p.inputType ?? 'text'
+  const placeholder = p.placeholder ? ` placeholder="${htmlEscape(p.placeholder)}"` : ''
+  const required = p.required ? ' required' : ''
   const inputEl = `${ind}<input type="${inputType}"${placeholder}${required} class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />\n`
   // Wrap in a div with classes from the node
   return `${ind}<div${attrStr(n)}>\n${label}${inputEl}${ind}</div>\n`
@@ -110,8 +112,9 @@ function renderInput(n: Node, depth: number): string {
 
 function renderForm(n: Node, depth: number): string {
   const ind = indent(depth)
-  const action = n.props.action ? ` action="${htmlEscape(n.props.action)}"` : ''
-  const method = n.props.method ? ` method="${htmlEscape(n.props.method)}"` : ' method="POST"'
+  const p = n.props ?? {}
+  const action = p.action ? ` action="${htmlEscape(p.action)}"` : ''
+  const method = p.method ? ` method="${htmlEscape(p.method)}"` : ' method="POST"'
   let out = `${ind}<form${attrStr(n)}${action}${method}>\n`
   for (const child of n.children) {
     out += renderNode(child, depth + 1)
@@ -130,7 +133,7 @@ function renderLink(n: Node, depth: number): string {
     out += `${ind}</a>\n`
     return out
   }
-  return `${ind}<a${attrStr(n, ['href'])}>${htmlEscape(n.props.text ?? '')}</a>\n`
+  return `${ind}<a${attrStr(n, ['href'])}>${htmlEscape(n.props?.text ?? '')}</a>\n`
 }
 
 // ── Public API ──────────────────────────────────────────────────
@@ -180,6 +183,12 @@ export function download(filename: string, content: string, mime = 'text/html') 
   const a = document.createElement('a')
   a.href = url
   a.download = filename
+  a.rel = 'noopener'
+  a.style.display = 'none'
+  // Firefox/Safari ignore .click() on detached elements — append first.
+  document.body.appendChild(a)
   a.click()
-  URL.revokeObjectURL(url)
+  document.body.removeChild(a)
+  // Defer revoke: some browsers start fetch after click() returns.
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
