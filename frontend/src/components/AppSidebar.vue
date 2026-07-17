@@ -3,7 +3,6 @@ import type { Component } from 'vue'
 import {
   IconArticle,
   IconInbox,
-  IconInnerShadowTop,
   IconLayoutDashboard,
   IconLifebuoy,
   IconPackage,
@@ -62,9 +61,7 @@ const data = {
         <SidebarMenuItem>
           <SidebarMenuButton size="lg" as-child>
             <a href="#">
-              <div class="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                <IconInnerShadowTop class="!size-5" />
-              </div>
+              <img src="/images/logo.png" alt="okuru.id" class="aspect-square size-8 rounded-lg object-contain" />
               <div class="grid flex-1 text-left text-sm leading-tight">
                 <span class="truncate font-semibold">okuru.id</span>
                 <span class="truncate text-xs">Admin Panel</span>

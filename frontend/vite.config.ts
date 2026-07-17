@@ -19,6 +19,20 @@ export default defineConfig(({ mode }) => {
       vue(),
       tailwindcss(),
       {
+        name: 'block-landing-builder',
+        configureServer(server) {
+          server.middlewares.use((req, res, next) => {
+            const url = req.url?.split('?')[0];
+            if (url === '/landing-builder.html' || url === '/landing-builder') {
+              res.statusCode = 404;
+              res.end('Not found');
+              return;
+            }
+            next();
+          });
+        },
+      },
+      {
         name: 'rewrite-admin-to-admin-html',
         configureServer(server) {
           // Serve admin SPA shell for any /admin/* path in dev.
