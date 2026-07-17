@@ -34,7 +34,12 @@ services:
       APP_PORT: 8080
       APP_ENV: production
       APP_DEBUG: "false"
+      DB_CONNECTION: postgres
       DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_DATABASE: okuruid
+      DB_USERNAME: postgres
+      DB_PASSWORD: password
     volumes:
       - storage-data:/opt/okuru/storage/app/public
     expose:
