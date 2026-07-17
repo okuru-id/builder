@@ -56,6 +56,7 @@ func Api() {
 			r.Put("/landing-pages/{id}", landingPageController.Update)
 			r.Delete("/landing-pages/{id}", landingPageController.Destroy)
 			r.Post("/landing-pages/{id}/publish", landingPageController.Publish)
+			r.Put("/landing-pages/{id}/settings", landingPageController.Settings)
 			r.Post("/landing-pages/{id}/duplicate", landingPageController.Duplicate)
 			r.Get("/landing-pages/{id}/revisions", landingPageController.Revisions)
 			r.Post("/landing-pages/{id}/revisions/{rid}/restore", landingPageController.RestoreRevision)

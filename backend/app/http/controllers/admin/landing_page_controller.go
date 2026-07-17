@@ -21,8 +21,11 @@ func NewLandingPageController() *LandingPageController {
 }
 
 type landingPageInput struct {
-	Name string `json:"name" validate:"required"`
-	Slug string `json:"slug"`
+	Name   string `json:"name" validate:"required"`
+	Slug   string `json:"slug"`
+	Path   string `json:"path"`
+	Domain string `json:"domain"`
+	IsHome *bool  `json:"is_home"` // pointer so omit != false
 }
 
 // defaultRootTree returns the initial empty tree for a new page.
@@ -53,6 +56,9 @@ func (c *LandingPageController) Index(ctx http.Context) http.Response {
 		Name      string `json:"name"`
 		Status    string `json:"status"`
 		Version   int    `json:"version"`
+		Path      string `json:"path"`
+		Domain    string `json:"domain"`
+		IsHome    bool   `json:"is_home"`
 		UpdatedAt string `json:"updated_at"`
 	}
 	items := make([]listItem, 0, len(pages))
@@ -61,7 +67,7 @@ func (c *LandingPageController) Index(ctx http.Context) http.Response {
 		if !p.UpdatedAt.IsZero() {
 			updatedAt = p.UpdatedAt.ToDateTimeString()
 		}
-		items = append(items, listItem{p.ID, p.Slug, p.Name, p.Status, p.Version, updatedAt})
+		items = append(items, listItem{p.ID, p.Slug, p.Name, p.Status, p.Version, p.Path, p.Domain, p.IsHome, updatedAt})
 	}
 	return ctx.Response().Success().Json(http.Json{"data": items})
 }
@@ -101,11 +107,16 @@ func (c *LandingPageController) Store(ctx http.Context) http.Response {
 	return ctx.Response().Success().Json(http.Json{"data": page})
 }
 
-// treeInput is the autosave payload.
+// treeInput is the autosave payload. path/domain/is_home are optional — the
+// dedicated Settings endpoint is the primary path for those, but autosave also
+// accepts them so the builder can persist routing changes inline.
 type treeInput struct {
-	Name string          `json:"name"`
-	Slug string          `json:"slug"`
-	Tree json.RawMessage `json:"tree"`
+	Name   string          `json:"name"`
+	Slug   string          `json:"slug"`
+	Path   *string         `json:"path"`
+	Domain *string         `json:"domain"`
+	IsHome *bool           `json:"is_home"`
+	Tree   json.RawMessage `json:"tree"`
 }
 
 // Update autosaves the working tree, bumps version, and logs a revision.
@@ -141,6 +152,28 @@ func (c *LandingPageController) Update(ctx http.Context) http.Response {
 	if in.Slug != "" {
 		page.Slug = in.Slug
 	}
+	// Routing fields (optional in autosave). Validate uniqueness when present.
+	if in.Path != nil {
+		np := normalizePath(*in.Path)
+		if resp, ok := ensureUniqueField(ctx, "path", np, page.ID); !ok {
+			return resp
+		}
+		page.Path = np
+	}
+	if in.Domain != nil {
+		nd := normalizeDomain(*in.Domain)
+		if resp, ok := ensureUniqueField(ctx, "domain", nd, page.ID); !ok {
+			return resp
+		}
+		page.Domain = nd
+	}
+	if in.IsHome != nil {
+		if *in.IsHome {
+			// At most one home page. Clear the flag on every other page.
+			facades.Orm().Query().Where("id != ?", page.ID).Update(map[string]any{"is_home": false})
+		}
+		page.IsHome = *in.IsHome
+	}
 	if _, err := facades.Orm().Query().Where("id = ?", id).Update(&page); err != nil {
 		return ctx.Response().Json(http.StatusInternalServerError, http.Json{"error": err.Error()})
 	}
@@ -173,6 +206,57 @@ func (c *LandingPageController) Publish(ctx http.Context) http.Response {
 	if _, err := facades.Orm().Query().Where("id = ?", id).Update(&page); err != nil {
 		return ctx.Response().Json(http.StatusInternalServerError, http.Json{"error": err.Error()})
 	}
+	return ctx.Response().Success().Json(http.Json{"data": page})
+}
+
+// Settings updates a page's routing fields (path, domain, is_home) and is the
+// primary UI entry point for multi-page publishing. Validates uniqueness and
+// enforces the single-home constraint. Body: { path?, domain?, is_home? }.
+func (c *LandingPageController) Settings(ctx http.Context) http.Response {
+	id := ctx.Request().Input("id")
+	var page models.LandingPage
+	if err := facades.Orm().Query().Where("id = ?", id).First(&page); err != nil {
+		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "page not found"})
+	}
+	if page.ID == 0 {
+		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "page not found"})
+	}
+
+	var in struct {
+		Path   *string `json:"path"`
+		Domain *string `json:"domain"`
+		IsHome *bool   `json:"is_home"`
+	}
+	if err := ctx.Request().Bind(&in); err != nil {
+		return ctx.Response().Json(http.StatusBadRequest, http.Json{"error": err.Error()})
+	}
+
+	if in.Path != nil {
+		np := normalizePath(*in.Path)
+		if resp, ok := ensureUniqueField(ctx, "path", np, page.ID); !ok {
+			return resp
+		}
+		page.Path = np
+	}
+	if in.Domain != nil {
+		nd := normalizeDomain(*in.Domain)
+		if resp, ok := ensureUniqueField(ctx, "domain", nd, page.ID); !ok {
+			return resp
+		}
+		page.Domain = nd
+	}
+	if in.IsHome != nil {
+		if *in.IsHome {
+			facades.Orm().Query().Where("id != ?", page.ID).Update(map[string]any{"is_home": false})
+		}
+		page.IsHome = *in.IsHome
+	}
+
+	if _, err := facades.Orm().Query().Where("id = ?", id).Update(&page); err != nil {
+		return ctx.Response().Json(http.StatusInternalServerError, http.Json{"error": err.Error()})
+	}
+	// Re-read so the returned row reflects DB defaults.
+	facades.Orm().Query().Where("id = ?", id).First(&page)
 	return ctx.Response().Success().Json(http.Json{"data": page})
 }
 
@@ -302,4 +386,61 @@ func uniqueSlug(base string) string {
 		}
 		candidate = fmt.Sprintf("%s-%d", base, i)
 	}
+}
+
+// normalizePath trims leading/trailing slashes and collapses to a single segment.
+// Empty input is allowed (means "not published via path"). Reserved paths that
+// would collide with app routes (/admin, /api, /assets, /shop, /health) are rejected.
+func normalizePath(s string) string {
+	s = strings.TrimSpace(s)
+	s = strings.Trim(s, "/")
+	return s
+}
+
+func isReservedPath(p string) bool {
+	switch p {
+	case "", "admin", "api", "assets", "images", "shop", "product", "checkout", "health":
+		return true
+	}
+	return false
+}
+
+// normalizeDomain lowercases, trims whitespace, strips scheme, path, and port.
+// "https://Promo.Example.com:443/x" → "promo.example.com".
+func normalizeDomain(s string) string {
+	s = strings.TrimSpace(s)
+	s = strings.TrimPrefix(s, "http://")
+	s = strings.TrimPrefix(s, "https://")
+	if i := strings.IndexAny(s, "/?#"); i != -1 {
+		s = s[:i]
+	}
+	if i := strings.LastIndex(s, ":"); i != -1 {
+		// keep colons only if they're part of an IPv6 bracket; else strip port
+		if !strings.Contains(s, "[") {
+			s = s[:i]
+		}
+	}
+	return strings.ToLower(strings.Trim(s, "."))
+}
+
+// ensureUniqueField checks whether another page already uses the given non-empty
+// value for path/domain. Returns the conflict response and ok=false; when ok=true
+// the caller may proceed. Empty values are allowed (many pages may have no custom
+// path/domain).
+func ensureUniqueField(ctx http.Context, field, value string, excludeID uint) (http.Response, bool) {
+	if value == "" {
+		return nil, true
+	}
+	var other models.LandingPage
+	q := facades.Orm().Query().Where(field+" = ?", value).Where("id != ?", excludeID)
+	_ = q.First(&other)
+	if other.ID != 0 {
+		return ctx.Response().Json(http.StatusConflict, http.Json{
+			"error":  field + " already in use by another page",
+			"field":  field,
+			"value":  value,
+			"pageId": other.ID,
+		}), false
+	}
+	return nil, true
 }

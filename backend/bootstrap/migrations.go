@@ -20,5 +20,6 @@ func Migrations() []schema.Migration {
 		&migrations.M20260702000009CreateSettingsTable{},
 		&migrations.M20260713000001CreateLandingPagesTables{},
 		&migrations.M20260713000002AddSystemFieldsToLandingComponentsTable{},
+		&migrations.M20260717000001AddPathDomainToLandingPages{},
 	}
 }
