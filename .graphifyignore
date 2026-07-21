@@ -1,0 +1,7 @@
+# Skip images (base64 payload too large for proxy 413)
+*.png
+*.svg
+*.jpg
+*.jpeg
+*.webp
+*.gif
