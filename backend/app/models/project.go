@@ -7,6 +7,7 @@ import (
 
 type Project struct {
 	orm.Model
+	UserID    uint `gorm:"index" json:"-"`
 	SortOrder     int               `json:"sort_order"`
 	TitleEn       string            `json:"title_en"`
 	TitleId       string            `json:"title_id"`

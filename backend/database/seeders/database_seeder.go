@@ -36,7 +36,7 @@ func (s *DatabaseSeeder) seedAdmin() error {
 	return facades.Orm().Query().UpdateOrCreate(
 		&user,
 		models.User{Email: "admin@okuru.id"},
-		models.User{Password: hashed},
+		models.User{Name: "Admin", Password: hashed, IsActive: true, IsAdmin: true},
 	)
 }
 

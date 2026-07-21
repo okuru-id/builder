@@ -9,6 +9,7 @@ import (
 // and may carry per-instance overrides.
 type LandingComponent struct {
 	orm.Model
+	UserID uint `gorm:"index" json:"-"`
 	Key      string         `gorm:"uniqueIndex" json:"key,omitempty"`
 	Name     string         `json:"name"`
 	IsSystem bool           `gorm:"default:false" json:"is_system"`

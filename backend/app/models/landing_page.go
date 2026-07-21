@@ -10,6 +10,7 @@ import (
 // by a public path (Path, e.g. "promo" → /promo), or at "/" when IsHome=true.
 type LandingPage struct {
 	orm.Model
+	UserID uint `gorm:"index" json:"-"`
 	Slug          string         `gorm:"uniqueIndex" json:"slug"`
 	Name          string         `json:"name"`
 	Status        string         `gorm:"default:draft" json:"status"` // draft | published

@@ -38,6 +38,7 @@ func Api() {
 		})
 
 		router.Middleware(middleware.JwtAuth(), middleware.TotpVerified()).Group(func(r route.Router) {
+			userController := admin.NewUserController()
 			postController := admin.NewPostController()
 			projectController := admin.NewProjectController()
 			openSourceController := admin.NewOpenSourceController()
@@ -69,6 +70,12 @@ func Api() {
 			r.Post("/landing-components/{id}/duplicate", landingComponentController.Duplicate)
 
 			r.Post("/builder/chat", builderChatController.Chat)
+
+			r.Get("/users", userController.Index)
+			r.Post("/users", userController.Store)
+			r.Get("/users/{id}", userController.Show)
+			r.Put("/users/{id}", userController.Update)
+			r.Delete("/users/{id}", userController.Destroy)
 
 			r.Get("/posts", postController.Index)
 			r.Post("/posts", postController.Store)

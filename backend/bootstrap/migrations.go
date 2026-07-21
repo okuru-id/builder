@@ -21,5 +21,8 @@ func Migrations() []schema.Migration {
 		&migrations.M20260713000001CreateLandingPagesTables{},
 		&migrations.M20260713000002AddSystemFieldsToLandingComponentsTable{},
 		&migrations.M20260717000001AddPathDomainToLandingPages{},
+		&migrations.M20260721000001AddUserManagementFieldsToUsersTable{},
+		&migrations.M20260721000002AddUserIdToContentTables{},
+		&migrations.M20260721000003AddIsAdminToUsersTable{},
 	}
 }

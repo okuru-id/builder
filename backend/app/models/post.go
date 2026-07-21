@@ -9,6 +9,7 @@ import (
 
 type Post struct {
 	orm.Model
+	UserID   uint `gorm:"index" json:"-"`
 	Slug        string            `gorm:"uniqueIndex" json:"slug"`
 	TitleEn     string            `json:"title_en"`
 	TitleId     string            `json:"title_id"`

@@ -25,10 +25,9 @@ type landingPageInput struct {
 	Slug   string `json:"slug"`
 	Path   string `json:"path"`
 	Domain string `json:"domain"`
-	IsHome *bool  `json:"is_home"` // pointer so omit != false
+	IsHome *bool  `json:"is_home"`
 }
 
-// defaultRootTree returns the initial empty tree for a new page.
 func defaultRootTree() datatypes.JSON {
 	tree := map[string]any{
 		"root": map[string]any{
@@ -44,10 +43,20 @@ func defaultRootTree() datatypes.JSON {
 	return b
 }
 
-// Index lists all landing pages (without heavy tree payload).
+// ownPage fetches a page scoped to the caller. Returns ok=false with a 404
+// response already built when missing/not-owned.
+func ownPage(ctx http.Context, id string) (models.LandingPage, http.Response, bool) {
+	var page models.LandingPage
+	if err := facades.Orm().Query().Where("id = ? AND user_id = ?", id, currentUserID(ctx)).First(&page); err != nil || page.ID == 0 {
+		return page, ctx.Response().Json(http.StatusNotFound, http.Json{"error": "page not found"}), false
+	}
+	return page, nil, true
+}
+
+// Index lists the caller's own pages (without heavy tree payload).
 func (c *LandingPageController) Index(ctx http.Context) http.Response {
 	var pages []models.LandingPage
-	if err := facades.Orm().Query().Order("id desc").Get(&pages); err != nil {
+	if err := facades.Orm().Query().Where("user_id = ?", currentUserID(ctx)).Order("id desc").Get(&pages); err != nil {
 		return ctx.Response().Json(http.StatusInternalServerError, http.Json{"error": err.Error()})
 	}
 	type listItem struct {
@@ -74,17 +83,14 @@ func (c *LandingPageController) Index(ctx http.Context) http.Response {
 
 // Show returns a single page with its full tree.
 func (c *LandingPageController) Show(ctx http.Context) http.Response {
-	var page models.LandingPage
-	if err := facades.Orm().Query().Where("id = ?", ctx.Request().Input("id")).First(&page); err != nil {
-		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "page not found"})
-	}
-	if page.ID == 0 {
-		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "page not found"})
+	page, resp, ok := ownPage(ctx, ctx.Request().Input("id"))
+	if !ok {
+		return resp
 	}
 	return ctx.Response().Success().Json(http.Json{"data": page})
 }
 
-// Store creates a new draft page.
+// Store creates a new draft page owned by the caller.
 func (c *LandingPageController) Store(ctx http.Context) http.Response {
 	var in landingPageInput
 	if err := ctx.Request().Bind(&in); err != nil {
@@ -94,12 +100,13 @@ func (c *LandingPageController) Store(ctx http.Context) http.Response {
 	if slug == "" {
 		slug = slugify(in.Name)
 	}
-	slug = uniqueSlug(slug)
+	slug = uniqueSlug(slug, currentUserID(ctx))
 	page := models.LandingPage{
 		Name:   in.Name,
 		Slug:   slug,
 		Status: "draft",
 		Tree:   defaultRootTree(),
+		UserID: currentUserID(ctx),
 	}
 	if err := facades.Orm().Query().Create(&page); err != nil {
 		return ctx.Response().Json(http.StatusInternalServerError, http.Json{"error": err.Error()})
@@ -107,9 +114,6 @@ func (c *LandingPageController) Store(ctx http.Context) http.Response {
 	return ctx.Response().Success().Json(http.Json{"data": page})
 }
 
-// treeInput is the autosave payload. path/domain/is_home are optional — the
-// dedicated Settings endpoint is the primary path for those, but autosave also
-// accepts them so the builder can persist routing changes inline.
 type treeInput struct {
 	Name   string          `json:"name"`
 	Slug   string          `json:"slug"`
@@ -121,13 +125,9 @@ type treeInput struct {
 
 // Update autosaves the working tree, bumps version, and logs a revision.
 func (c *LandingPageController) Update(ctx http.Context) http.Response {
-	id := ctx.Request().Input("id")
-	var page models.LandingPage
-	if err := facades.Orm().Query().Where("id = ?", id).First(&page); err != nil {
-		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "page not found"})
-	}
-	if page.ID == 0 {
-		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "page not found"})
+	page, resp, ok := ownPage(ctx, ctx.Request().Input("id"))
+	if !ok {
+		return resp
 	}
 
 	var in treeInput
@@ -135,7 +135,6 @@ func (c *LandingPageController) Update(ctx http.Context) http.Response {
 		return ctx.Response().Json(http.StatusBadRequest, http.Json{"error": err.Error()})
 	}
 
-	// Save revision of the current tree before overwriting.
 	rev := models.LandingPageRevision{
 		LandingPageID: page.ID,
 		Tree:          page.Tree,
@@ -152,29 +151,28 @@ func (c *LandingPageController) Update(ctx http.Context) http.Response {
 	if in.Slug != "" {
 		page.Slug = in.Slug
 	}
-	// Routing fields (optional in autosave). Validate uniqueness when present.
 	if in.Path != nil {
 		np := normalizePath(*in.Path)
-		if resp, ok := ensureUniqueField(ctx, "path", np, page.ID); !ok {
-			return resp
+		if r, ok := ensureUniqueField(ctx, "path", np, page.ID); !ok {
+			return r
 		}
 		page.Path = np
 	}
 	if in.Domain != nil {
 		nd := normalizeDomain(*in.Domain)
-		if resp, ok := ensureUniqueField(ctx, "domain", nd, page.ID); !ok {
-			return resp
+		if r, ok := ensureUniqueField(ctx, "domain", nd, page.ID); !ok {
+			return r
 		}
 		page.Domain = nd
 	}
 	if in.IsHome != nil {
 		if *in.IsHome {
-			// At most one home page. Clear the flag on every other page.
+			// At most one home page globally (single-tenant storefront).
 			facades.Orm().Query().Where("id != ?", page.ID).Update(map[string]any{"is_home": false})
 		}
 		page.IsHome = *in.IsHome
 	}
-	if _, err := facades.Orm().Query().Where("id = ?", id).Update(&page); err != nil {
+	if _, err := facades.Orm().Query().Where("id = ?", page.ID).Update(&page); err != nil {
 		return ctx.Response().Json(http.StatusInternalServerError, http.Json{"error": err.Error()})
 	}
 	return ctx.Response().Success().Json(http.Json{"data": page, "revision": rev.ID})
@@ -182,44 +180,30 @@ func (c *LandingPageController) Update(ctx http.Context) http.Response {
 
 // Publish snapshots the working tree into published_tree and marks status=published.
 func (c *LandingPageController) Publish(ctx http.Context) http.Response {
-	id := ctx.Request().Input("id")
-	var page models.LandingPage
-	if err := facades.Orm().Query().Where("id = ?", id).First(&page); err != nil {
-		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "page not found"})
-	}
-	if page.ID == 0 {
-		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "page not found"})
+	page, resp, ok := ownPage(ctx, ctx.Request().Input("id"))
+	if !ok {
+		return resp
 	}
 	page.PublishedTree = page.Tree
 	page.Status = "published"
 	page.Version = page.Version + 1
 
-	// Run tree → HTML codegen synchronously at publish time. Cached in published_html,
-	// served raw by the storefront so the published page never depends on the editor.
-	// Component instances are resolved to their master trees first, so published HTML
-	// is self-contained even if a master is later edited or deleted.
 	resolved := services.ResolveComponentInstances(treeToMap(page.Tree))
 	if html, err := renderHTMLFromMap(resolved, page.Name); err == nil {
 		page.PublishedHTML = html
 	}
 
-	if _, err := facades.Orm().Query().Where("id = ?", id).Update(&page); err != nil {
+	if _, err := facades.Orm().Query().Where("id = ?", page.ID).Update(&page); err != nil {
 		return ctx.Response().Json(http.StatusInternalServerError, http.Json{"error": err.Error()})
 	}
 	return ctx.Response().Success().Json(http.Json{"data": page})
 }
 
-// Settings updates a page's routing fields (path, domain, is_home) and is the
-// primary UI entry point for multi-page publishing. Validates uniqueness and
-// enforces the single-home constraint. Body: { path?, domain?, is_home? }.
+// Settings updates a page's routing fields (path, domain, is_home).
 func (c *LandingPageController) Settings(ctx http.Context) http.Response {
-	id := ctx.Request().Input("id")
-	var page models.LandingPage
-	if err := facades.Orm().Query().Where("id = ?", id).First(&page); err != nil {
-		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "page not found"})
-	}
-	if page.ID == 0 {
-		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "page not found"})
+	page, resp, ok := ownPage(ctx, ctx.Request().Input("id"))
+	if !ok {
+		return resp
 	}
 
 	var in struct {
@@ -233,15 +217,15 @@ func (c *LandingPageController) Settings(ctx http.Context) http.Response {
 
 	if in.Path != nil {
 		np := normalizePath(*in.Path)
-		if resp, ok := ensureUniqueField(ctx, "path", np, page.ID); !ok {
-			return resp
+		if r, ok := ensureUniqueField(ctx, "path", np, page.ID); !ok {
+			return r
 		}
 		page.Path = np
 	}
 	if in.Domain != nil {
 		nd := normalizeDomain(*in.Domain)
-		if resp, ok := ensureUniqueField(ctx, "domain", nd, page.ID); !ok {
-			return resp
+		if r, ok := ensureUniqueField(ctx, "domain", nd, page.ID); !ok {
+			return r
 		}
 		page.Domain = nd
 	}
@@ -252,16 +236,13 @@ func (c *LandingPageController) Settings(ctx http.Context) http.Response {
 		page.IsHome = *in.IsHome
 	}
 
-	if _, err := facades.Orm().Query().Where("id = ?", id).Update(&page); err != nil {
+	if _, err := facades.Orm().Query().Where("id = ?", page.ID).Update(&page); err != nil {
 		return ctx.Response().Json(http.StatusInternalServerError, http.Json{"error": err.Error()})
 	}
-	// Re-read so the returned row reflects DB defaults.
-	facades.Orm().Query().Where("id = ?", id).First(&page)
+	facades.Orm().Query().Where("id = ?", page.ID).First(&page)
 	return ctx.Response().Success().Json(http.Json{"data": page})
 }
 
-// renderHTML converts a datatypes.JSON tree into a full HTML document via the
-// LandingCodegen service.
 func renderHTML(tree datatypes.JSON, title string) (string, error) {
 	m := treeToMap(tree)
 	return renderHTMLFromMap(m, title)
@@ -279,9 +260,13 @@ func treeToMap(tree datatypes.JSON) map[string]any {
 	return m
 }
 
-// Revisions lists the page revision history (newest first).
+// Revisions lists the page revision history (newest first). Scoped to the
+// caller's pages.
 func (c *LandingPageController) Revisions(ctx http.Context) http.Response {
 	id := ctx.Request().Input("id")
+	if _, resp, ok := ownPage(ctx, id); !ok {
+		return resp
+	}
 	var revs []models.LandingPageRevision
 	if err := facades.Orm().Query().Where("landing_page_id = ?", id).Order("id desc").Limit(100).Get(&revs); err != nil {
 		return ctx.Response().Json(http.StatusInternalServerError, http.Json{"error": err.Error()})
@@ -294,17 +279,14 @@ func (c *LandingPageController) RestoreRevision(ctx http.Context) http.Response 
 	pageID := ctx.Request().Input("id")
 	revID := ctx.Request().Input("rid")
 
-	var rev models.LandingPageRevision
-	if err := facades.Orm().Query().Where("id = ? AND landing_page_id = ?", revID, pageID).First(&rev); err != nil {
-		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "revision not found"})
-	}
-	if rev.ID == 0 {
-		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "revision not found"})
+	page, resp, ok := ownPage(ctx, pageID)
+	if !ok {
+		return resp
 	}
 
-	var page models.LandingPage
-	if err := facades.Orm().Query().Where("id = ?", pageID).First(&page); err != nil {
-		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "page not found"})
+	var rev models.LandingPageRevision
+	if err := facades.Orm().Query().Where("id = ? AND landing_page_id = ?", revID, pageID).First(&rev); err != nil || rev.ID == 0 {
+		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "revision not found"})
 	}
 	page.Tree = rev.Tree
 	page.Version = page.Version + 1
@@ -316,35 +298,28 @@ func (c *LandingPageController) RestoreRevision(ctx http.Context) http.Response 
 
 // Destroy deletes a landing page and its revisions.
 func (c *LandingPageController) Destroy(ctx http.Context) http.Response {
-	id := ctx.Request().Input("id")
-	var page models.LandingPage
-	if err := facades.Orm().Query().Where("id = ?", id).First(&page); err != nil {
-		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "page not found"})
+	page, resp, ok := ownPage(ctx, ctx.Request().Input("id"))
+	if !ok {
+		return resp
 	}
-	if page.ID == 0 {
-		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "page not found"})
-	}
-	// Delete associated revisions first.
-	facades.Orm().Query().Where("landing_page_id = ?", id).Delete(&models.LandingPageRevision{})
-	facades.Orm().Query().Where("id = ?", id).Delete(&models.LandingPage{})
+	facades.Orm().Query().Where("landing_page_id = ?", page.ID).Delete(&models.LandingPageRevision{})
+	facades.Orm().Query().Where("id = ?", page.ID).Delete(&models.LandingPage{})
 	return ctx.Response().Success().Json(http.Json{"deleted": true})
 }
 
 // Duplicate creates a copy of an existing page with "(copy)" suffix.
 func (c *LandingPageController) Duplicate(ctx http.Context) http.Response {
-	id := ctx.Request().Input("id")
-	var page models.LandingPage
-	if err := facades.Orm().Query().Where("id = ?", id).First(&page); err != nil {
-		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "page not found"})
+	page, resp, ok := ownPage(ctx, ctx.Request().Input("id"))
+	if !ok {
+		return resp
 	}
-	if page.ID == 0 {
-		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "page not found"})
-	}
+	uid := currentUserID(ctx)
 	copy := models.LandingPage{
 		Name:   page.Name + " (copy)",
-		Slug:   uniqueSlug(slugify(page.Name + " copy")),
+		Slug:   uniqueSlug(slugify(page.Name+" copy"), uid),
 		Status: "draft",
 		Tree:   page.Tree,
+		UserID: uid,
 	}
 	if err := facades.Orm().Query().Create(&copy); err != nil {
 		return ctx.Response().Json(http.StatusInternalServerError, http.Json{"error": err.Error()})
@@ -375,12 +350,13 @@ func slugify(s string) string {
 	return out
 }
 
-func uniqueSlug(base string) string {
+// uniqueSlug makes a slug unique within the caller's own pages.
+func uniqueSlug(base string, uid uint) string {
 	base = slugify(base)
 	candidate := base
 	for i := 2; ; i++ {
 		var page models.LandingPage
-		_ = facades.Orm().Query().Where("slug = ?", candidate).First(&page)
+		_ = facades.Orm().Query().Where("slug = ? AND user_id = ?", candidate, uid).First(&page)
 		if page.ID == 0 {
 			return candidate
 		}
@@ -388,9 +364,6 @@ func uniqueSlug(base string) string {
 	}
 }
 
-// normalizePath trims leading/trailing slashes and collapses to a single segment.
-// Empty input is allowed (means "not published via path"). Reserved paths that
-// would collide with app routes (/admin, /api, /assets, /shop, /health) are rejected.
 func normalizePath(s string) string {
 	s = strings.TrimSpace(s)
 	s = strings.Trim(s, "/")
@@ -405,8 +378,6 @@ func isReservedPath(p string) bool {
 	return false
 }
 
-// normalizeDomain lowercases, trims whitespace, strips scheme, path, and port.
-// "https://Promo.Example.com:443/x" → "promo.example.com".
 func normalizeDomain(s string) string {
 	s = strings.TrimSpace(s)
 	s = strings.TrimPrefix(s, "http://")
@@ -415,7 +386,6 @@ func normalizeDomain(s string) string {
 		s = s[:i]
 	}
 	if i := strings.LastIndex(s, ":"); i != -1 {
-		// keep colons only if they're part of an IPv6 bracket; else strip port
 		if !strings.Contains(s, "[") {
 			s = s[:i]
 		}
@@ -423,10 +393,9 @@ func normalizeDomain(s string) string {
 	return strings.ToLower(strings.Trim(s, "."))
 }
 
-// ensureUniqueField checks whether another page already uses the given non-empty
-// value for path/domain. Returns the conflict response and ok=false; when ok=true
-// the caller may proceed. Empty values are allowed (many pages may have no custom
-// path/domain).
+// ensureUniqueField checks GLOBAL uniqueness of path/domain — the public
+// storefront resolves pages by these fields without a user context, so they
+// must not collide across owners.
 func ensureUniqueField(ctx http.Context, field, value string, excludeID uint) (http.Response, bool) {
 	if value == "" {
 		return nil, true

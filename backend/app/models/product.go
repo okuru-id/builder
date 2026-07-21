@@ -4,6 +4,7 @@ import "github.com/goravel/framework/database/orm"
 
 type Product struct {
 	orm.Model
+	UserID uint `gorm:"index" json:"-"`
 	Slug        string  `gorm:"uniqueIndex" json:"slug"`
 	Title       string  `json:"title"`
 	Description *string `json:"description"`

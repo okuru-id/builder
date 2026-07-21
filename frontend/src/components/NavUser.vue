@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import {
   IconCircleCheck,
-  IconCreditCard,
-  IconBell,
   IconLogout,
   IconSelector,
-  IconUserCircle,
   IconSun,
   IconMoon,
 } from '@tabler/icons-vue'
@@ -42,6 +40,7 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{ logout: [] }>()
+const router = useRouter()
 const { isMobile } = useSidebar()
 const { theme, toggle } = useTheme()
 
@@ -110,21 +109,9 @@ function initials(s: string) {
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
-            <DropdownMenuItem>
-              <IconUserCircle />
-              Account
-            </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem @select="router.push('/profile')">
               <IconCircleCheck />
               Profile
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <IconCreditCard />
-              Billing
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <IconBell />
-              Notifications
             </DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />

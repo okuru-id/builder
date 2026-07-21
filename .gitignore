@@ -34,3 +34,8 @@ infra/.env
 .env
 .env.local
 .env.*.local
+
+# Local dev artifacts
+backend/database.sqlite
+backend/database.sqlite-*
+graphify-out/

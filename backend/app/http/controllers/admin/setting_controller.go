@@ -13,10 +13,10 @@ func NewSettingController() *SettingController {
 	return &SettingController{}
 }
 
-// Index lists all settings as a key-value map.
+// Index lists the caller's own settings as a key-value map.
 func (c *SettingController) Index(ctx http.Context) http.Response {
 	var settings []models.Setting
-	facades.Orm().Query().OrderBy("key", "asc").Get(&settings)
+	facades.Orm().Query().Where("user_id = ?", currentUserID(ctx)).OrderBy("key", "asc").Get(&settings)
 
 	out := make(map[string]string, len(settings))
 	for _, s := range settings {
@@ -30,7 +30,7 @@ type updateSettingRequest struct {
 	Value string `json:"value"`
 }
 
-// Update creates or updates a setting by key.
+// Update creates or updates a setting scoped to the caller.
 func (c *SettingController) Update(ctx http.Context) http.Response {
 	var input updateSettingRequest
 	if err := ctx.Request().Bind(&input); err != nil {
@@ -40,10 +40,11 @@ func (c *SettingController) Update(ctx http.Context) http.Response {
 		return ctx.Response().Json(http.StatusBadRequest, http.Json{"error": "key is required"})
 	}
 
+	uid := currentUserID(ctx)
 	var setting models.Setting
-	err := facades.Orm().Query().Where("key = ?", input.Key).First(&setting)
-	if err != nil {
-		setting = models.Setting{Key: input.Key, Value: input.Value}
+	err := facades.Orm().Query().Where("key = ? AND user_id = ?", input.Key, uid).First(&setting)
+	if err != nil || setting.ID == 0 {
+		setting = models.Setting{Key: input.Key, Value: input.Value, UserID: uid}
 		if createErr := facades.Orm().Query().Create(&setting); createErr != nil {
 			return ctx.Response().Json(http.StatusInternalServerError, http.Json{"error": createErr.Error()})
 		}
@@ -56,7 +57,6 @@ func (c *SettingController) Update(ctx http.Context) http.Response {
 }
 
 func (c *SettingController) Destroy(ctx http.Context) http.Response {
-	key := ctx.Request().Route("key")
-	facades.Orm().Query().Where("key = ?", key).Delete(&models.Setting{})
+	facades.Orm().Query().Where("key = ? AND user_id = ?", ctx.Request().Route("key"), currentUserID(ctx)).Delete(&models.Setting{})
 	return ctx.Response().Success().Json(http.Json{"deleted": true})
 }

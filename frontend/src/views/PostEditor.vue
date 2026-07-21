@@ -2,6 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
+import { CalendarDate } from '@internationalized/date'
 import api from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,7 +16,13 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
-import { IconArrowLeft } from '@tabler/icons-vue'
+import { Calendar } from '@/components/ui/calendar'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import { IconArrowLeft, IconCalendar } from '@tabler/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -45,6 +52,39 @@ function toLocalInput(s: string | null) {
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
+
+const publishedDate = computed<CalendarDate | undefined>({
+  get: () => {
+    const s = form.value.published_at
+    if (!s) return undefined
+    const [date] = s.split('T')
+    const [y, m, d] = date.split('-').map(Number)
+    if (!y || !m || !d) return undefined
+    return new CalendarDate(y, m, d)
+  },
+  set: (v) => {
+    if (!v) { form.value.published_at = ''; return }
+    const time = form.value.published_at?.split('T')[1] ?? '09:00'
+    form.value.published_at = `${v.toString()}T${time}`
+  },
+})
+
+const publishedTime = computed<string>({
+  get: () => form.value.published_at?.split('T')[1] ?? '',
+  set: (v) => {
+    const [date] = (form.value.published_at || '').split('T')
+    if (!date) return
+    form.value.published_at = `${date}T${v}`
+  },
+})
+
+const publishedLabel = computed(() => {
+  const s = form.value.published_at
+  if (!s) return 'Pick date'
+  const d = new Date(s)
+  if (isNaN(d.getTime())) return 'Pick date'
+  return d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+})
 
 async function load() {
   loading.value = true
@@ -120,81 +160,97 @@ onMounted(load)
     <div v-if="loading" class="flex flex-col gap-3">
       <Skeleton v-for="i in 4" :key="i" class="h-10 w-full" />
     </div>
-    <form v-else class="grid max-w-3xl gap-4" @submit.prevent="save">
-      <div class="grid gap-4 sm:grid-cols-2">
-        <div class="flex flex-col gap-2">
-          <Label for="title_en">Title (EN) *</Label>
-          <Input id="title_en" v-model="form.title_en" />
+    <form v-else class="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]" @submit.prevent="save">
+      <!-- main column -->
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div class="space-y-2">
+            <Label for="title_en">Title (EN) *</Label>
+            <Input id="title_en" v-model="form.title_en" />
+          </div>
+          <div class="space-y-2">
+            <Label for="title_id">Title (ID)</Label>
+            <Input id="title_id" v-model="form.title_id" />
+          </div>
         </div>
-        <div class="flex flex-col gap-2">
-          <Label for="title_id">Title (ID)</Label>
-          <Input id="title_id" v-model="form.title_id" />
+        <div class="grid grid-cols-2 gap-3">
+          <div class="space-y-2">
+            <Label for="excerpt_en">Excerpt (EN)</Label>
+            <Textarea id="excerpt_en" v-model="form.excerpt_en" />
+          </div>
+          <div class="space-y-2">
+            <Label for="excerpt_id">Excerpt (ID)</Label>
+            <Textarea id="excerpt_id" v-model="form.excerpt_id" />
+          </div>
         </div>
-      </div>
-
-      <div class="grid gap-4 sm:grid-cols-2">
-        <div class="flex flex-col gap-2">
-          <Label for="slug">Slug *</Label>
-          <Input id="slug" v-model="form.slug" placeholder="my-post" />
+        <div class="space-y-2">
+          <Label for="content_en">Content (EN) — Markdown</Label>
+          <Textarea id="content_en" v-model="form.content_en" class="min-h-72 font-mono" />
         </div>
-        <div class="flex flex-col gap-2">
-          <Label for="category">Category</Label>
-          <Select v-model="form.category">
-            <SelectTrigger class="w-full">
-              <SelectValue placeholder="Select category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem v-for="c in categories" :key="c.id" :value="c.slug">
-                {{ c.name_en }}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div class="grid gap-4 sm:grid-cols-2">
-        <div class="flex flex-col gap-2">
-          <Label for="status">Status</Label>
-          <Select v-model="form.status">
-            <SelectTrigger class="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="draft">draft</SelectItem>
-              <SelectItem value="published">published</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div class="flex flex-col gap-2">
-          <Label for="published_at">Published At</Label>
-          <Input id="published_at" v-model="form.published_at" type="datetime-local" />
+        <div class="space-y-2">
+          <Label for="content_id">Content (ID) — Markdown</Label>
+          <Textarea id="content_id" v-model="form.content_id" class="min-h-72 font-mono" />
         </div>
       </div>
 
-      <div class="grid gap-4 sm:grid-cols-2">
-        <div class="flex flex-col gap-2">
-          <Label for="excerpt_en">Excerpt (EN)</Label>
-          <Textarea id="excerpt_en" v-model="form.excerpt_en" />
+      <!-- sidebar -->
+      <aside class="space-y-4 lg:sticky lg:top-4 lg:self-start">
+        <div class="rounded-lg border p-4 space-y-3">
+          <div class="space-y-2">
+            <Label for="status">Status</Label>
+            <Select v-model="form.status">
+              <SelectTrigger class="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="draft">draft</SelectItem>
+                <SelectItem value="published">published</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div class="space-y-2">
+            <Label for="published_at">Published At</Label>
+            <div class="flex gap-2">
+              <Popover>
+                <PopoverTrigger as-child>
+                  <Button variant="outline" type="button" class="flex-1 justify-start font-normal">
+                    <IconCalendar class="size-4" />
+                    {{ publishedLabel }}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent class="w-auto p-0">
+                  <Calendar v-model="publishedDate" />
+                </PopoverContent>
+              </Popover>
+              <Input v-model="publishedTime" type="time" class="w-32" />
+            </div>
+          </div>
+          <div class="flex gap-2 pt-1">
+            <Button type="submit" class="flex-1" :disabled="saving">{{ saving ? 'Saving…' : 'Save Post' }}</Button>
+            <Button type="button" variant="ghost" @click="router.push('/posts')">Cancel</Button>
+          </div>
         </div>
-        <div class="flex flex-col gap-2">
-          <Label for="excerpt_id">Excerpt (ID)</Label>
-          <Textarea id="excerpt_id" v-model="form.excerpt_id" />
+
+        <div class="rounded-lg border p-4 space-y-3">
+          <div class="space-y-2">
+            <Label for="slug">Slug *</Label>
+            <Input id="slug" v-model="form.slug" placeholder="my-post" />
+          </div>
+          <div class="space-y-2">
+            <Label for="category">Category</Label>
+            <Select v-model="form.category">
+              <SelectTrigger class="w-full">
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem v-for="c in categories" :key="c.id" :value="c.slug">
+                  {{ c.name_en }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-      </div>
-
-      <div class="flex flex-col gap-2">
-        <Label for="content_en">Content (EN) — Markdown</Label>
-        <Textarea id="content_en" v-model="form.content_en" class="min-h-64 font-mono" />
-      </div>
-      <div class="flex flex-col gap-2">
-        <Label for="content_id">Content (ID) — Markdown</Label>
-        <Textarea id="content_id" v-model="form.content_id" class="min-h-64 font-mono" />
-      </div>
-
-      <div class="flex gap-2">
-        <Button type="submit" :disabled="saving">{{ saving ? 'Saving…' : 'Save Post' }}</Button>
-        <Button type="button" variant="ghost" @click="router.push('/posts')">Cancel</Button>
-      </div>
+      </aside>
     </form>
   </div>
 </template>

@@ -24,13 +24,29 @@ const tempRememberMe = ref(false)
 const totpSecret = ref('')
 const totpQrUrl = ref('')
 
-function storeTokenAndRedirect(token: string) {
-  localStorage.setItem('access_token', token)
-  router.push('/')
-}
-
 function storeToken(token: string) {
   localStorage.setItem('access_token', token)
+}
+
+async function fetchMe() {
+  try {
+    const { data } = await api.get('/auth/me')
+    if (data?.id) localStorage.setItem('user_id', String(data.id))
+  } catch {
+    /* non-fatal */
+  }
+  try {
+    const { data } = await api.get('/users')
+    localStorage.setItem('is_super', data?.is_super ? '1' : '0')
+  } catch {
+    localStorage.setItem('is_super', '0')
+  }
+}
+
+async function storeTokenAndRedirect(token: string) {
+  localStorage.setItem('access_token', token)
+  await fetchMe()
+  router.push('/')
 }
 
 async function submitLogin() {

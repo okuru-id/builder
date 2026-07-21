@@ -13,10 +13,20 @@ func NewShopController() *ShopController {
 	return &ShopController{}
 }
 
+// siteOwnerID is duplicated here (content_controller has its own) to keep the
+// shop self-contained. Returns 1 when there are no users yet.
+func (c *ShopController) siteOwnerID() uint {
+	var u models.User
+	if err := facades.Orm().Query().OrderBy("id", "asc").First(&u); err != nil || u.ID == 0 {
+		return 1
+	}
+	return u.ID
+}
+
 // GET /shop — list active products.
 func (c *ShopController) Index(ctx http.Context) http.Response {
 	var products []models.Product
-	facades.Orm().Query().Where("status = ?", "active").OrderBy("id", "desc").Get(&products)
+	facades.Orm().Query().Where("user_id = ? AND status = ?", c.siteOwnerID(), "active").OrderBy("id", "desc").Get(&products)
 
 	return ctx.Response().View().Make("shop/index.tmpl", map[string]any{
 		"Title":    "Products",
@@ -30,8 +40,7 @@ func (c *ShopController) Product(ctx http.Context) http.Response {
 
 	var product models.Product
 	if err := facades.Orm().Query().
-		Where("slug = ?", slug).
-		Where("status = ?", "active").
+		Where("slug = ? AND user_id = ? AND status = ?", slug, c.siteOwnerID(), "active").
 		First(&product); err != nil || product.ID == 0 {
 		return ctx.Response().String(http.StatusNotFound, "Product not found")
 	}

@@ -1,17 +1,18 @@
 <script setup lang="ts">
 import type { Component } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import {
   IconArticle,
   IconInbox,
   IconLayoutDashboard,
-  IconLifebuoy,
   IconPackage,
   IconFileSpark,
+  IconUsers,
 } from '@tabler/icons-vue'
 
 import NavMain from '@/components/NavMain.vue'
-import NavSecondary from '@/components/NavSecondary.vue'
 import NavUser from '@/components/NavUser.vue'
+import api from '@/lib/api'
 import {
   Sidebar,
   SidebarContent,
@@ -24,10 +25,28 @@ import {
 
 defineEmits<{ logout: [] }>()
 
+const isSuper = ref(localStorage.getItem('is_super') === '1')
+
+onMounted(async () => {
+  isSuper.value = localStorage.getItem('is_super') === '1'
+  try {
+    const { data } = await api.get('/users')
+    const sup = data?.is_super ? '1' : '0'
+    localStorage.setItem('is_super', sup)
+    isSuper.value = sup === '1'
+  } catch {
+    /* keep stored value */
+  }
+})
+
 const data = {
   user: { name: 'Admin', email: 'admin@okuru.id', avatar: '' },
-  navMain: [
+}
+
+const navMain = computed(() => {
+  const items: { title: string; to?: string; icon?: Component; items?: { title: string; to: string }[] }[] = [
     { title: 'Dashboard', to: '/', icon: IconLayoutDashboard },
+    { title: 'Pages', to: '/pages', icon: IconFileSpark },
     {
       title: 'Blog',
       icon: IconArticle,
@@ -46,12 +65,10 @@ const data = {
       ],
     },
     { title: 'Inbox', to: '/inbox', icon: IconInbox },
-    { title: 'Pages', to: '/pages', icon: IconFileSpark },
-  ] as { title: string; to?: string; icon?: Component; items?: { title: string; to: string }[] }[],
-  navSecondary: [
-    { title: 'Support', to: '/', icon: IconLifebuoy },
-  ],
-}
+  ]
+  if (isSuper.value) items.push({ title: 'Users', to: '/users', icon: IconUsers })
+  return items
+})
 </script>
 
 <template>
@@ -72,8 +89,7 @@ const data = {
       </SidebarMenu>
     </SidebarHeader>
     <SidebarContent>
-      <NavMain :items="data.navMain" />
-      <NavSecondary :items="data.navSecondary" class="mt-auto" />
+      <NavMain :items="navMain" />
     </SidebarContent>
     <SidebarFooter>
       <NavUser :user="data.user" @logout="$emit('logout')" />

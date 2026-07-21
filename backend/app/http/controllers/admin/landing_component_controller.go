@@ -11,9 +11,7 @@ import (
 	"okuru/app/models"
 )
 
-// LandingComponentController manages reusable component masters.
-// Instances in page trees reference a master by ID; rendering resolves the
-// master tree at render time so editing a master updates all instances.
+// LandingComponentController manages reusable component masters, scoped per user.
 type LandingComponentController struct{}
 
 func NewLandingComponentController() *LandingComponentController {
@@ -25,28 +23,30 @@ type landingComponentInput struct {
 	Tree json.RawMessage `json:"tree"`
 }
 
-// Index lists all component masters.
+func ownComponent(ctx http.Context, id string) (models.LandingComponent, http.Response, bool) {
+	var comp models.LandingComponent
+	if err := facades.Orm().Query().Where("id = ? AND user_id = ?", id, currentUserID(ctx)).First(&comp); err != nil || comp.ID == 0 {
+		return comp, ctx.Response().Json(http.StatusNotFound, http.Json{"error": "component not found"}), false
+	}
+	return comp, nil, true
+}
+
 func (c *LandingComponentController) Index(ctx http.Context) http.Response {
 	var comps []models.LandingComponent
-	if err := facades.Orm().Query().Order("id desc").Get(&comps); err != nil {
+	if err := facades.Orm().Query().Where("user_id = ?", currentUserID(ctx)).Order("id desc").Get(&comps); err != nil {
 		return ctx.Response().Json(http.StatusInternalServerError, http.Json{"error": err.Error()})
 	}
 	return ctx.Response().Success().Json(http.Json{"data": comps})
 }
 
-// Show returns a single component master with its tree.
 func (c *LandingComponentController) Show(ctx http.Context) http.Response {
-	var comp models.LandingComponent
-	if err := facades.Orm().Query().Where("id = ?", ctx.Request().Input("id")).First(&comp); err != nil {
-		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "component not found"})
-	}
-	if comp.ID == 0 {
-		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "component not found"})
+	comp, resp, ok := ownComponent(ctx, ctx.Request().Input("id"))
+	if !ok {
+		return resp
 	}
 	return ctx.Response().Success().Json(http.Json{"data": comp})
 }
 
-// Store creates a new component master from a tree fragment.
 func (c *LandingComponentController) Store(ctx http.Context) http.Response {
 	var in landingComponentInput
 	if err := ctx.Request().Bind(&in); err != nil {
@@ -56,6 +56,7 @@ func (c *LandingComponentController) Store(ctx http.Context) http.Response {
 		Name:     in.Name,
 		Tree:     datatypes.JSON(in.Tree),
 		IsSystem: false,
+		UserID:   currentUserID(ctx),
 	}
 	if err := facades.Orm().Query().Create(&comp); err != nil {
 		return ctx.Response().Json(http.StatusInternalServerError, http.Json{"error": err.Error()})
@@ -63,20 +64,16 @@ func (c *LandingComponentController) Store(ctx http.Context) http.Response {
 	return ctx.Response().Success().Json(http.Json{"data": comp})
 }
 
-// Duplicate creates an editable copy of a component master.
 func (c *LandingComponentController) Duplicate(ctx http.Context) http.Response {
-	id := ctx.Request().Input("id")
-	var comp models.LandingComponent
-	if err := facades.Orm().Query().Where("id = ?", id).First(&comp); err != nil {
-		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "component not found"})
-	}
-	if comp.ID == 0 {
-		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "component not found"})
+	comp, resp, ok := ownComponent(ctx, ctx.Request().Input("id"))
+	if !ok {
+		return resp
 	}
 	copy := models.LandingComponent{
 		Name:     fmt.Sprintf("%s (copy)", comp.Name),
 		Tree:     comp.Tree,
 		IsSystem: false,
+		UserID:   currentUserID(ctx),
 	}
 	if err := facades.Orm().Query().Create(&copy); err != nil {
 		return ctx.Response().Json(http.StatusInternalServerError, http.Json{"error": err.Error()})
@@ -84,16 +81,10 @@ func (c *LandingComponentController) Duplicate(ctx http.Context) http.Response {
 	return ctx.Response().Success().Json(http.Json{"data": copy})
 }
 
-// Update replaces the master name and/or tree. Instances resolve the new tree
-// on next render — this is how "edit master → update all instances" works.
 func (c *LandingComponentController) Update(ctx http.Context) http.Response {
-	id := ctx.Request().Input("id")
-	var comp models.LandingComponent
-	if err := facades.Orm().Query().Where("id = ?", id).First(&comp); err != nil {
-		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "component not found"})
-	}
-	if comp.ID == 0 {
-		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "component not found"})
+	comp, resp, ok := ownComponent(ctx, ctx.Request().Input("id"))
+	if !ok {
+		return resp
 	}
 	var in landingComponentInput
 	if err := ctx.Request().Bind(&in); err != nil {
@@ -108,27 +99,21 @@ func (c *LandingComponentController) Update(ctx http.Context) http.Response {
 	if len(in.Tree) > 0 {
 		comp.Tree = datatypes.JSON(in.Tree)
 	}
-	if _, err := facades.Orm().Query().Where("id = ?", id).Update(&comp); err != nil {
+	if _, err := facades.Orm().Query().Where("id = ?", comp.ID).Update(&comp); err != nil {
 		return ctx.Response().Json(http.StatusInternalServerError, http.Json{"error": err.Error()})
 	}
 	return ctx.Response().Success().Json(http.Json{"data": comp})
 }
 
-// Destroy removes a component master. Existing instances in pages become
-// unresolvable (renderer falls back to an empty placeholder).
 func (c *LandingComponentController) Destroy(ctx http.Context) http.Response {
-	id := ctx.Request().Input("id")
-	var comp models.LandingComponent
-	if err := facades.Orm().Query().Where("id = ?", id).First(&comp); err != nil {
-		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "component not found"})
-	}
-	if comp.ID == 0 {
-		return ctx.Response().Json(http.StatusNotFound, http.Json{"error": "component not found"})
+	comp, resp, ok := ownComponent(ctx, ctx.Request().Input("id"))
+	if !ok {
+		return resp
 	}
 	if comp.IsSystem {
 		return ctx.Response().Json(http.StatusForbidden, http.Json{"error": "system component cannot be deleted"})
 	}
-	if _, err := facades.Orm().Query().Where("id = ?", id).Delete(&models.LandingComponent{}); err != nil {
+	if _, err := facades.Orm().Query().Where("id = ?", comp.ID).Delete(&models.LandingComponent{}); err != nil {
 		return ctx.Response().Json(http.StatusInternalServerError, http.Json{"error": err.Error()})
 	}
 	return ctx.Response().Success().Json(http.Json{"data": true})
